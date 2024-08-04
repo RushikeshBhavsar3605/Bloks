@@ -4,8 +4,12 @@ import { useScrollTop } from "@/hooks/use-scroll-top";
 import { cn } from "@/lib/utils";
 import { Logo } from "./logo";
 import { ModeToggle } from "@/components/mode-toggle";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export const Navbar = () => {
+  const user = useCurrentUser();
   const scrolled = useScrollTop();
 
   return (
@@ -17,6 +21,22 @@ export const Navbar = () => {
     >
       <Logo />
       <div className="md:ml-auto md:justify-end justify-between w-full flex items-center gap-x-2">
+        {!user && (
+          <>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/auth/login">Login</Link>
+            </Button>
+          </>
+        )}
+
+        {user && (
+          <>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/documents">Enter Jotion</Link>
+            </Button>
+          </>
+        )}
+
         <ModeToggle />
       </div>
     </div>

@@ -4,8 +4,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 export const Heading = () => {
+  const user = useCurrentUser();
   const router = useRouter();
 
   const onClick = () => {
@@ -24,7 +26,7 @@ export const Heading = () => {
         better, faster work happens.
       </h3>
 
-      {false && false && (
+      {user && (
         <Button asChild>
           <Link href="/documents">
             Enter Jotion
@@ -33,7 +35,7 @@ export const Heading = () => {
         </Button>
       )}
 
-      {true && true && (
+      {!user && (
         <Button onClick={onClick}>
           Get Jotion free
           <ArrowRight className="h-4 w-4 ml-2" />
