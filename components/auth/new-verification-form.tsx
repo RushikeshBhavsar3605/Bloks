@@ -7,6 +7,7 @@ import { newVerification } from "@/actions/new-verification";
 import { CardWrapper } from "@/components/auth/card-wrapper";
 import { FormError } from "@/components/form-error";
 import { FormSuccess } from "@/components/form-success";
+import { toast } from "sonner";
 
 export const NewVerificationForm = () => {
   const [error, setError] = useState<string | undefined>();
@@ -20,16 +21,25 @@ export const NewVerificationForm = () => {
 
     if (!token) {
       setError("Missing token!");
+      toast.error("Missing token!");
       return;
     }
 
     newVerification(token)
       .then((data) => {
-        setSuccess(data.success);
-        setError(data.error);
+        if (data?.error) {
+          setError(data.error);
+          toast.error(data.error);
+        }
+
+        if (data?.success) {
+          setSuccess(data.success);
+          toast.success(data.success);
+        }
       })
       .catch(() => {
         setError("Something went wrong!");
+        toast.error("Something went wrong!");
       });
   }, [token, success, error]);
 

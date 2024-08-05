@@ -16,9 +16,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FormError } from "@/components/form-error";
-import { FormSuccess } from "@/components/form-success";
 import { reset } from "@/actions/reset";
+import { toast } from "sonner";
 
 export const ResetForm = () => {
   const [error, setError] = useState<string | undefined>("");
@@ -37,10 +36,24 @@ export const ResetForm = () => {
     setSuccess("");
 
     startTransition(() => {
-      reset(values).then((data) => {
-        setError(data?.error);
-        setSuccess(data?.success);
-      });
+      reset(values)
+        .then((data) => {
+          if (data?.error) {
+            form.reset();
+            setError(data.error);
+            toast.error(data.error);
+          }
+
+          if (data?.success) {
+            form.reset();
+            setSuccess(data.success);
+            toast.success(data.success);
+          }
+        })
+        .catch(() => {
+          setError("Something went wrong!");
+          toast.error("Something went wrong!");
+        });
     });
   };
 
@@ -74,9 +87,6 @@ export const ResetForm = () => {
               )}
             />
           </div>
-
-          <FormError message={error} />
-          <FormSuccess message={success} />
 
           <Button disabled={isPending} type="submit" className="w-full">
             Send reset email
