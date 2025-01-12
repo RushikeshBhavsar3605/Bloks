@@ -1,20 +1,34 @@
 "use client";
 
+import { createDocument } from "@/actions/documents/create-document";
 import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { PlusCircle } from "lucide-react";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
+import { useState } from "react";
+import { toast } from "sonner";
 
 const DocumentsPage = () => {
   const user = useCurrentUser();
+  const [error, setError] = useState<string | undefined>("");
+  const [success, setSuccess] = useState<string | undefined>("");
 
   const onClick = () => {
     signOut();
   };
 
   const onCreate = () => {
-    console.log("Page created!");
+    setError("");
+    setSuccess("");
+
+    const promise = createDocument({ title: "Untitled" });
+
+    toast.promise(promise, {
+      loading: "Creating a new note...",
+      success: "New note created!",
+      error: "Failed to create a new note."
+    })
   };
 
   return (

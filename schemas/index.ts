@@ -33,3 +33,8 @@ export const RegisterSchema = z.object({
     message: "Name is required",
   }),
 });
+
+export const createDocumentSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  parentDocument: z.optional(z.string()),
+});

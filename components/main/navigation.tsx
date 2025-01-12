@@ -6,8 +6,11 @@ import { usePathname } from "next/navigation";
 import { ElementRef, useEffect, useRef, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 import UserItem from "./user-item";
+import { getDocuments } from "@/actions/documents/get-documents";
+import { Document } from "@prisma/client";
 
 export const Navigation = () => {
+  const [documents, setDocuments] = useState<any[]>();
   const pathname = usePathname();
   const isMobile = useMediaQuery("(max-width: 768px)");
 
@@ -16,6 +19,16 @@ export const Navigation = () => {
   const navbarRef = useRef<ElementRef<"div">>(null);
   const [isResetting, setIsResetting] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(isMobile);
+
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      const response = getDocuments().then((data) => {
+        setDocuments(data);
+      })
+    }
+
+    fetchDocuments();
+  }, [])
 
   useEffect(() => {
     if (isMobile) {
@@ -119,7 +132,11 @@ export const Navigation = () => {
         </div>
 
         <div>
-          <p>Documents</p>
+          {documents?.map((document: any) => (
+            <p key={document.id}>
+              {document.title}
+            </p>
+          ))}
         </div>
 
         <div

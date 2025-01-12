@@ -14,30 +14,30 @@ datasource db {
 }
 
 model User {
-  id String @id @default(cuid()) @map("_id")
-  name String?
-  email String? @unique
-  emailVerified DateTime?
-  image String?
-  password String?
-  accounts Account[]
-  isTwoFactorEnabled Boolean @default(false)
+  id                    String                 @id @default(cuid()) @map("_id")
+  name                  String?
+  email                 String?                @unique
+  emailVerified         DateTime?
+  image                 String?
+  password              String?
+  accounts              Account[]
+  isTwoFactorEnabled    Boolean                @default(false)
   twoFactorConfirmation TwoFactorConfirmation?
 }
 
 model Account {
-  id String @id @default(cuid()) @map("_id")
-  userId String
-  type String
-  provider String
+  id                String  @id @default(cuid()) @map("_id")
+  userId            String
+  type              String
+  provider          String
   providerAccountId String
-  refresh_token String?
-  access_token String?
-  expires_at Int?
-  token_type String?
-  scope String?
-  id_token String?
-  session_state String?
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -45,27 +45,27 @@ model Account {
 }
 
 model VerificationToken {
-  id String @id @default(cuid()) @map("_id")
-  email String
-  token String @unique
+  id      String   @id @default(cuid()) @map("_id")
+  email   String
+  token   String   @unique
   expires DateTime
 
   @@unique([email, token])
 }
 
 model PasswordResetToken {
-  id String @id @default(cuid()) @map("_id")
-  email String
-  token String @unique
+  id      String   @id @default(cuid()) @map("_id")
+  email   String
+  token   String   @unique
   expires DateTime
 
   @@unique([email, token])
 }
 
 model TwoFactorToken {
-  id String @id @default(cuid()) @map("_id")
-  email String
-  token String @unique
+  id      String   @id @default(cuid()) @map("_id")
+  email   String
+  token   String   @unique
   expires DateTime
 
   @@unique([email, token])
@@ -75,7 +75,25 @@ model TwoFactorConfirmation {
   id String @id @default(cuid()) @map("_id")
 
   userId String
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId])
+}
+
+model Document {
+  id         String  @id @default(cuid()) @map("_id")
+  title      String
+  userId     String
+  isArchived Boolean
+
+  parentDocumentId String?
+  parentDocument   Document?  @relation("DocumentParent", fields: [parentDocumentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  childDocuments   Document[] @relation("DocumentParent")
+  content          String?
+  coverImage       String?
+  icon             String?
+  isPublished      Boolean
+
+  @@index([userId])
+  @@index([userId, parentDocumentId])
 }
