@@ -1,13 +1,22 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { ChevronsLeft, MenuIcon } from "lucide-react";
+import {
+  ChevronsLeft,
+  MenuIcon,
+  PlusCircle,
+  Search,
+  Settings,
+} from "lucide-react";
 import { usePathname } from "next/navigation";
 import { ElementRef, useEffect, useRef, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 import UserItem from "./user-item";
 import { getDocuments } from "@/actions/documents/get-documents";
 import { Document } from "@prisma/client";
+import { Item } from "./item";
+import { createDocument } from "@/actions/documents/create-document";
+import { toast } from "sonner";
 
 export const Navigation = () => {
   const [documents, setDocuments] = useState<any[]>();
@@ -20,15 +29,31 @@ export const Navigation = () => {
   const [isResetting, setIsResetting] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(isMobile);
 
+  const [error, setError] = useState<string | undefined>("");
+  const [success, setSuccess] = useState<string | undefined>("");
+
+  const onCreate = () => {
+    setError("");
+    setSuccess("");
+
+    const promise = createDocument({ title: "Untitled" });
+
+    toast.promise(promise, {
+      loading: "Creating a new note...",
+      success: "New note created!",
+      error: "Failed to create a new note.",
+    });
+  };
+
   useEffect(() => {
     const fetchDocuments = async () => {
       const response = getDocuments().then((data) => {
         setDocuments(data);
-      })
-    }
+      });
+    };
 
     fetchDocuments();
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (isMobile) {
@@ -129,13 +154,14 @@ export const Navigation = () => {
 
         <div>
           <UserItem />
+          <Item label="Search" icon={Search} isSearch onClick={() => {}} />
+          <Item label="Settings" icon={Settings} onClick={() => {}} />
+          <Item label="New page" icon={PlusCircle} onClick={onCreate} />
         </div>
 
         <div>
           {documents?.map((document: any) => (
-            <p key={document.id}>
-              {document.title}
-            </p>
+            <p key={document.id}>{document.title}</p>
           ))}
         </div>
 
