@@ -84,6 +84,7 @@ model Document {
   id         String  @id @default(cuid()) @map("_id")
   title      String
   userId     String
+  createdAt  DateTime @default(now())
   isArchived Boolean
 
   parentDocumentId String?
