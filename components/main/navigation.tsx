@@ -12,14 +12,12 @@ import { usePathname } from "next/navigation";
 import { ElementRef, useEffect, useRef, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 import UserItem from "./user-item";
-import { getDocuments } from "@/actions/documents/get-documents";
-import { Document } from "@prisma/client";
 import { Item } from "./item";
 import { createDocument } from "@/actions/documents/create-document";
 import { toast } from "sonner";
+import { DocumentList } from "./document-list";
 
 export const Navigation = () => {
-  const [documents, setDocuments] = useState<any[]>();
   const pathname = usePathname();
   const isMobile = useMediaQuery("(max-width: 768px)");
 
@@ -44,16 +42,6 @@ export const Navigation = () => {
       error: "Failed to create a new note.",
     });
   };
-
-  useEffect(() => {
-    const fetchDocuments = async () => {
-      const response = getDocuments().then((data) => {
-        setDocuments(data);
-      });
-    };
-
-    fetchDocuments();
-  }, []);
 
   useEffect(() => {
     if (isMobile) {
@@ -159,10 +147,8 @@ export const Navigation = () => {
           <Item label="New page" icon={PlusCircle} onClick={onCreate} />
         </div>
 
-        <div>
-          {documents?.map((document: any) => (
-            <p key={document.id}>{document.title}</p>
-          ))}
+        <div className="mt-4">
+          <DocumentList />
         </div>
 
         <div
