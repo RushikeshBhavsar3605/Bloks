@@ -25,12 +25,12 @@ export const createDocument = async (
   const document = await db.document.create({
     data: {
       title,
-      parentDocumentId: parentDocument || undefined,
+      parentDocumentId: parentDocument || "",
       userId: user.id!,
       isArchived: false,
       isPublished: false,
     },
   });
 
-  return { success: "New note created!" };
+  return document;
 };

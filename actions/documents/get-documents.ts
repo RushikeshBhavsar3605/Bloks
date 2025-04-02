@@ -12,7 +12,7 @@ export const getDocuments = async (parentDocument?: string) => {
   const documents = await prisma?.document.findMany({
     where: {
       userId: user.id,
-      parentDocumentId: parentDocument || undefined,
+      parentDocumentId: parentDocument || "",
       isArchived: false,
     },
     orderBy: {
