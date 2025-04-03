@@ -39,3 +39,23 @@ export const getDocument = async (documentId: string) => {
 
   return document;
 };
+
+export const getAllTrashDocuments = async () => {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new Error("Not authenticated");
+  }
+
+  const documents = await prisma?.document.findMany({
+    where: {
+      userId: user.id,
+      isArchived: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return documents;
+};
