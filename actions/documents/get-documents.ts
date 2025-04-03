@@ -2,7 +2,7 @@
 
 import { currentUser } from "@/lib/auth";
 
-export const getSidebarDocuments = async (parentDocument?: string) => {
+export const getAllDocuments = async (parentDocument?: string) => {
   const user = await currentUser();
 
   if (!user) {
@@ -21,4 +21,21 @@ export const getSidebarDocuments = async (parentDocument?: string) => {
   });
 
   return documents;
+};
+
+export const getDocument = async (documentId: string) => {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new Error("Not authenticated");
+  }
+
+  const document = await prisma?.document.findUnique({
+    where: {
+      userId: user.id,
+      id: documentId,
+    },
+  });
+
+  return document;
 };
