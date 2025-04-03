@@ -52,3 +52,70 @@ export const archive = async (documentId: string) => {
 
   return document;
 };
+
+export const restoreDocument = async (documentId: string) => {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new Error("Not authenticated");
+  }
+
+  const existingDocument = await getDocument(documentId);
+
+  if (!existingDocument) {
+    throw new Error("Not found");
+  }
+
+  if (existingDocument.userId !== user.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const recursiveRestore = async (documentId: string) => {
+    const children = await prisma?.document.findMany({
+      where: {
+        userId: user.id,
+        parentDocumentId: documentId,
+      },
+    });
+
+    if (!children) return;
+
+    for (const child of children) {
+      await prisma?.document.update({
+        where: {
+          id: child.id,
+        },
+        data: {
+          isArchived: false,
+        },
+      });
+
+      await recursiveRestore(child.id);
+    }
+  };
+
+  const options: Partial<{ isArchived: boolean; parentDocumentId: string }> = {
+    isArchived: false,
+  };
+
+  if (
+    existingDocument.parentDocumentId &&
+    existingDocument.parentDocumentId != ""
+  ) {
+    const parent = await getDocument(existingDocument.parentDocumentId);
+    if (parent?.isArchived) {
+      options.parentDocumentId = "";
+    }
+  }
+
+  const document = await prisma?.document.update({
+    where: {
+      id: documentId,
+    },
+    data: options,
+  });
+
+  recursiveRestore(documentId);
+
+  return document;
+};
