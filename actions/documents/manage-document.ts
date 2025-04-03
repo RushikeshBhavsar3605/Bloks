@@ -115,7 +115,56 @@ export const restoreDocument = async (documentId: string) => {
     data: options,
   });
 
-  recursiveRestore(documentId);
+  await recursiveRestore(documentId);
+
+  return document;
+};
+
+export const removeDocument = async (documentId: string) => {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new Error("Not authenticated");
+  }
+
+  const existingDocument = await getDocument(documentId);
+
+  if (!existingDocument) {
+    throw new Error("Not found");
+  }
+
+  if (existingDocument.userId !== user.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const recursiveRemove = async (documentId: string) => {
+    const children = await prisma?.document.findMany({
+      where: {
+        userId: user.id,
+        parentDocumentId: documentId,
+      },
+    });
+
+    if (!children) return;
+
+    for (const child of children) {
+      await recursiveRemove(child.id);
+
+      await prisma?.document.delete({
+        where: {
+          id: child.id,
+        },
+      });
+    }
+  };
+
+  await recursiveRemove(documentId);
+
+  const document = await prisma?.document.delete({
+    where: {
+      id: documentId,
+    },
+  });
 
   return document;
 };
