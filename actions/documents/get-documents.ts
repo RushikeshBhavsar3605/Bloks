@@ -2,7 +2,7 @@
 
 import { currentUser } from "@/lib/auth";
 
-export const getDocuments = async (parentDocument?: string) => {
+export const getSidebarDocuments = async (parentDocument?: string) => {
   const user = await currentUser();
 
   if (!user) {

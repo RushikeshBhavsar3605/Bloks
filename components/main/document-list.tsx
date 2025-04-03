@@ -1,6 +1,6 @@
 "use client";
 
-import { getDocuments } from "@/actions/documents/get-documents";
+import { getSidebarDocuments } from "@/actions/documents/get-documents";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Item } from "./item";
@@ -32,7 +32,7 @@ export const DocumentList = ({
 
   useEffect(() => {
     const fetchDocuments = async () => {
-      const data = await getDocuments(parentDocumentId);
+      const data = await getSidebarDocuments(parentDocumentId);
       setDocuments(data);
     };
 
