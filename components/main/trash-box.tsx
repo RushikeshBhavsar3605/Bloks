@@ -10,8 +10,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Spinner } from "../spinner";
-import { Search, Undo } from "lucide-react";
+import { Search, Trash, Undo } from "lucide-react";
 import { Input } from "../ui/input";
+import { ConfirmModal } from "../modals/confirm-modal";
 
 export const TrashBox = () => {
   const router = useRouter();
@@ -107,6 +108,15 @@ export const TrashBox = () => {
               >
                 <Undo className="h-4 w-4 text-muted-foreground" />
               </div>
+
+              <ConfirmModal onConfirm={() => onRemove(document.id)}>
+                <div
+                  role="button"
+                  className="rounded-sm p-2 hover:bg-neutral-200"
+                >
+                  <Trash className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </ConfirmModal>
             </div>
           </div>
         ))}
