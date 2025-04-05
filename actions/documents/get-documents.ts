@@ -59,3 +59,31 @@ export const getAllTrashDocuments = async () => {
 
   return documents;
 };
+
+export const getDocumentById = async (documentId: string) => {
+  const user = await currentUser();
+
+  const document = await prisma?.document.findUnique({
+    where: {
+      id: documentId,
+    },
+  });
+
+  if (!document) {
+    throw new Error("Not found");
+  }
+
+  if (document.isPublished && !document.isArchived) {
+    return document;
+  }
+
+  if (!user) {
+    throw new Error("Not authenticated");
+  }
+
+  if (document.userId !== user.id) {
+    throw new Error("Unauthorized");
+  }
+
+  return document;
+};
