@@ -168,3 +168,43 @@ export const removeDocument = async (documentId: string) => {
 
   return document;
 };
+
+export const updateDocument = async (data: {
+  id: string;
+  title?: string;
+  content?: string;
+  coverImage?: string;
+  icon?: string;
+  isPublished?: boolean;
+}) => {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new Error("Not authenticated");
+  }
+
+  const existingDocument = await prisma?.document.findUnique({
+    where: {
+      id: data.id,
+    },
+  });
+
+  if (!existingDocument) {
+    throw new Error("Not found");
+  }
+
+  if (existingDocument.userId !== user.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const { id, ...rest } = data;
+
+  const document = await prisma?.document.update({
+    where: {
+      id,
+    },
+    data: rest,
+  });
+
+  return document;
+};
