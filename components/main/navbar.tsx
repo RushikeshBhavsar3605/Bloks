@@ -1,0 +1,52 @@
+"use client";
+
+import { getDocumentById } from "@/actions/documents/get-documents";
+import { Document } from "@prisma/client";
+import { MenuIcon } from "lucide-react";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Title } from "./title";
+
+interface NavbarProps {
+  isCollapsed: boolean;
+  onResetWidth: () => void;
+}
+
+export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
+  const params = useParams();
+  const [document, setDocument] = useState<Document>();
+
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      const data = await getDocumentById(params.documentId as string);
+      setDocument(data);
+    };
+    fetchDocuments();
+  }, []);
+
+  if (document === undefined) {
+    return <p>Loading...</p>;
+  }
+
+  if (document === null) {
+    return null;
+  }
+
+  return (
+    <>
+      <nav className="bg-background dark:bg-[#1F1F1F] px-3 py-2 w-full flex items-center gap-x-4">
+        {isCollapsed && (
+          <MenuIcon
+            role="button"
+            onClick={onResetWidth}
+            className="h-6 w-6 text-muted-foreground"
+          />
+        )}
+
+        <div className="flex items-center justify-between w-full">
+          <Title initialData={document} />
+        </div>
+      </nav>
+    </>
+  );
+};
