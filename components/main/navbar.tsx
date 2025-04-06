@@ -6,6 +6,7 @@ import { MenuIcon } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Title } from "./title";
+import { SocketIndicator } from "../socket-indicator";
 
 interface NavbarProps {
   isCollapsed: boolean;
@@ -18,7 +19,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
 
   useEffect(() => {
     const fetchDocuments = async () => {
-      const data = await getDocumentById(params.documentId as string);
+      const data = await getDocumentById(params?.documentId as string);
       setDocument(data);
     };
     fetchDocuments();
@@ -45,6 +46,10 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
 
         <div className="flex items-center justify-between w-full">
           <Title initialData={document} />
+        </div>
+
+        <div className="ml-auto flex items-center">
+          <SocketIndicator />
         </div>
       </nav>
     </>
