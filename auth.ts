@@ -32,6 +32,8 @@ export const {
       // Allow OAuth without email verification
       if (account?.provider !== "credentials") return true;
 
+      if (!user.id) return false;
+
       const existingUser = await getUserById(user.id);
 
       // Prevent sign in without email verification
@@ -53,13 +55,24 @@ export const {
       return true;
     },
     async session({ token, session }) {
-      if (token.sub && session.user) {
+      if (token.user) {
+        session.user = token.user as any;
+      } else if (token.sub && session.user) {
         session.user.id = token.sub;
       }
 
       return session;
     },
-    async jwt({ token }) {
+    async jwt({ token, user }) {
+      if (user) {
+        token.user = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+        };
+      }
+
       return token;
     },
   },
