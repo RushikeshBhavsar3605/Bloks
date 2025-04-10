@@ -15,7 +15,6 @@ import { ElementRef, useEffect, useRef, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 import UserItem from "./user-item";
 import { Item } from "./item";
-import { createDocument } from "@/actions/documents/create-document";
 import { toast } from "sonner";
 import { DocumentList } from "./document-list";
 import {
@@ -48,7 +47,14 @@ export const Navigation = () => {
     setError("");
     setSuccess("");
 
-    const promise = createDocument({ title: "Untitled" });
+    const promise = fetch("/api/socket/document/create", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title: "Untitled" }),
+    });
 
     toast.promise(promise, {
       loading: "Creating a new note...",

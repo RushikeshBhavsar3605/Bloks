@@ -7,6 +7,7 @@ import { Item } from "./item";
 import { cn } from "@/lib/utils";
 import { Document } from "@prisma/client";
 import { FileIcon } from "lucide-react";
+import { useSocket } from "../providers/socket-provider";
 
 interface DocumentListProps {
   parentDocumentId?: string;
@@ -18,9 +19,10 @@ export const DocumentList = ({
   parentDocumentId,
   level = 0,
 }: DocumentListProps) => {
+  const { socket } = useSocket();
   const params = useParams();
   const router = useRouter();
-  const [documents, setDocuments] = useState<Document[]>();
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const onExpand = (documentId: string) => {
@@ -30,14 +32,35 @@ export const DocumentList = ({
     }));
   };
 
-  useEffect(() => {
-    const fetchDocuments = async () => {
-      const data = await getAllDocuments(parentDocumentId);
+  const fetchDocuments = async () => {
+    try {
+      const res = await fetch(
+        `/api/socket/document/fetch-all?parentDocument=${
+          parentDocumentId || ""
+        }`
+      );
+      const data = await res.json();
       setDocuments(data);
-    };
+    } catch (error) {
+      console.log("Failed to fetch documents", error);
+    }
+  };
 
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("document:created", (data: Document) => {
+      fetchDocuments();
+    });
+
+    return () => {
+      socket.off("document:created");
+    };
+  }, [socket]);
+
+  useEffect(() => {
     fetchDocuments();
-  }, []);
+  }, [parentDocumentId]);
 
   const onRedirect = (documentId: string) => {
     router.push(`/documents/${documentId}`);
@@ -80,7 +103,7 @@ export const DocumentList = ({
             label={document.title}
             icon={FileIcon}
             documentIcon={document.icon || undefined}
-            active={params.documentId === document.id}
+            active={params?.documentId === document.id}
             level={level}
             onExpand={() => onExpand(document.id)}
             expanded={expanded[document.id]}

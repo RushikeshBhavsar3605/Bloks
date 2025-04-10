@@ -1,6 +1,5 @@
 "use client";
 
-import { createDocument } from "@/actions/documents/create-document";
 import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { PlusCircle } from "lucide-react";
@@ -22,13 +21,20 @@ const DocumentsPage = () => {
     setError("");
     setSuccess("");
 
-    const promise = createDocument({ title: "Untitled" });
+    const promise = fetch("/api/socket/document/create", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title: "Untitled" }),
+    });
 
     toast.promise(promise, {
       loading: "Creating a new note...",
       success: "New note created!",
-      error: "Failed to create a new note."
-    })
+      error: "Failed to create a new note.",
+    });
   };
 
   return (

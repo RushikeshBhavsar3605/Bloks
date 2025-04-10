@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 import { useRouter } from "next/navigation";
-import { createDocument } from "@/actions/documents/create-document";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -75,16 +74,22 @@ export const Item = ({
     event.stopPropagation();
     if (!id) return;
 
-    const promise = createDocument({
-      title: "Untitled",
-      parentDocument: id,
-    }).then((document) => {
-      if ("error" in document) return;
-      if (!expanded) {
-        onExpand?.();
-      }
-      router.push(`/documents/${document.id}`);
-    });
+    const promise = fetch("/api/socket/document/create", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title: "Untitled", parentDocument: id }),
+    })
+      .then((res) => res.json())
+      .then((document) => {
+        if ("error" in document) return;
+        if (!expanded) {
+          onExpand?.();
+        }
+        router.push(`/documents/${document.id}`);
+      });
 
     toast.promise(promise, {
       loading: "Creating a new note...",
