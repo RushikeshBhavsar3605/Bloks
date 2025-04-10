@@ -22,6 +22,10 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    fetch("/api/socket/io").catch((err) => {
+      console.error("Socket server init failed", err);
+    });
+
     const socketInstance = new (ClientIO as any)(
       process.env.NEXT_PUBLIC_APP_URL!,
       {
