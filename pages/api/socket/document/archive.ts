@@ -27,6 +27,10 @@ export default async function (
       },
     });
 
+    if (!existingDocument) {
+      return res.status(404).json({ error: "Document not found!" });
+    }
+
     if (user.id !== existingDocument?.userId) {
       return res.status(403).json("Unauthorized!");
     }
