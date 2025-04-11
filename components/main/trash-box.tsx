@@ -21,12 +21,13 @@ export const TrashBox = () => {
   const [search, setSearch] = useState<string>("");
   const [documents, setDocuments] = useState<Document[]>();
 
-  useEffect(() => {
-    const fetchDocuments = async () => {
-      const data = await getAllTrashDocuments();
-      setDocuments(data);
-    };
+  const fetchDocuments = async () => {
+    const res = await fetch("/api/socket/document/fetch-all-trash");
+    const data = await res.json();
+    setDocuments(data);
+  };
 
+  useEffect(() => {
     fetchDocuments();
   }, []);
 
@@ -43,7 +44,13 @@ export const TrashBox = () => {
     documentId: string
   ) => {
     event.stopPropagation();
-    const promise = restoreDocument(documentId);
+    const promise = fetch("/api/socket/document/restore", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ documentId: documentId }),
+    });
 
     toast.promise(promise, {
       loading: "Restoring note...",
@@ -61,7 +68,7 @@ export const TrashBox = () => {
       error: "Failed to delete note.",
     });
 
-    if (params.documentId === documentId) {
+    if (params?.documentId === documentId) {
       router.push("/documents");
     }
   };
