@@ -20,7 +20,6 @@ import {
   DropdownMenuSeparator,
 } from "../ui/dropdown-menu";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { archive } from "@/actions/documents/manage-document";
 
 interface ItemProps {
   id?: string;
@@ -54,7 +53,13 @@ export const Item = ({
     event.stopPropagation();
     if (!id) return;
 
-    const promise = archive(id);
+    const promise = fetch("/api/socket/document/archive", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ documentId: id }),
+    });
 
     toast.promise(promise, {
       loading: "Moving to trash...",

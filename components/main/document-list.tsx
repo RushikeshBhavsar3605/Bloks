@@ -1,6 +1,5 @@
 "use client";
 
-import { getAllDocuments } from "@/actions/documents/get-documents";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Item } from "./item";
@@ -49,12 +48,20 @@ export const DocumentList = ({
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("document:created", (data: Document) => {
+    const handleCreated = (data: Document) => {
       fetchDocuments();
-    });
+    };
+
+    const handleArchived = (data: Document) => {
+      fetchDocuments();
+    };
+
+    socket.on("document:created", handleCreated);
+    socket.on("document:archived", handleArchived);
 
     return () => {
-      socket.off("document:created");
+      socket.off("document:created", handleCreated);
+      socket.off("document:archived", handleArchived);
     };
   }, [socket]);
 
