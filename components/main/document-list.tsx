@@ -56,12 +56,18 @@ export const DocumentList = ({
       fetchDocuments();
     };
 
+    const handleRestore = (data: Document) => {
+      fetchDocuments();
+    };
+
     socket.on("document:created", handleCreated);
     socket.on("document:archived", handleArchived);
+    socket.on("document:restore", handleRestore);
 
     return () => {
       socket.off("document:created", handleCreated);
       socket.off("document:archived", handleArchived);
+      socket.off("document:restore", handleRestore);
     };
   }, [socket]);
 

@@ -1,10 +1,6 @@
 "use client";
 
-import { getAllTrashDocuments } from "@/actions/documents/get-documents";
-import {
-  removeDocument,
-  restoreDocument,
-} from "@/actions/documents/manage-document";
+import { removeDocument } from "@/actions/documents/manage-document";
 import { Document } from "@prisma/client";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -13,8 +9,10 @@ import { Spinner } from "../spinner";
 import { Search, Trash, Undo } from "lucide-react";
 import { Input } from "../ui/input";
 import { ConfirmModal } from "../modals/confirm-modal";
+import { useSocket } from "../providers/socket-provider";
 
 export const TrashBox = () => {
+  const { socket } = useSocket();
   const router = useRouter();
   const params = useParams();
 
@@ -22,10 +20,28 @@ export const TrashBox = () => {
   const [documents, setDocuments] = useState<Document[]>();
 
   const fetchDocuments = async () => {
-    const res = await fetch("/api/socket/document/fetch-all-trash");
-    const data = await res.json();
-    setDocuments(data);
+    try {
+      const res = await fetch("/api/socket/document/fetch-all-trash");
+      const data = await res.json();
+      setDocuments(data);
+    } catch (error) {
+      console.log("Failed to fetch trash documents", error);
+    }
   };
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleRestore = (data: Document) => {
+      fetchDocuments();
+    };
+
+    socket.on("document:restore", handleRestore);
+
+    return () => {
+      socket.off("document:restore", handleRestore);
+    };
+  }, [socket]);
 
   useEffect(() => {
     fetchDocuments();
