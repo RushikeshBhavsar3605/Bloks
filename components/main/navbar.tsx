@@ -31,17 +31,17 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
   useEffect(() => {
     if (!socket) return;
 
+    if (!document?.id) return;
     const handleUpdate = (data: Document) => {
-      console.log("RUN");
       setDocument(data);
     };
 
-    socket.on(`document:update`, handleUpdate);
+    socket.on(`document:update:${document.id}`, handleUpdate);
 
     return () => {
-      socket.off(`document:update`, handleUpdate);
+      socket.off(`document:update:${document.id}`, handleUpdate);
     };
-  }, [socket]);
+  }, [socket, document?.id]);
 
   useEffect(() => {
     fetchDocuments();

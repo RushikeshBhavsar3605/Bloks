@@ -41,7 +41,7 @@ export default async function (
       data: rest,
     });
 
-    res?.socket?.server?.io?.emit(`document:update`, document);
+    res?.socket?.server?.io?.emit(`document:update:${id as string}`, document);
 
     return res.status(200).json(document);
   } catch (error) {
