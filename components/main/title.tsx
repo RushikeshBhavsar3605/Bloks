@@ -4,7 +4,6 @@ import { Document } from "@prisma/client";
 import { useRef, useState } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { updateDocument } from "@/actions/documents/manage-document";
 import { toast } from "sonner";
 
 interface TitleProps {
@@ -32,9 +31,16 @@ export const Title = ({ initialData }: TitleProps) => {
 
   const onChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(event.target.value);
-    const promise = updateDocument({
-      id: initialData.id,
-      title: event.target.value || "Untitled",
+
+    const promise = fetch("/api/socket/document/update-document", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: initialData.id,
+        title: event.target.value || "Untitled",
+      }),
     });
 
     toast.promise(promise, {

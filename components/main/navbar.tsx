@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Title } from "./title";
 import { SocketIndicator } from "../socket-indicator";
+import { useSocket } from "../providers/socket-provider";
 
 interface NavbarProps {
   isCollapsed: boolean;
@@ -14,14 +15,35 @@ interface NavbarProps {
 }
 
 export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
+  const { socket } = useSocket();
   const params = useParams();
   const [document, setDocument] = useState<Document>();
 
+  const fetchDocuments = async () => {
+    const data = await getDocumentById(params?.documentId as string);
+    setDocument(data);
+  };
+
+  if (document?.id != params?.documentId) {
+    fetchDocuments();
+  }
+
   useEffect(() => {
-    const fetchDocuments = async () => {
-      const data = await getDocumentById(params?.documentId as string);
+    if (!socket) return;
+
+    const handleUpdate = (data: Document) => {
+      console.log("RUN");
       setDocument(data);
     };
+
+    socket.on(`document:update`, handleUpdate);
+
+    return () => {
+      socket.off(`document:update`, handleUpdate);
+    };
+  }, [socket]);
+
+  useEffect(() => {
     fetchDocuments();
   }, []);
 
