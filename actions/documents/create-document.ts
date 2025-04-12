@@ -5,6 +5,8 @@ import { createDocumentSchema } from "@/schemas";
 import { currentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 
+// ❌ Deprecated: This server action has been replaced by `/api/socket/document/create`
+// Reason: Switched to API route for real-time socket support
 export const createDocument = async (
   values: z.infer<typeof createDocumentSchema>
 ) => {

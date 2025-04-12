@@ -2,6 +2,8 @@
 
 import { currentUser } from "@/lib/auth";
 
+// ❌ Deprecated: This server action has been replaced by `/api/socket/document/fetch-all`
+// Reason: Switched to API route for real-time socket support
 export const getAllDocuments = async (parentDocument?: string) => {
   const user = await currentUser();
 
@@ -23,6 +25,8 @@ export const getAllDocuments = async (parentDocument?: string) => {
   return documents;
 };
 
+// ❌ Deprecated: This helper server action has been un longer used
+// Reason: Calling server action has been Deprecated
 export const getDocument = async (documentId: string) => {
   const user = await currentUser();
 
@@ -40,6 +44,8 @@ export const getDocument = async (documentId: string) => {
   return document;
 };
 
+// ❌ Deprecated: This server action has been replaced by `/api/socket/document/create`
+// Reason: Switched to API route for real-time socket support
 export const getAllTrashDocuments = async () => {
   const user = await currentUser();
 

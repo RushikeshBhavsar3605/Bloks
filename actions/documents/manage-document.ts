@@ -3,6 +3,8 @@
 import { currentUser } from "@/lib/auth";
 import { getAllDocuments, getDocument } from "./get-documents";
 
+// ❌ Deprecated: This server action has been replaced by `/api/socket/document/archive`
+// Reason: Switched to API route for real-time socket support
 export const archive = async (documentId: string) => {
   const user = await currentUser();
 
@@ -53,6 +55,8 @@ export const archive = async (documentId: string) => {
   return document;
 };
 
+// ❌ Deprecated: This server action has been replaced by `/api/socket/document/restore`
+// Reason: Switched to API route for real-time socket support
 export const restoreDocument = async (documentId: string) => {
   const user = await currentUser();
 
@@ -120,6 +124,8 @@ export const restoreDocument = async (documentId: string) => {
   return document;
 };
 
+// ❌ Deprecated: This server action has been replaced by `/api/socket/document/remove`
+// Reason: Switched to API route for real-time socket support
 export const removeDocument = async (documentId: string) => {
   const user = await currentUser();
 
@@ -169,6 +175,8 @@ export const removeDocument = async (documentId: string) => {
   return document;
 };
 
+// ❌ Deprecated: This server action has been replaced by `/api/socket/document/update-document`
+// Reason: Switched to API route for real-time socket support
 export const updateDocument = async (data: {
   id: string;
   title?: string;
