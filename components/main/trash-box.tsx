@@ -1,6 +1,5 @@
 "use client";
 
-import { removeDocument } from "@/actions/documents/manage-document";
 import { Document } from "@prisma/client";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -36,10 +35,16 @@ export const TrashBox = () => {
       fetchDocuments();
     };
 
+    const handleRemove = (data: Document) => {
+      fetchDocuments();
+    };
+
     socket.on("document:restore", handleRestore);
+    socket.on("document:remove", handleRemove);
 
     return () => {
       socket.off("document:restore", handleRestore);
+      socket.off("document:remove", handleRemove);
     };
   }, [socket]);
 
@@ -76,7 +81,13 @@ export const TrashBox = () => {
   };
 
   const onRemove = (documentId: string) => {
-    const promise = removeDocument(documentId);
+    const promise = fetch("/api/socket/document/remove", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ documentId: documentId }),
+    });
 
     toast.promise(promise, {
       loading: "Deleting note...",
