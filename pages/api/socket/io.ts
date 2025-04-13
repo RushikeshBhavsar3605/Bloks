@@ -25,6 +25,10 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIo) => {
       socket.on("disconnect", () => {
         console.log("[Socket.io] Client disconnected", socket.id);
       });
+
+      socket.on("document:update:title", ({ id, title }) => {
+        io.emit("document:receive:title", { id, title });
+      });
     });
 
     res.socket.server.io = io;

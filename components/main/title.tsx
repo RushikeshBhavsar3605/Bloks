@@ -1,16 +1,20 @@
 "use client";
 
 import { Document } from "@prisma/client";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { toast } from "sonner";
+import debounce from "lodash.debounce";
+import { useSocket } from "../providers/socket-provider";
+import { useSaveStatus } from "@/hooks/use-save-status";
 
 interface TitleProps {
   initialData: Document;
 }
 
 export const Title = ({ initialData }: TitleProps) => {
+  const { socket } = useSocket();
+  const { setSaving, setSaved } = useSaveStatus();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState(initialData.title || "Untitled");
@@ -27,27 +31,36 @@ export const Title = ({ initialData }: TitleProps) => {
 
   const disableInput = () => {
     setIsEditing(false);
+    initialData.title = title;
   };
 
+  const saveToDB = useCallback(
+    debounce(async (title: string) => {
+      await fetch("/api/socket/document/update-document", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: initialData.id,
+          title: title || "Untitled",
+        }),
+      });
+
+      setSaved();
+    }, 2000),
+    [initialData.id]
+  );
+
   const onChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSaving();
     setTitle(event.target.value);
 
-    const promise = fetch("/api/socket/document/update-document", {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        id: initialData.id,
-        title: event.target.value || "Untitled",
-      }),
+    socket.emit("document:update:title", {
+      id: initialData.id,
+      title: event.target.value,
     });
-
-    toast.promise(promise, {
-      loading: "Changing...",
-      success: "Changed",
-      error: "Change failed",
-    });
+    saveToDB(event.target.value);
   };
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {

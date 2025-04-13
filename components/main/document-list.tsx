@@ -60,14 +60,28 @@ export const DocumentList = ({
       fetchDocuments();
     };
 
+    const handleUpdateTitle = ({
+      id,
+      title,
+    }: {
+      id: string;
+      title: string;
+    }) => {
+      setDocuments((prevDocs) =>
+        prevDocs.map((doc) => (doc.id == id ? { ...doc, title } : doc))
+      );
+    };
+
     socket.on("document:created", handleCreated);
     socket.on("document:archived", handleArchived);
     socket.on("document:restore", handleRestore);
+    socket.on("document:receive:title", handleUpdateTitle);
 
     return () => {
       socket.off("document:created", handleCreated);
       socket.off("document:archived", handleArchived);
       socket.off("document:restore", handleRestore);
+      socket.off("document:receive:title", handleUpdateTitle);
     };
   }, [socket]);
 
