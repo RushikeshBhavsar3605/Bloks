@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Title } from "./title";
 import { SocketIndicator } from "../socket-indicator";
 import { useSocket } from "../providers/socket-provider";
+import { SaveIndicator } from "../save-indicator";
 
 interface NavbarProps {
   isCollapsed: boolean;
@@ -70,7 +71,8 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
           <Title initialData={document} />
         </div>
 
-        <div className="ml-auto flex items-center">
+        <div className="ml-auto flex items-center space-x-2">
+          <SaveIndicator />
           <SocketIndicator />
         </div>
       </nav>

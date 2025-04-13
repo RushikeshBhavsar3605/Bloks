@@ -10,5 +10,5 @@ export const SocketIndicator = () => {
     return <Badge variant="destructive">Not connected</Badge>;
   }
 
-  return <Badge variant="secondary">Connected</Badge>;
+  return <Badge variant="connected">Connected</Badge>;
 };
