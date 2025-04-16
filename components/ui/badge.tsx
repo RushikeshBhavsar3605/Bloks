@@ -17,10 +17,8 @@ const badgeVariants = cva(
         outline: "text-foreground",
         saving:
           "border-transparent bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
-        saved:
-          "border-transparent bg-gray-500 text-white dark:bg-gray-400 dark:text-black",
-        connected:
-          "border-transparent bg-gray-500 text-white dark:bg-gray-400 dark:text-black",
+        saved: "border-transparent bg-primary/5",
+        connected: "border-transparent bg-primary/5",
       },
     },
     defaultVariants: {
