@@ -9,6 +9,9 @@ import { Title } from "./title";
 import { SocketIndicator } from "../socket-indicator";
 import { useSocket } from "../providers/socket-provider";
 import { SaveIndicator } from "../save-indicator";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { Button } from "../ui/button";
+import { CollaboratorsSetting } from "./collaborators-setting";
 
 interface NavbarProps {
   isCollapsed: boolean;
@@ -72,6 +75,21 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
         </div>
 
         <div className="ml-auto flex items-center space-x-2">
+          <Popover>
+            <PopoverTrigger>
+              <Button
+                variant="secondary"
+                size="xs"
+                className="bg-primary/5 hover:bg-neutral-300 dark:hover:bg-neutral-600"
+              >
+                Share
+              </Button>
+            </PopoverTrigger>
+
+            <PopoverContent className="w-[500px]">
+              <CollaboratorsSetting />
+            </PopoverContent>
+          </Popover>
           <SaveIndicator />
           <SocketIndicator />
         </div>
