@@ -21,7 +21,7 @@ const DocumentsPage = () => {
     setError("");
     setSuccess("");
 
-    const promise = fetch("/api/socket/document/create", {
+    const promise = fetch("/api/socket/documents/create", {
       method: "POST",
       credentials: "include",
       headers: {

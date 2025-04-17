@@ -34,7 +34,7 @@ export const DocumentList = ({
   const fetchDocuments = async () => {
     try {
       const res = await fetch(
-        `/api/socket/document/fetch-all?parentDocument=${
+        `/api/socket/documents/fetch-all?parentDocument=${
           parentDocumentId || ""
         }`
       );

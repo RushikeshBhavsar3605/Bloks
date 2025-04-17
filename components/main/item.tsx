@@ -53,7 +53,7 @@ export const Item = ({
     event.stopPropagation();
     if (!id) return;
 
-    const promise = fetch("/api/socket/document/archive", {
+    const promise = fetch("/api/socket/documents/archive", {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -79,7 +79,7 @@ export const Item = ({
     event.stopPropagation();
     if (!id) return;
 
-    const promise = fetch("/api/socket/document/create", {
+    const promise = fetch("/api/socket/documents/create", {
       method: "POST",
       credentials: "include",
       headers: {
