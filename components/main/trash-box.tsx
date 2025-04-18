@@ -20,7 +20,7 @@ export const TrashBox = () => {
 
   const fetchDocuments = async () => {
     try {
-      const res = await fetch("/api/socket/documents/fetch-all-trash");
+      const res = await fetch("/api/socket/documents/trash");
       const data = await res.json();
       setDocuments(data);
     } catch (error) {
@@ -65,12 +65,11 @@ export const TrashBox = () => {
     documentId: string
   ) => {
     event.stopPropagation();
-    const promise = fetch("/api/socket/documents/restore", {
+    const promise = fetch(`/api/socket/documents/${documentId}/restore`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ documentId: documentId }),
     });
 
     toast.promise(promise, {
@@ -81,12 +80,11 @@ export const TrashBox = () => {
   };
 
   const onRemove = (documentId: string) => {
-    const promise = fetch("/api/socket/documents/remove", {
-      method: "PATCH",
+    const promise = fetch(`/api/socket/documents/${documentId}/remove`, {
+      method: "DELETE",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ documentId: documentId }),
     });
 
     toast.promise(promise, {

@@ -53,12 +53,11 @@ export const Item = ({
     event.stopPropagation();
     if (!id) return;
 
-    const promise = fetch("/api/socket/documents/archive", {
+    const promise = fetch(`/api/socket/documents/${id}/archive`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ documentId: id }),
     });
 
     toast.promise(promise, {
@@ -79,13 +78,13 @@ export const Item = ({
     event.stopPropagation();
     if (!id) return;
 
-    const promise = fetch("/api/socket/documents/create", {
+    const promise = fetch("/api/socket/documents", {
       method: "POST",
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ title: "Untitled", parentDocument: id }),
+      body: JSON.stringify({ title: "Untitled", parentDocumentId: id }),
     })
       .then((res) => res.json())
       .then((document) => {

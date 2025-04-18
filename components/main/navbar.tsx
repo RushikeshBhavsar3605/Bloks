@@ -1,6 +1,5 @@
 "use client";
 
-import { getDocumentById } from "@/actions/documents/get-documents";
 import { Document } from "@prisma/client";
 import { MenuIcon } from "lucide-react";
 import { useParams } from "next/navigation";
@@ -24,7 +23,10 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
   const [document, setDocument] = useState<Document>();
 
   const fetchDocuments = async () => {
-    const data = await getDocumentById(params?.documentId as string);
+    const response = await fetch(
+      `/api/socket/documents/${params?.documentId as string}`
+    );
+    const data = await response.json();
     setDocument(data);
   };
 
@@ -87,7 +89,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
             </PopoverTrigger>
 
             <PopoverContent className="w-[500px]">
-              <CollaboratorsSetting />
+              <CollaboratorsSetting documentId={document.id} />
             </PopoverContent>
           </Popover>
           <SaveIndicator />

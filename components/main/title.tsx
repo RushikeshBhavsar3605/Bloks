@@ -36,13 +36,12 @@ export const Title = ({ initialData }: TitleProps) => {
 
   const saveToDB = useCallback(
     debounce(async (title: string) => {
-      await fetch("/api/socket/documents/update-document", {
+      await fetch(`/api/socket/documents/${initialData.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id: initialData.id,
           title: title || "Untitled",
         }),
       });
