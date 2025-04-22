@@ -13,6 +13,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum CollaboratorRole {
+  VIEWER
+  EDITOR
+}
+
 model User {
   id                    String                 @id @default(cuid()) @map("_id")
   name                  String?
@@ -23,6 +28,10 @@ model User {
   accounts              Account[]
   isTwoFactorEnabled    Boolean                @default(false)
   twoFactorConfirmation TwoFactorConfirmation?
+
+  documents             Document[]             @relation("DocumentOwner")
+
+  collaborations        Collaborator[]
 }
 
 model Account {
@@ -39,7 +48,7 @@ model Account {
   id_token          String?
   session_state     String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -72,7 +81,7 @@ model TwoFactorToken {
 }
 
 model TwoFactorConfirmation {
-  id String @id @default(cuid()) @map("_id")
+  id     String @id @default(cuid()) @map("_id")
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -81,20 +90,55 @@ model TwoFactorConfirmation {
 }
 
 model Document {
-  id         String   @id @default(cuid()) @map("_id")
-  title      String
-  userId     String
-  createdAt  DateTime @default(now())
-  isArchived Boolean
+  id               String     @id @default(cuid()) @map("_id")
+  title            String
+
+  userId           String
+  owner            User       @relation("DocumentOwner", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt        DateTime   @default(now())
+  isArchived       Boolean
 
   parentDocumentId String?
   parentDocument   Document?  @relation("DocumentParent", fields: [parentDocumentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   childDocuments   Document[] @relation("DocumentParent")
+
   content          String?
   coverImage       String?
   icon             String?
   isPublished      Boolean
 
+  collaborators    Collaborator[]
+
   @@index([userId])
   @@index([userId, parentDocumentId])
+}
+
+model Collaborator {
+  id         String           @id @default(cuid()) @map("_id")
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  documentId String
+  document   Document         @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  role       CollaboratorRole @default(VIEWER)
+  createdAt  DateTime         @default(now())
+  isVerified DateTime?
+
+  @@unique([userId, documentId])
+  @@index([documentId])
+  @@index([userId])
+}
+
+model CollaboratorVerificationToken {
+  id         String   @id @default(cuid()) @map("_id")
+  email      String
+  token      String   @unique
+  documentId String
+  
+  createdAt  DateTime @default(now())
+  expires    DateTime
+
+  @@index([email, token])
 }

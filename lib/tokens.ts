@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getVerificationTokenByEmail } from "@/data/verification-token";
 import { getPasswordResetTokenByEmail } from "@/data/password-reset-token";
 import { getTwoFactorTokenByEmail } from "@/data/two-factor-token";
+import { getCollaboratorVerificationTokenByEmail } from "@/data/collaborator-verification-token";
 
 export const generateTwoFactorToken = async (email: string) => {
   const token = crypto.randomInt(100_000, 1_000_000).toString();
@@ -76,4 +77,37 @@ export const generateVerificationToken = async (email: string) => {
   });
 
   return verificationToken;
+};
+
+export const generateCollaboratorVerificationToken = async (
+  email: string,
+  documentId: string
+) => {
+  const token = uuidv4();
+  const expires = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+
+  const existingToken = await getCollaboratorVerificationTokenByEmail(
+    email,
+    documentId
+  );
+
+  if (existingToken) {
+    await db.collaboratorVerificationToken.delete({
+      where: {
+        id: existingToken.id,
+      },
+    });
+  }
+
+  const collaboratorVerificationToken =
+    await db.collaboratorVerificationToken.create({
+      data: {
+        email,
+        token,
+        documentId,
+        expires,
+      },
+    });
+
+  return collaboratorVerificationToken;
 };

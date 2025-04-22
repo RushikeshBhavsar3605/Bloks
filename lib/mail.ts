@@ -70,3 +70,30 @@ export const sendVerificationEmail = async (email: string, token: string) => {
 
   await transporter.sendMail(message);
 };
+
+export const sendCollaboratorVerificationEmail = async (
+  email: string,
+  token: string
+) => {
+  const confirmLink = `${domain}/collaborate/verify?token=${token}`;
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_FROM,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const message = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: "Confirm your collaborator request",
+    html: `<p>Click <a href="${confirmLink}">here</a> to confirm the collaboration.</p>`,
+    headers: {
+      "X-Entity-Ref-ID": "newmail",
+    },
+  };
+
+  await transporter.sendMail(message);
+};

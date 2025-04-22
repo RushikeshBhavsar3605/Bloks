@@ -1,14 +1,31 @@
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import EmailSelector, {
   EmailOption,
   EmailSelectorRef,
 } from "../ui/multi-selector";
+import CollaboratorUserItem from "./collaborator-user-item";
+import { Collaborator } from "@prisma/client";
 
-export const CollaboratorsSetting = () => {
+type User = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image: string | null;
+};
+
+type CollaboratorType = Collaborator & {
+  user: User;
+};
+
+export const CollaboratorsSetting = ({
+  documentId,
+}: {
+  documentId: string;
+}) => {
   const emailSelectorRef = useRef<EmailSelectorRef>(null);
-  const [email, setEmail] = useState<string>();
+  const [collaborators, setCollaborators] = useState<CollaboratorType[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const user = useCurrentUser();
 
   const handleInvite = (emails: EmailOption[]) => {
@@ -16,8 +33,59 @@ export const CollaboratorsSetting = () => {
       "Inviting emails:",
       emails.map((email) => email.value)
     );
-    // Here you would typically call your API to send invitations
+    emails.map(async (email) => {
+      try {
+        const response = await fetch("/api/socket/collaborators/invite", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email.value,
+            documentId,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(error || "Failed to add collaborator");
+        }
+
+        const data = await response.json();
+        setCollaborators([...collaborators, data]);
+      } catch (error: any) {
+        setIsLoading(false);
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    });
   };
+
+  useEffect(() => {
+    const fetchCollaborators = async () => {
+      try {
+        const response = await fetch(
+          `/api/socket/documents/${documentId}/collaborators`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch collaborators");
+        }
+
+        const data = await response.json();
+        console.log("DATA: ", JSON.stringify(data));
+        setCollaborators(data);
+      } catch (error) {
+        setIsLoading(false);
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCollaborators();
+  }, [documentId]);
 
   return (
     <div className="">
@@ -37,66 +105,23 @@ export const CollaboratorsSetting = () => {
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between py-2">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-7 w-7">
-              {user?.image ? (
-                <AvatarImage src={user?.image} />
-              ) : (
-                <AvatarFallback>{user?.name?.charAt(0)}</AvatarFallback>
-              )}
-            </Avatar>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="dark:text-white text-sm">
-                  Rushikesh Bhavsar
-                </span>
-                <span className="text-gray-600 dark:text-gray-400 text-xs">
-                  (You)
-                </span>
-              </div>
-              <span className="text-gray-600 dark:text-gray-400 text-xs">
-                prokiller3605@gmail.com
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center">
-            <span className="text-gray-600 dark:text-gray-400 mr-1 text-sm">
-              Full access
-            </span>
-          </div>
-        </div>
+        <CollaboratorUserItem
+          name={user?.name as string}
+          email={user?.email as string}
+          label="You"
+          role="OWNER"
+        />
 
-        <div className="flex items-center justify-between py-2">
-          <div className="flex items-center gap-3">
-            <span className="text-gray-400 text-sm">R</span>
-            <div className="flex flex-col">
-              <div className="flex items-center">
-                <span className="text-gray-300">{user?.email}</span>
-                <span className="ml-2 text-xs bg-gray-700 text-gray-400 px-2 py-0.5 rounded">
-                  Invited
-                </span>
-              </div>
-            </div>
+        {collaborators?.map((collaborator) => (
+          <div key={collaborator.id}>
+            <CollaboratorUserItem
+              name={collaborator.user.name as string}
+              email={collaborator.user.email as string}
+              label={collaborator.isVerified ? "" : "Invited"}
+              role={collaborator.role}
+            />
           </div>
-          <div className="flex items-center">
-            <span className="text-gray-400 mr-1">Can view</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-gray-400"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );
