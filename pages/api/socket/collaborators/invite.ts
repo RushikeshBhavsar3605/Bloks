@@ -42,6 +42,10 @@ export default async function handler(
       return res.status(404).json({ error: "User not found" });
     }
 
+    if (document.userId === invitedUser.id) {
+      return res.status(403).json({ error: "Not allowed" });
+    }
+
     const token = await generateCollaboratorVerificationToken(
       email,
       documentId
