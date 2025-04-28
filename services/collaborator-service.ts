@@ -28,6 +28,7 @@ type ServiceResponse<T> = {
   status?: number;
 };
 
+// Add collaborator to document
 export const addCollaborator = async ({
   documentId,
   userId,
@@ -35,6 +36,7 @@ export const addCollaborator = async ({
   role = CollaboratorRole.VIEWER,
 }: AddCollaboratorProps): Promise<ServiceResponse<any>> => {
   try {
+    // Check if current user is the owner
     const document = await db.document.findUnique({
       where: {
         id: documentId,
@@ -50,6 +52,7 @@ export const addCollaborator = async ({
       };
     }
 
+    // Find user by email
     const collaboratorUser = await db.user.findUnique({
       where: {
         email: collaboratorEmail,
@@ -64,6 +67,7 @@ export const addCollaborator = async ({
       };
     }
 
+    // Don't allow adding yourself as collaborator
     if (collaboratorUser.id === userId) {
       return {
         success: false,
@@ -72,6 +76,7 @@ export const addCollaborator = async ({
       };
     }
 
+    // Check if collaboration already exists
     const existingCollaborator = await db.collaborator.findUnique({
       where: {
         userId_documentId: {
@@ -89,6 +94,7 @@ export const addCollaborator = async ({
       };
     }
 
+    // Create the collaboration (pending verification)
     const newCollaborator = await db.collaborator.create({
       data: {
         userId: collaboratorUser.id,
@@ -193,12 +199,14 @@ export const updateCollaboratorRole = async ({
   }
 };
 
+// Remove collaborator from document
 export const removeCollaborator = async ({
   documentId,
   userId,
   collaboratorId,
 }: RemoveCollaboratorProps): Promise<ServiceResponse<any>> => {
   try {
+    // Check if current user is the owner
     const document = await db.document.findUnique({
       where: {
         id: documentId,
@@ -214,6 +222,7 @@ export const removeCollaborator = async ({
       };
     }
 
+    // Fetch the collaboration
     const collaborator = await db.collaborator.findUnique({
       where: {
         id: collaboratorId,
@@ -229,6 +238,7 @@ export const removeCollaborator = async ({
       };
     }
 
+    // Delete the collaboration
     await db.collaborator.delete({
       where: {
         id: collaboratorId,
@@ -312,78 +322,6 @@ export const getDocumentCollaborators = async (
     };
   } catch (error) {
     console.error("[ERROR_GETTING_DOCUMENT_COLLABORATORS]: ", error);
-    return {
-      success: false,
-      error: "An unexpected error occurred",
-      status: 500,
-    };
-  }
-};
-
-export const checkDocumentAccess = async (
-  documentId: string,
-  userId: string
-): Promise<ServiceResponse<any>> => {
-  try {
-    const document = await db.document.findUnique({
-      where: {
-        id: documentId,
-      },
-    });
-
-    if (!document) {
-      return {
-        success: false,
-        error: "Document not found",
-        status: 404,
-      };
-    }
-
-    if (document.userId === userId) {
-      return {
-        success: true,
-        data: {
-          hasAccess: true,
-          isOwner: true,
-          role: null,
-        },
-        status: 200,
-      };
-    }
-
-    const collaborator = await db.collaborator.findUnique({
-      where: {
-        userId_documentId: {
-          userId,
-          documentId,
-        },
-      },
-    });
-
-    if (collaborator && collaborator.isVerified) {
-      return {
-        success: true,
-        data: {
-          hasAccess: true,
-          isOwner: false,
-          role: collaborator.role,
-        },
-        status: 200,
-      };
-    }
-
-    return {
-      success: false,
-      data: {
-        hasAccess: false,
-        isOwner: false,
-        role: null,
-      },
-      error: "You do not have access to this document",
-      status: 403,
-    };
-  } catch (error) {
-    console.error("[ERROR_CHECKING_DOCUMENT_ACCESS]: ", error);
     return {
       success: false,
       error: "An unexpected error occurred",

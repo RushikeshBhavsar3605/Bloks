@@ -1,6 +1,6 @@
 "use client";
 
-import { Document } from "@prisma/client";
+import { CollaboratorRole, Document } from "@prisma/client";
 import { MenuIcon } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -12,6 +12,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { CollaboratorsSetting } from "./collaborators-setting";
 
+type ModifiedDocument = Document & {
+  isOwner: boolean;
+  role: CollaboratorRole | null;
+};
+
 interface NavbarProps {
   isCollapsed: boolean;
   onResetWidth: () => void;
@@ -20,7 +25,7 @@ interface NavbarProps {
 export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
   const { socket } = useSocket();
   const params = useParams();
-  const [document, setDocument] = useState<Document>();
+  const [document, setDocument] = useState<ModifiedDocument>();
 
   const fetchDocuments = async () => {
     const response = await fetch(
@@ -38,7 +43,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
     if (!socket) return;
 
     if (!document?.id) return;
-    const handleUpdate = (data: Document) => {
+    const handleUpdate = (data: ModifiedDocument) => {
       setDocument(data);
     };
 

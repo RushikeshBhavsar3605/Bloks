@@ -1,6 +1,6 @@
 "use client";
 
-import { Document } from "@prisma/client";
+import { CollaboratorRole, Document } from "@prisma/client";
 import { useCallback, useRef, useState } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -8,8 +8,13 @@ import debounce from "lodash.debounce";
 import { useSocket } from "../providers/socket-provider";
 import { useSaveStatus } from "@/hooks/use-save-status";
 
+type ModifiedDocument = Document & {
+  isOwner: boolean;
+  role: CollaboratorRole | null;
+};
+
 interface TitleProps {
-  initialData: Document;
+  initialData: ModifiedDocument;
 }
 
 export const Title = ({ initialData }: TitleProps) => {
@@ -21,6 +26,10 @@ export const Title = ({ initialData }: TitleProps) => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
   const enableInput = () => {
+    if (!initialData.isOwner && initialData.role !== CollaboratorRole.EDITOR) {
+      return;
+    }
+
     setTitle(initialData.title);
     setIsEditing(true);
     setTimeout(() => {

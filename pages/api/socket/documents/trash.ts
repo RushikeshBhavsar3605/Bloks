@@ -1,5 +1,5 @@
 import { currentUser } from "@/lib/auth-server";
-import { fetchAllTrashDocuments } from "@/services/document-service";
+import { getArchivedDocuments } from "@/services/document-service";
 import { NextApiResponseServerIo } from "@/types";
 import { NextApiRequest } from "next";
 
@@ -15,7 +15,7 @@ export default async function handler(
 
   // GET - Fetch all trashed documents
   if (req.method === "GET") {
-    const response = await fetchAllTrashDocuments(user.id);
+    const response = await getArchivedDocuments(user.id);
 
     if (!response.success) {
       return res.status(response.status || 400).json({ error: response.error });

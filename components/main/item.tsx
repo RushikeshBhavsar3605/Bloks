@@ -20,6 +20,7 @@ import {
   DropdownMenuSeparator,
 } from "../ui/dropdown-menu";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { CollaboratorRole } from "@prisma/client";
 
 interface ItemProps {
   id?: string;
@@ -32,6 +33,7 @@ interface ItemProps {
   label: string;
   onClick?: () => void;
   icon: LucideIcon;
+  role?: CollaboratorRole | "OWNER" | null;
 }
 
 export const Item = ({
@@ -45,6 +47,7 @@ export const Item = ({
   label,
   onClick,
   icon: Icon,
+  role,
 }: ItemProps) => {
   const user = useCurrentUser();
   const router = useRouter();
@@ -140,38 +143,42 @@ export const Item = ({
 
       {!!id && (
         <div className="ml-auto flex items-center gap-x-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger onClick={(e) => e.stopPropagation()} asChild>
-              <div
-                role="button"
-                className="opacity-0 group-hover:opacity-100 h-full ml-auto rounded-sm hover:bg-neutral-300 dark:hover:bg-neutral-600"
+          {(role === "OWNER" || role === "EDITOR") && (
+            <DropdownMenu>
+              <DropdownMenuTrigger onClick={(e) => e.stopPropagation()} asChild>
+                <div
+                  role="button"
+                  className="opacity-0 group-hover:opacity-100 h-full ml-auto rounded-sm hover:bg-neutral-300 dark:hover:bg-neutral-600"
+                >
+                  <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-60"
+                align="start"
+                side="right"
+                forceMount
               >
-                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              className="w-60"
-              align="start"
-              side="right"
-              forceMount
+                <DropdownMenuItem onClick={onArchive}>
+                  <Trash className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <div className="text-xs text-muted-foreground p-2">
+                  Last edited by: {user?.name}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          {role === "OWNER" && (
+            <div
+              role="button"
+              onClick={onCreate}
+              className="opacity-0 group-hover:opacity-100 h-full ml-auto rounded-sm hover:bg-neutral-300 dark:hover:bg-neutral-600"
             >
-              <DropdownMenuItem onClick={onArchive}>
-                <Trash className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <div className="text-xs text-muted-foreground p-2">
-                Last edited by: {user?.name}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <div
-            role="button"
-            onClick={onCreate}
-            className="opacity-0 group-hover:opacity-100 h-full ml-auto rounded-sm hover:bg-neutral-300 dark:hover:bg-neutral-600"
-          >
-            <Plus className="h-4 w-4 text-muted-foreground" />
-          </div>
+              <Plus className="h-4 w-4 text-muted-foreground" />
+            </div>
+          )}
         </div>
       )}
     </div>

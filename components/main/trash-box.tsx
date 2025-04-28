@@ -1,6 +1,6 @@
 "use client";
 
-import { Document } from "@prisma/client";
+import { Collaborator, CollaboratorRole, Document } from "@prisma/client";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -10,19 +10,36 @@ import { Input } from "../ui/input";
 import { ConfirmModal } from "../modals/confirm-modal";
 import { useSocket } from "../providers/socket-provider";
 
+type ModifiedDocument = {
+  ownedArchived: (Document & {
+    isOwner: boolean;
+    role: CollaboratorRole | null;
+  })[];
+  sharedArchived: (Document & {
+    collaborators: Collaborator[];
+    owner: {
+      name: string | null;
+      image: string | null;
+    };
+    isOwner: boolean;
+    role: CollaboratorRole | null;
+  })[];
+};
+
 export const TrashBox = () => {
   const { socket } = useSocket();
   const router = useRouter();
   const params = useParams();
 
   const [search, setSearch] = useState<string>("");
-  const [documents, setDocuments] = useState<Document[]>();
+  const [documents, setDocuments] = useState<ModifiedDocument>();
 
   const fetchDocuments = async () => {
     try {
       const res = await fetch("/api/socket/documents/trash");
       const data = await res.json();
       setDocuments(data);
+      console.log("DOC: ", JSON.stringify(data));
     } catch (error) {
       console.log("Failed to fetch trash documents", error);
     }
@@ -52,9 +69,15 @@ export const TrashBox = () => {
     fetchDocuments();
   }, []);
 
-  const filteredDocuments = documents?.filter((document) => {
+  const filteredOwnedDocuments = documents?.ownedArchived.filter((document) => {
     return document.title.toLowerCase().includes(search.toLowerCase());
   });
+
+  const filteredSharedDocuments = documents?.sharedArchived.filter(
+    (document) => {
+      return document.title.toLowerCase().includes(search.toLowerCase());
+    }
+  );
 
   const onClick = (documentId: string) => {
     router.push(`/documents/${documentId}`);
@@ -123,35 +146,69 @@ export const TrashBox = () => {
           No documents found.
         </p>
 
-        {filteredDocuments?.map((document) => (
-          <div
-            key={document.id}
-            role="button"
-            onClick={() => onClick(document.id)}
-            className="text-sm rounded-sm w-full hover:bg-primary/5 flex items-center text-primary justify-between"
-          >
-            <span className="truncate pl-2">{document.title}</span>
+        {filteredOwnedDocuments &&
+          filteredOwnedDocuments?.length > 0 &&
+          filteredOwnedDocuments?.map((document) => (
+            <div
+              key={document.id}
+              role="button"
+              onClick={() => onClick(document.id)}
+              className="text-sm rounded-sm w-full hover:bg-primary/5 flex items-center text-primary justify-between"
+            >
+              <span className="truncate pl-2">{document.title}</span>
 
-            <div className="flex items-center">
-              <div
-                onClick={(e) => onRestore(e, document.id)}
-                role="button"
-                className="rounded-sm p-2 hover:bg-neutral-200 dark:hover:bg-neutral-600"
-              >
-                <Undo className="h-4 w-4 text-muted-foreground" />
-              </div>
-
-              <ConfirmModal onConfirm={() => onRemove(document.id)}>
+              <div className="flex items-center">
                 <div
+                  onClick={(e) => onRestore(e, document.id)}
                   role="button"
                   className="rounded-sm p-2 hover:bg-neutral-200 dark:hover:bg-neutral-600"
                 >
-                  <Trash className="h-4 w-4 text-muted-foreground" />
+                  <Undo className="h-4 w-4 text-muted-foreground" />
                 </div>
-              </ConfirmModal>
+
+                <ConfirmModal onConfirm={() => onRemove(document.id)}>
+                  <div
+                    role="button"
+                    className="rounded-sm p-2 hover:bg-neutral-200 dark:hover:bg-neutral-600"
+                  >
+                    <Trash className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </ConfirmModal>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+
+        {filteredSharedDocuments &&
+          filteredSharedDocuments.length > 0 &&
+          filteredSharedDocuments?.map((document) => (
+            <div
+              key={document.id}
+              role="button"
+              onClick={() => onClick(document.id)}
+              className="text-sm rounded-sm w-full hover:bg-primary/5 flex items-center text-primary justify-between"
+            >
+              <span className="truncate pl-2">{document.title}</span>
+
+              <div className="flex items-center">
+                <div
+                  onClick={(e) => onRestore(e, document.id)}
+                  role="button"
+                  className="rounded-sm p-2 hover:bg-neutral-200 dark:hover:bg-neutral-600"
+                >
+                  <Undo className="h-4 w-4 text-muted-foreground" />
+                </div>
+
+                <ConfirmModal onConfirm={() => onRemove(document.id)}>
+                  <div
+                    role="button"
+                    className="rounded-sm p-2 hover:bg-neutral-200 dark:hover:bg-neutral-600"
+                  >
+                    <Trash className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </ConfirmModal>
+              </div>
+            </div>
+          ))}
       </div>
     </div>
   );

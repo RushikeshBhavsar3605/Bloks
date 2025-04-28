@@ -1,5 +1,9 @@
 import { currentUser } from "@/lib/auth-server";
-import { createDocument, fetchAllDocuments } from "@/services/document-service";
+import {
+  createDocument,
+  fetchAllDocuments,
+  getDocuments,
+} from "@/services/document-service";
 import { NextApiResponseServerIo } from "@/types";
 import { NextApiRequest } from "next";
 
@@ -15,13 +19,18 @@ export default async function handler(
 
   // GET - Fetch all documents (non-archived)
   if (req.method === "GET") {
+    let response;
     const parentDocumentId =
       (req.query.parentDocumentId as string) || undefined;
 
-    const response = await fetchAllDocuments({
-      userId: user.id,
-      documentId: parentDocumentId || "",
-    });
+    if (!parentDocumentId) {
+      response = await getDocuments(user.id);
+    } else {
+      response = await fetchAllDocuments({
+        userId: user.id,
+        documentId: parentDocumentId,
+      });
+    }
 
     if (!response.success) {
       return res.status(response.status || 400).json({ error: response.error });

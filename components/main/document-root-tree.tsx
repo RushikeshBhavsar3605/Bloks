@@ -4,46 +4,41 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Item } from "./item";
 import { cn } from "@/lib/utils";
-import { Collaborator, CollaboratorRole, Document } from "@prisma/client";
+import { CollaboratorRole, Document } from "@prisma/client";
 import { FileIcon } from "lucide-react";
 import { useSocket } from "../providers/socket-provider";
+import { DocumentList } from "./document-list";
 
-type ChildDocuments = Document & {
-  role: CollaboratorRole | "OWNER" | null;
+type ownedDocsWithMeta = Document & {
+  isOwner: boolean;
+  role: CollaboratorRole;
+};
+
+type collaboratedDocuments = Document & {
+  isCollaborator: boolean;
+  role: CollaboratorRole;
 };
 
 type RootDocuments = {
-  ownedDocuments: (Document & {
-    childDocuments: Document[];
-    collaborators: Collaborator[];
-  })[];
-  sharedDocuments: (Document & {
-    childDocuments: Document[];
-    collaborators: Collaborator[];
-    role: CollaboratorRole | null;
-    owner: {
-      name: string | null;
-      image: string | null;
-    };
-  })[];
+  owned: ownedDocsWithMeta[];
+  collaborated: collaboratedDocuments[];
+  all: (ownedDocsWithMeta | collaboratedDocuments)[];
+  type: "Root";
 };
-
-interface DocumentListProps {
+interface DocumentRootTreeProps {
   parentDocumentId?: string;
   level?: number;
   data?: string;
 }
 
-export const DocumentList = ({
+export const DocumentRootTree = ({
   parentDocumentId,
   level = 0,
-}: DocumentListProps) => {
+}: DocumentRootTreeProps) => {
   const { socket } = useSocket();
   const params = useParams();
   const router = useRouter();
-  const [documents, setDocuments] = useState<ChildDocuments[] | RootDocuments>(
-    []
-  );
+  const [documents, setDocuments] = useState<Document[] | RootDocuments>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const onExpand = (documentId: string) => {
@@ -94,26 +89,36 @@ export const DocumentList = ({
       id: string;
       title: string;
     }) => {
-      setDocuments((prevDocs) => {
-        if (Array.isArray(prevDocs)) {
-          return prevDocs.map((doc) =>
-            doc.id == id ? { ...doc, title } : doc
-          );
-        }
+      if (Array.isArray(documents)) {
+        setDocuments((prevDocs) => {
+          if (Array.isArray(prevDocs)) {
+            return prevDocs.map((doc) =>
+              doc.id == id ? { ...doc, title } : doc
+            );
+          }
 
-        if (prevDocs && !Array.isArray(prevDocs)) {
-          return {
-            ...prevDocs,
-            ownedDocuments: prevDocs.ownedDocuments.map((doc) =>
-              doc.id === id ? { ...doc, title } : doc
-            ),
-            sharedDocuments: prevDocs.sharedDocuments.map((doc) =>
-              doc.id === id ? { ...doc, title } : doc
-            ),
-          };
-        }
-        return prevDocs;
-      });
+          return prevDocs;
+        });
+      } else {
+        setDocuments((prevDocs) => {
+          if (!Array.isArray(prevDocs) && documents.type === "Root") {
+            return {
+              ...prevDocs,
+              owned: prevDocs.owned.map((doc) =>
+                doc.id === id ? { ...doc, title } : doc
+              ),
+              collaborated: prevDocs.collaborated.map((doc) =>
+                doc.id === id ? { ...doc, title } : doc
+              ),
+              all: prevDocs.all.map((doc) =>
+                doc.id === id ? { ...doc, title } : doc
+              ),
+            };
+          }
+
+          return prevDocs;
+        });
+      }
     };
 
     socket.on("document:created", handleCreated);
@@ -166,14 +171,8 @@ export const DocumentList = ({
         No pages inside
       </p>
 
-      {!Array.isArray(documents) && documents.ownedDocuments.length > 0 && (
-        <div className="text-gray-700 dark:text-gray-400 text-sm font-medium px-3 py-2 mt-4 tracking-wide">
-          Private Documents
-        </div>
-      )}
-
       {!Array.isArray(documents) &&
-        documents.ownedDocuments.map((document) => (
+        documents.owned.map((document) => (
           <div key={document.id}>
             <Item
               id={document.id}
@@ -185,35 +184,6 @@ export const DocumentList = ({
               level={level}
               onExpand={() => onExpand(document.id)}
               expanded={expanded[document.id]}
-              role={"OWNER"}
-            />
-
-            {expanded[document.id] && (
-              <DocumentList parentDocumentId={document.id} level={level + 1} />
-            )}
-          </div>
-        ))}
-
-      {!Array.isArray(documents) && documents.sharedDocuments.length > 0 && (
-        <div className="text-gray-700 dark:text-gray-400 text-sm font-medium px-3 py-2 mt-4 tracking-wide">
-          Shared
-        </div>
-      )}
-
-      {!Array.isArray(documents) &&
-        documents.sharedDocuments?.map((document) => (
-          <div key={document.id}>
-            <Item
-              id={document.id}
-              onClick={() => onRedirect(document.id)}
-              label={document.title}
-              icon={FileIcon}
-              documentIcon={document.icon || undefined}
-              active={params?.documentId === document.id}
-              level={level}
-              onExpand={() => onExpand(document.id)}
-              expanded={expanded[document.id]}
-              role={document.role}
             />
 
             {expanded[document.id] && (
@@ -235,7 +205,6 @@ export const DocumentList = ({
               level={level}
               onExpand={() => onExpand(document.id)}
               expanded={expanded[document.id]}
-              role={document.role}
             />
 
             {expanded[document.id] && (
