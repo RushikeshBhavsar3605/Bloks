@@ -1,5 +1,5 @@
 import { currentUser } from "@/lib/auth-server";
-import { getUserAccessibleDocuments } from "@/services/collaborator-service";
+import { getAllAccessibleDocuments } from "@/services/document-service";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
@@ -15,7 +15,7 @@ export default async function handler(
 
     // GET - Get all documents a user can access
     if (req.method === "GET") {
-      const response = await getUserAccessibleDocuments(user.id);
+      const response = await getAllAccessibleDocuments(user.id);
 
       if (!response.success) {
         return res

@@ -24,14 +24,14 @@ const CollaboratorUserItem = ({
           {imageSrc ? (
             <AvatarImage src={imageSrc} />
           ) : (
-            <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{name?.charAt(0)}</AvatarFallback>
           )}
         </Avatar>
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <span className="dark:text-white text-sm">{name}</span>
             <span className="text-gray-600 dark:text-gray-400 text-xs">
-              ({label})
+              {label}
             </span>
           </div>
           <span className="text-gray-600 dark:text-gray-400 text-xs">

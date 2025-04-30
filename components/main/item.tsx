@@ -20,7 +20,7 @@ import {
   DropdownMenuSeparator,
 } from "../ui/dropdown-menu";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { CollaboratorRole } from "@prisma/client";
+import { CollaboratorRole, Document } from "@prisma/client";
 
 interface ItemProps {
   id?: string;
@@ -90,7 +90,7 @@ export const Item = ({
       body: JSON.stringify({ title: "Untitled", parentDocumentId: id }),
     })
       .then((res) => res.json())
-      .then((document) => {
+      .then((document: Document) => {
         if ("error" in document) return;
         if (!expanded) {
           onExpand?.();

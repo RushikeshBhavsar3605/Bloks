@@ -1,4 +1,6 @@
 import { db } from "@/lib/db";
+import { DocumentWithMeta } from "@/types/shared";
+import { CollaboratorRole, Document } from "@prisma/client";
 
 type ServiceResponse<T> = {
   success: boolean;
@@ -12,21 +14,13 @@ interface DocumentActionProps {
   documentId: string;
 }
 
-interface FetchAllDocumentsProps extends DocumentActionProps {}
-interface ArchiveDocumentProps extends DocumentActionProps {}
-interface RestoreDocumentProps extends DocumentActionProps {}
-interface RemoveDocumentProps extends DocumentActionProps {}
-interface GetDocumentByIdProps extends DocumentActionProps {}
-
 interface CreateDocumentProps {
   userId: string;
   title: string;
   parentDocumentId?: string;
 }
 
-interface UpdateDocumentProps {
-  userId: string;
-  documentId: string;
+interface UpdateDocumentProps extends DocumentActionProps {
   content?: string;
   title?: string;
   coverImage?: string;
@@ -34,12 +28,97 @@ interface UpdateDocumentProps {
   isPublished?: boolean;
 }
 
+// DOCUMENT ACCESS FUNCTIONS
+
+/**
+ * Gets direct access information for a document
+ * Returns role and access status without checking ancestors
+ */
+export const getDirectDocumentAccess = async (
+  documentId: string,
+  userId: string
+): Promise<ServiceResponse<any>> => {
+  try {
+    const document = await db.document.findUnique({
+      where: { id: documentId },
+      select: {
+        userId: true,
+        collaborators: {
+          where: {
+            userId,
+            isVerified: { not: null },
+          },
+        },
+      },
+    });
+
+    if (!document) {
+      return {
+        success: false,
+        data: { hasAccess: false },
+        error: "Document not found",
+        status: 404,
+      };
+    }
+
+    // User is the owner
+    if (document.userId === userId) {
+      return {
+        success: true,
+        data: {
+          hasAccess: true,
+          isOwner: true,
+          role: "OWNER",
+        },
+        status: 200,
+      };
+    }
+
+    // User is a collaborator
+    if (document.collaborators.length > 0) {
+      return {
+        success: true,
+        data: {
+          hasAccess: true,
+          isOwner: false,
+          role: document.collaborators[0].role,
+        },
+        status: 200,
+      };
+    }
+
+    return {
+      success: false,
+      data: {
+        hasAccess: false,
+        isOwner: false,
+        role: null,
+      },
+      error: "No access to this document",
+      status: 403,
+    };
+  } catch (error) {
+    console.error("[GET_DIRECT_DOCUMENT_ACCESS]", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+      status: 500,
+    };
+  }
+};
+
+// DOCUMENT OPERATIONS
+
+/**
+ * Creates a new document and propagates parent collaborators if needed
+ */
 export const createDocument = async ({
   userId,
   title,
   parentDocumentId,
-}: CreateDocumentProps): Promise<ServiceResponse<any>> => {
+}: CreateDocumentProps): Promise<ServiceResponse<Document>> => {
   try {
+    // Create the document first
     const document = await db.document.create({
       data: {
         title,
@@ -51,113 +130,80 @@ export const createDocument = async ({
       },
     });
 
+    // If there's a parent, inherit collaborators
+    if (parentDocumentId) {
+      // Get parent document collaborators
+      const parentCollaborators = await db.collaborator.findMany({
+        where: {
+          documentId: parentDocumentId,
+          isVerified: { not: null },
+        },
+      });
+
+      // Add the same collaborators to this document
+      if (parentCollaborators.length > 0) {
+        await Promise.all(
+          parentCollaborators.map((collab) =>
+            db.collaborator.create({
+              data: {
+                documentId: document.id,
+                userId: collab.userId,
+                role: collab.role,
+                isVerified: collab.isVerified,
+              },
+            })
+          )
+        );
+      }
+    }
+
     return {
       success: true,
       data: document,
       status: 200,
     };
   } catch (error) {
-    console.error("[ERROR_CREATE_DOCUMENT]: ", error);
+    console.error("[CREATE_DOCUMENT]", error);
     return {
       success: false,
-      error: "An unexpected error occurred while creating the document",
+      error: "Failed to create document",
       status: 500,
     };
   }
 };
 
-// Modified function to fetch documents with collaborator access check
-export const fetchAllDocuments = async ({
+/**
+ * Fetches all documents where the user is either the owner or a collaborator
+ * with the specified parent document ID
+ */
+export const fetchDocuments = async ({
   userId,
-  documentId,
-}: FetchAllDocumentsProps): Promise<ServiceResponse<any>> => {
+  documentId: parentDocumentId,
+}: DocumentActionProps): Promise<ServiceResponse<DocumentWithMeta[]>> => {
   try {
-    // Fetch all Documents with given parentId
+    // Get documents where user is owner OR collaborator with the given parent ID
     const documents = await db.document.findMany({
       where: {
-        parentDocumentId: documentId,
+        parentDocumentId,
         isArchived: false,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    // Filter out only accessible Documents
-    const accessibleDocuments = [];
-
-    for (const doc of documents) {
-      const accessResult = await checkDocumentAccess(doc.id, userId);
-
-      if (accessResult.success && accessResult.data?.hasAccess) {
-        accessibleDocuments.push({
-          ...doc,
-          role:
-            accessResult.data.role ||
-            (accessResult.data.isOwner ? "OWNER" : null), // 👈 Add role here
-        });
-      }
-    }
-
-    return {
-      success: true,
-      data: accessibleDocuments,
-      status: 200,
-    };
-  } catch (error) {
-    console.error("[ERROR_FETCHING_DOCUMENTS]: ", error);
-    return {
-      success: false,
-      error: "An unexpected error occurred while fetching documents",
-      status: 500,
-    };
-  }
-};
-
-// Modified function to fetch documents with collaborator access for initial sidebar rendering
-export const getDocuments = async (
-  userId: string
-): Promise<ServiceResponse<any>> => {
-  try {
-    // Fetch documents owned by the user
-    const ownedDocuments = await db.document.findMany({
-      where: {
-        userId,
-        isArchived: false,
-        parentDocument: null,
+        OR: [
+          { userId }, // Owner
+          {
+            collaborators: {
+              some: {
+                userId,
+                isVerified: { not: null },
+              },
+            },
+          }, // Collaborator
+        ],
       },
       include: {
-        childDocuments: {
-          orderBy: {
-            createdAt: "desc",
-          },
-        },
-        collaborators: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    // Fetch documents where user is a collaborator
-    const sharedDocuments = await db.document.findMany({
-      where: {
         collaborators: {
-          some: {
+          where: {
             userId,
-            isVerified: { not: null }, // Only include verified collaborations
           },
         },
-        isArchived: false,
-        parentDocument: null,
-      },
-      include: {
-        childDocuments: {
-          orderBy: {
-            createdAt: "desc",
-          },
-        },
-        collaborators: true,
         owner: {
           select: {
             name: true,
@@ -170,34 +216,155 @@ export const getDocuments = async (
       },
     });
 
-    const finalDocuments = sharedDocuments.map((doc) => {
-      const myCollaborator = doc.collaborators.find((c) => c.userId === userId);
+    // Enhance documents with role information
+    const enhancedDocuments = documents.map((doc) => {
+      const { collaborators, ...docWithoutCollaborators } = doc;
+      const isOwner = doc.userId === userId;
+      const role: CollaboratorRole | "OWNER" | null = isOwner
+        ? "OWNER"
+        : collaborators.length > 0
+        ? collaborators[0].role
+        : null;
+
       return {
-        ...doc,
-        role: myCollaborator?.role ?? null,
+        ...docWithoutCollaborators,
+        isOwner,
+        role,
       };
     });
 
     return {
       success: true,
-      data: { ownedDocuments, sharedDocuments: finalDocuments },
+      data: enhancedDocuments,
       status: 200,
     };
   } catch (error) {
-    console.error("[GET_DOCUMENTS]", error);
+    console.error("[FETCH_DOCUMENTS]", error);
     return {
       success: false,
-      data: { ownedDocuments: [], sharedDocuments: [] },
-      error: "An unexpected error occurred while fetching documents",
+      error: "Failed to fetch documents",
       status: 500,
     };
   }
 };
 
-// Modified function to fetch all user's documents including archived ones
-export const getAllDocuments = async (
+/**
+ * Gets all top-level documents (no parent) for the sidebar
+ * Separates user's documents and shared documents
+ */
+export const getRootDocuments = async (
   userId: string
-): Promise<ServiceResponse<any>> => {
+): Promise<
+  ServiceResponse<{
+    ownedDocuments: Document[];
+    sharedDocuments: DocumentWithMeta[];
+  }>
+> => {
+  try {
+    // Fetch documents owned by the user
+    const ownedDocuments = await db.document.findMany({
+      where: {
+        userId,
+        isArchived: false,
+        parentDocumentId: "",
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    // Fetch documents where user is a collaborator
+    const collaboratedDocuments = await db.document.findMany({
+      where: {
+        collaborators: {
+          some: {
+            userId,
+            isVerified: { not: null }, // Only include verified collaborations
+          },
+        },
+        isArchived: false,
+      },
+      include: {
+        collaborators: {
+          where: {
+            userId,
+          },
+        },
+        owner: {
+          select: {
+            name: true,
+            image: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const sharedDocuments = [];
+
+    for (const doc of collaboratedDocuments) {
+      // 1. Include root documents (parentDocumentId is null)
+      if (doc.parentDocumentId === null) {
+        sharedDocuments.push(doc);
+        continue;
+      }
+
+      // 2. For child documents, check if the parent is shared with the user
+      const parentCollaborator = await db.collaborator.findUnique({
+        where: {
+          userId_documentId: {
+            documentId: doc.parentDocumentId,
+            userId,
+          },
+        },
+      });
+
+      // 3. If the parent document is not shared with the user, include the document
+      if (!parentCollaborator) {
+        sharedDocuments.push(doc);
+      }
+    }
+
+    const enhancedSharedDocuments = sharedDocuments.map((doc) => {
+      const { collaborators, ...docWithoutCollaborators } = doc;
+      const isOwner = doc.userId === userId;
+      const role: CollaboratorRole | "OWNER" | null = isOwner
+        ? "OWNER"
+        : collaborators.length > 0
+        ? collaborators[0].role
+        : null;
+
+      return {
+        ...docWithoutCollaborators,
+        isOwner,
+        role,
+      };
+    });
+
+    return {
+      success: true,
+      data: { ownedDocuments, sharedDocuments: enhancedSharedDocuments },
+      status: 200,
+    };
+  } catch (error) {
+    console.error("[GET_ROOT_DOCUMENTS]", error);
+    return {
+      success: false,
+      data: { ownedDocuments: [], sharedDocuments: [] },
+      error: "Failed to get documents",
+      status: 500,
+    };
+  }
+};
+
+/**
+ * Gets all documents accessible to the user (for search functionality)
+ */
+export const getAllAccessibleDocuments = async (
+  userId: string
+): Promise<ServiceResponse<DocumentWithMeta[]>> => {
   try {
     const documents = await db.document.findMany({
       where: {
@@ -214,120 +381,70 @@ export const getAllDocuments = async (
         ],
       },
       include: {
-        collaborators: true,
+        collaborators: {
+          where: {
+            userId,
+          },
+        },
+        owner: {
+          select: {
+            name: true,
+            image: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
       },
     });
 
+    // Add role and ownership information
+    const enhancedDocuments = documents.map((doc) => {
+      const { collaborators, ...docWithoutCollaborators } = doc;
+      const isOwner = doc.userId === userId;
+      const role: CollaboratorRole | "OWNER" | null = isOwner
+        ? "OWNER"
+        : collaborators.length > 0
+        ? collaborators[0].role
+        : null;
+
+      return {
+        ...docWithoutCollaborators,
+        isOwner,
+        role,
+      };
+    });
+
     return {
       success: true,
-      data: documents,
+      data: enhancedDocuments,
       status: 200,
     };
   } catch (error) {
-    console.error("[GET_ALL_DOCUMENTS]", error);
+    console.error("[GET_ALL_ACCESSIBLE_DOCUMENTS]", error);
     return {
       success: false,
       data: [],
-      error: "An unexpected error occurred while fetching all documents",
+      error: "Failed to retrieve documents",
       status: 500,
     };
   }
 };
 
-// Recursive function to check document access rights
-export const checkDocumentAccess = async (
-  documentId: string,
-  userId: string
-): Promise<ServiceResponse<any>> => {
-  try {
-    // Check if user is the owner
-    const document = await db.document.findUnique({
-      where: { id: documentId },
-      select: { userId: true, parentDocument: true },
-    });
-
-    if (!document) {
-      return {
-        success: false,
-        data: {
-          hasAccess: false,
-          role: null,
-        },
-        error: "Document not found",
-        status: 404,
-      };
-    }
-
-    // Case 1: User is the owner
-    if (document.userId === userId) {
-      return {
-        success: true,
-        data: {
-          hasAccess: true,
-          isOwner: true,
-          role: null,
-        },
-        status: 200,
-      };
-    }
-
-    // Case 2: Check if user is a direct collaborator
-    const collaboration = await db.collaborator.findUnique({
-      where: {
-        userId_documentId: {
-          userId,
-          documentId,
-        },
-      },
-    });
-
-    if (collaboration?.isVerified) {
-      return {
-        success: true,
-        data: {
-          hasAccess: true,
-          isOwner: false,
-          role: collaboration.role,
-        },
-        status: 200,
-      };
-    }
-
-    // Case 3: Check if parent document gives access rights
-    if (document?.parentDocument) {
-      return checkDocumentAccess(document.parentDocument.id, userId);
-    }
-
-    return {
-      success: false,
-      data: {
-        hasAccess: false,
-        isOwner: false,
-        role: null,
-      },
-      error: "You do not have access to this document",
-      status: 403,
-    };
-  } catch (error) {
-    console.error("[CHECK_DOCUMENT_ACCESS]", error);
-    return {
-      success: false,
-      error: "An unexpected error occurred",
-      status: 500,
-    };
-  }
-};
-
-// Modified function to fetch archived documents with collaboration support
+/**
+ * Gets all archived documents accessible to the user
+ */
 export const getArchivedDocuments = async (
   userId: string
-): Promise<ServiceResponse<any>> => {
+): Promise<
+  ServiceResponse<{
+    ownedArchived: DocumentWithMeta[];
+    sharedArchived: DocumentWithMeta[];
+  }>
+> => {
   try {
     // Get archived documents owned by the user
-    let ownedArchived = await db.document.findMany({
+    const ownedArchived = await db.document.findMany({
       where: {
         userId,
         isArchived: true,
@@ -337,15 +454,8 @@ export const getArchivedDocuments = async (
       },
     });
 
-    // Add isOwner and role for owned documents
-    ownedArchived = ownedArchived.map((doc) => ({
-      ...doc,
-      isOwner: true,
-      role: null,
-    }));
-
     // Get archived documents where user is a collaborator
-    let sharedArchived = await db.document.findMany({
+    const sharedArchived = await db.document.findMany({
       where: {
         collaborators: {
           some: {
@@ -359,7 +469,11 @@ export const getArchivedDocuments = async (
         createdAt: "desc",
       },
       include: {
-        collaborators: true,
+        collaborators: {
+          where: {
+            userId,
+          },
+        },
         owner: {
           select: {
             name: true,
@@ -369,28 +483,42 @@ export const getArchivedDocuments = async (
       },
     });
 
+    // Enhance with role information
+    const enhancedOwnedArchived = ownedArchived.map((doc) => {
+      const isOwner = true;
+      const role: CollaboratorRole | "OWNER" | null = "OWNER";
+
+      return {
+        ...doc,
+        owner: {
+          name: null,
+          image: null,
+        },
+        isOwner,
+        role,
+      };
+    });
+
     // Add isOwner and role for shared documents
-    sharedArchived = sharedArchived
-      .map((doc) => {
-        const userCollab = doc.collaborators.find(
-          (collab) => collab.userId === userId && collab.isVerified
-        );
+    const enhancedSharedArchived = sharedArchived.map((doc) => {
+      const { collaborators, ...docWithoutCollaborators } = doc;
+      const isOwner = false;
+      const role: CollaboratorRole | "OWNER" | null =
+        collaborators.length > 0 ? collaborators[0].role : null;
 
-        if (!userCollab) {
-          return null;
-        }
-
-        return {
-          ...doc,
-          isOwner: false,
-          role: userCollab.role,
-        };
-      })
-      .filter((doc) => doc !== null);
+      return {
+        ...docWithoutCollaborators,
+        isOwner,
+        role,
+      };
+    });
 
     return {
       success: true,
-      data: { ownedArchived, sharedArchived },
+      data: {
+        ownedArchived: enhancedOwnedArchived,
+        sharedArchived: enhancedSharedArchived,
+      },
       status: 200,
     };
   } catch (error) {
@@ -398,55 +526,34 @@ export const getArchivedDocuments = async (
     return {
       success: false,
       data: { ownedArchived: [], sharedArchived: [] },
-      error: "An unexpected error occurred while fetching archived documents",
+      error: "Failed to fetch archived documents",
       status: 500,
     };
   }
 };
 
-// Demolish Afterwards
-export const fetchAllTrashDocuments = async (
-  userId: string
-): Promise<ServiceResponse<any>> => {
-  try {
-    const documents = await db.document.findMany({
-      where: {
-        userId,
-        isArchived: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return {
-      success: true,
-      data: documents,
-      status: 200,
-    };
-  } catch (error) {
-    console.error("[ERROR_FETCHING_TRASH_DOCUMENTS]: ", error);
-    return {
-      success: false,
-      error: "An unexpected error occurred while fetching trash",
-      status: 500,
-    };
-  }
-};
-
-// Recursive archiving with collaboration handling
+/**
+ * Archives a document and all its children
+ */
 export const archiveDocument = async ({
   userId,
   documentId,
-}: ArchiveDocumentProps): Promise<ServiceResponse<any>> => {
+}: DocumentActionProps): Promise<
+  ServiceResponse<{ id: string; isArchived: boolean }>
+> => {
   try {
-    // First check access rights
-    const accessCheck = await checkDocumentAccess(documentId, userId);
+    // Check access rights (must be owner or EDITOR)
+    const access = await getDirectDocumentAccess(documentId, userId);
 
-    if (
-      !accessCheck.data.hasAccess ||
-      !(accessCheck.data.isOwner || accessCheck.data.role === "EDITOR")
-    ) {
+    if (!access.success || !access.data?.hasAccess) {
+      return {
+        success: false,
+        error: "Document not found or no access",
+        status: 404,
+      };
+    }
+
+    if (!access.data.isOwner && access.data.role !== "EDITOR") {
       return {
         success: false,
         error: "You don't have permission to archive this document",
@@ -454,6 +561,7 @@ export const archiveDocument = async ({
       };
     }
 
+    // Find the document and its children
     const document = await db.document.findUnique({
       where: { id: documentId },
       include: { childDocuments: true },
@@ -467,127 +575,64 @@ export const archiveDocument = async ({
       };
     }
 
-    // Archive the document
-    const updatedDocument = await db.document.update({
-      where: { id: documentId },
-      data: { isArchived: true },
-    });
+    // Recursively archive all children
+    const archiveRecursively = async (docId: string) => {
+      const children = await db.document.findMany({
+        where: { parentDocumentId: docId },
+        select: { id: true },
+      });
 
-    // Recursively archive all child documents
-    if (document.childDocuments.length > 0) {
-      for (const child of document.childDocuments) {
-        await archiveDocument({ documentId: child.id, userId });
+      // Archive the current document
+      await db.document.update({
+        where: { id: docId },
+        data: { isArchived: true },
+      });
+
+      // Archive all children
+      for (const child of children) {
+        await archiveRecursively(child.id);
       }
-    }
+    };
+
+    await archiveRecursively(documentId);
 
     return {
       success: true,
-      data: updatedDocument,
+      data: { id: documentId, isArchived: true },
       status: 200,
     };
   } catch (error) {
     console.error("[ARCHIVE_DOCUMENT]", error);
     return {
       success: false,
-      error: "An unexpected error occurred while archiving document",
+      error: "Failed to archive document",
       status: 500,
     };
   }
 };
 
-// Demolish Afterwards
-/*
-export const archiveDocument = async ({
+/**
+ * Restores a document and all its children from archive
+ */
+export const restoreDocument = async ({
   userId,
   documentId,
-}: ArchiveDocumentProps): Promise<ServiceResponse<any>> => {
+}: DocumentActionProps): Promise<
+  ServiceResponse<{ id: string; isArchived: boolean; parentDocumentId: string }>
+> => {
   try {
-    // First verify the document belongs to this user
-    const document = await db.document.findUnique({
-      where: {
-        id: documentId,
-        userId,
-      },
-    });
+    // Check access rights (must be owner or EDITOR)
+    const access = await getDirectDocumentAccess(documentId, userId);
 
-    if (!document) {
+    if (!access.success || !access.data?.hasAccess) {
       return {
         success: false,
-        error: "Document not found or you do not have permission",
+        error: "Document not found or no access",
         status: 404,
       };
     }
 
-    // Recursively archive all child documents
-    const recursiveArchiveChildren = async (parentId: string) => {
-      // Find all child documents
-      const children = await db.document.findMany({
-        where: {
-          userId,
-          parentDocumentId: parentId || "",
-          isArchived: false,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-
-      for (const child of children) {
-        // Recursively archive its children
-        await recursiveArchiveChildren(child.id);
-
-        // Archive the child
-        await db.document.update({
-          where: {
-            id: child.id,
-          },
-          data: {
-            isArchived: true,
-          },
-        });
-      }
-    };
-
-    await recursiveArchiveChildren(documentId);
-
-    // Archive this document
-    const archivedDocument = await db.document.update({
-      where: {
-        id: documentId,
-      },
-      data: {
-        isArchived: true,
-      },
-    });
-
-    return {
-      success: true,
-      data: archivedDocument,
-      status: 200,
-    };
-  } catch (error) {
-    console.error("[ERROR_ARCHIVE_DOCUMENT]: ", error);
-    return {
-      success: false,
-      error: "An unexpected error occurred while archiving the document",
-      status: 500,
-    };
-  }
-};
-*/
-
-// Recursive restoration with collaboration handling
-export const restoreDocument = async ({
-  userId,
-  documentId,
-}: RestoreDocumentProps): Promise<ServiceResponse<any>> => {
-  try {
-    // First check access rights (OWNER or EDITOR)
-    const accessCheck = await checkDocumentAccess(documentId, userId);
-    if (
-      !accessCheck.data.hasAccess ||
-      !(accessCheck.data.role === "OWNER" || accessCheck.data.role === "EDITOR")
-    ) {
+    if (!access.data.isOwner && access.data.role !== "EDITOR") {
       return {
         success: false,
         error: "You don't have permission to restore this document",
@@ -596,96 +641,85 @@ export const restoreDocument = async ({
     }
 
     const document = await db.document.findUnique({
-      where: {
-        id: documentId,
-      },
+      where: { id: documentId },
     });
 
     if (!document) {
       return {
         success: false,
-        error: "Document not found or you do not have permission",
+        error: "Document not found",
         status: 404,
       };
     }
 
-    // Restore all child documents
-    const recursiveRestoreChildren = async (parentId: string) => {
-      // Find all direct child documents
-      const children = await db.document.findMany({
-        where: {
-          parentDocumentId: parentId || "",
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+    // Check if parent is archived - if so, disconnect from parent
+    let parentDocumentId = document.parentDocumentId;
 
-      for (const child of children) {
-        // Recursively restore its children
-        await recursiveRestoreChildren(child.id);
-
-        // Restore the child
-        await db.document.update({
-          where: {
-            id: child.id,
-          },
-          data: {
-            isArchived: false,
-          },
-        });
-      }
-    };
-
-    // Check if parent is archived - if so, we need to restore the document without a parent
-    const options: Partial<{ isArchived: boolean; parentDocumentId: string }> =
-      {
-        isArchived: false,
-        parentDocumentId: document.parentDocumentId || "",
-      };
-
-    if (document.parentDocumentId && document.parentDocumentId != "") {
+    if (document.parentDocumentId) {
       const parent = await db.document.findUnique({
-        where: {
-          id: document.parentDocumentId,
-        },
+        where: { id: document.parentDocumentId },
       });
 
       if (parent?.isArchived) {
-        options.parentDocumentId = "";
+        parentDocumentId = ""; // Disconnect from archived parent
       }
     }
 
-    await recursiveRestoreChildren(documentId);
+    // Recursively restore all children
+    const restoreRecursively = async (docId: string) => {
+      const children = await db.document.findMany({
+        where: { parentDocumentId: docId },
+        select: { id: true },
+      });
 
-    // Restore this document
-    const restoredDocument = await db.document.update({
-      where: {
-        id: documentId,
-      },
-      data: options,
-    });
+      // Restore the current document
+      await db.document.update({
+        where: { id: docId },
+        data: { isArchived: false },
+      });
+
+      // Restore all children
+      for (const child of children) {
+        await restoreRecursively(child.id);
+      }
+    };
+
+    await restoreRecursively(documentId);
+
+    // Update the parent reference if needed
+    if (parentDocumentId !== document.parentDocumentId) {
+      await db.document.update({
+        where: { id: documentId },
+        data: { parentDocumentId },
+      });
+    }
 
     return {
       success: true,
-      data: restoredDocument,
+      data: {
+        id: documentId,
+        isArchived: false,
+        parentDocumentId: parentDocumentId || "",
+      },
       status: 200,
     };
   } catch (error) {
-    console.error("Error restoring document:", error);
+    console.error("[RESTORE_DOCUMENT]", error);
     return {
       success: false,
-      error: "An unexpected error occurred while restoring the document",
+      error: "Failed to restore document",
       status: 500,
     };
   }
 };
 
-// Recursive deletion with collaboration handling
+/**
+ * Permanently removes a document and all its children
+ */
 export const removeDocument = async ({
   userId,
   documentId,
-}: RemoveDocumentProps): Promise<ServiceResponse<any>> => {
+}: DocumentActionProps): Promise<ServiceResponse<Document>> => {
   try {
     // First verify the document belongs to this user
     const document = await db.document.findUnique({
@@ -713,7 +747,7 @@ export const removeDocument = async ({
     }
 
     // Remove all child documents
-    const recursiveRemoveChildren = async (documentId: string) => {
+    const deleteRecursively = async (documentId: string) => {
       // Find all direct child documents
       const children = await db.document.findMany({
         where: {
@@ -724,7 +758,7 @@ export const removeDocument = async ({
 
       for (const child of children) {
         // Recursively remove it's children
-        await recursiveRemoveChildren(child.id);
+        await deleteRecursively(child.id);
 
         // Remove the Collaborators
         await db.collaborator.deleteMany({
@@ -742,7 +776,7 @@ export const removeDocument = async ({
       }
     };
 
-    await recursiveRemoveChildren(documentId);
+    await deleteRecursively(documentId);
 
     // Remove the collaborators (cascading delete will handle child documents & collaborators) but we are using mongodb so we want to do it manually via recursion as we do above
     await db.collaborator.deleteMany({
@@ -764,15 +798,18 @@ export const removeDocument = async ({
       status: 200,
     };
   } catch (error) {
-    console.error("[ERROR_REMOVE_DOCUMENT]: ", error);
+    console.error("[REMOVE_DOCUMENT]: ", error);
     return {
       success: false,
-      error: "An unexpected error occurred while removing the document",
+      error: "Failed to delete document",
       status: 500,
     };
   }
 };
 
+/**
+ * Updates a document with provided changes
+ */
 export const updateDocument = async ({
   userId,
   documentId,
@@ -781,63 +818,47 @@ export const updateDocument = async ({
   coverImage,
   icon,
   isPublished,
-}: UpdateDocumentProps): Promise<ServiceResponse<any>> => {
+}: UpdateDocumentProps): Promise<ServiceResponse<DocumentWithMeta>> => {
   try {
-    // First check document ownership or collaborator with edit access
-    const document = await db.document.findUnique({
-      where: {
-        id: documentId,
-      },
-    });
+    // Check access rights
+    const access = await getDirectDocumentAccess(documentId, userId);
 
-    if (!document) {
+    if (!access.success || !access.data?.hasAccess) {
       return {
         success: false,
-        error: "Document not found",
+        error: "Document not found or no access",
         status: 404,
       };
     }
 
-    // Use checkDocumentAccess to verify permissions
-    const accessCheck = await checkDocumentAccess(documentId, userId);
+    // Check if user has appropriate permissions
+    const isOwner = access.data.isOwner;
+    const role = access.data.role;
 
-    if (!accessCheck.success || !accessCheck.data.hasAccess) {
+    // Non-owners with non-EDITOR roles can't edit
+    if (!isOwner && role !== "EDITOR") {
       return {
         success: false,
-        error: accessCheck.error || "You do not have access to this document",
-        status: accessCheck.status || 403,
+        error: "You don't have permission to edit this document",
+        status: 403,
       };
     }
 
-    // Check if user has permission to make the requested changes
-    const isOwner = accessCheck.data.isOwner;
-    const role = accessCheck.data.role;
-
-    if (!isOwner) {
-      // Check if user is a collaborator with EDITOR role
-      if (!role || role !== "EDITOR") {
-        return {
-          success: false,
-          error: "You do not have permission to edit this document",
-          status: 403,
-        };
-      }
-
-      // If collaborator, only allow content updates, not metadata
-      if (
-        coverImage !== undefined ||
+    // Non-owners can only update content and title
+    if (
+      !isOwner &&
+      (coverImage !== undefined ||
         icon !== undefined ||
-        isPublished !== undefined
-      ) {
-        return {
-          success: false,
-          error: "Collaborators can only update document content",
-          status: 403,
-        };
-      }
+        isPublished !== undefined)
+    ) {
+      return {
+        success: false,
+        error: "Collaborators can only update document content and title",
+        status: 403,
+      };
     }
 
-    // Build update data object based on provided parameters
+    // Build update object
     const updateData: any = {};
     if (content !== undefined) updateData.content = content;
     if (title !== undefined) updateData.title = title;
@@ -847,39 +868,60 @@ export const updateDocument = async ({
 
     // Update the document
     const updatedDocument = await db.document.update({
-      where: {
-        id: documentId,
-      },
+      where: { id: documentId },
       data: updateData,
+      include: {
+        owner: {
+          select: {
+            name: true,
+            image: true,
+          },
+        },
+      },
     });
 
     return {
       success: true,
       data: {
         ...updatedDocument,
-        isOwner: isOwner,
-        role: role,
+        isOwner,
+        role,
       },
       status: 200,
     };
   } catch (error) {
-    console.error("[ERROR_UPDATE_DOCUMENT]: ", error);
+    console.error("[UPDATE_DOCUMENT]: ", error);
     return {
       success: false,
-      error: "An unexpected error occurred while updating the document",
+      error: "Failed to update document",
       status: 500,
     };
   }
 };
 
+/**
+ * Gets a document by ID if the user has access to it
+ */
 export const getDocumentById = async ({
   userId,
   documentId,
-}: GetDocumentByIdProps): Promise<ServiceResponse<any>> => {
+}: DocumentActionProps): Promise<ServiceResponse<DocumentWithMeta>> => {
   try {
     const document = await db.document.findUnique({
-      where: {
-        id: documentId,
+      where: { id: documentId },
+      include: {
+        collaborators: {
+          where: {
+            userId,
+            isVerified: { not: null },
+          },
+        },
+        owner: {
+          select: {
+            name: true,
+            image: true,
+          },
+        },
       },
     });
 
@@ -891,29 +933,45 @@ export const getDocumentById = async ({
       };
     }
 
-    // First use checkDocumentAccess to verify access rights and get role information
-    const accessCheck = await checkDocumentAccess(documentId, userId);
+    // Direct owner
+    if (document.userId === userId) {
+      const { collaborators, ...docWithoutCollaborators } = document;
 
-    // If user has valid access through ownership or collaboration
-    if (accessCheck.success && accessCheck.data.hasAccess) {
       return {
         success: true,
         data: {
-          ...document,
-          isOwner: accessCheck.data.isOwner,
-          role: accessCheck.data.role,
+          ...docWithoutCollaborators,
+          isOwner: true,
+          role: "OWNER",
         },
         status: 200,
       };
     }
 
-    // Check if document is published (public)
-    if (document.isPublished) {
+    // Direct collaborator
+    if (document.collaborators.length > 0) {
+      const { collaborators, ...docWithoutCollaborators } = document;
+
       return {
         success: true,
         data: {
-          ...document,
-          isOwner: document.userId === userId,
+          ...docWithoutCollaborators,
+          isOwner: false,
+          role: collaborators[0].role,
+        },
+        status: 200,
+      };
+    }
+
+    // Published document (public access)
+    if (document.isPublished) {
+      const { collaborators, ...docWithoutCollaborators } = document;
+
+      return {
+        success: true,
+        data: {
+          ...docWithoutCollaborators,
+          isOwner: false,
           role: null,
         },
         status: 200,
@@ -922,14 +980,14 @@ export const getDocumentById = async ({
 
     return {
       success: false,
-      error: accessCheck.error || "You do not have access to this document",
-      status: accessCheck.status || 403,
+      error: "You don't have access to this document",
+      status: 403,
     };
   } catch (error) {
-    console.error("[ERROR_FETCHING_DOCUMENT]: ", error);
+    console.error("[GET_DOCUMENT_BY_ID]: ", error);
     return {
       success: false,
-      error: "An unexpected error occurred while fetching the document",
+      error: "Failed to retrieve document",
       status: 500,
     };
   }

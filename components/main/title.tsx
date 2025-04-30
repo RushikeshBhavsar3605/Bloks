@@ -7,14 +7,10 @@ import { Button } from "../ui/button";
 import debounce from "lodash.debounce";
 import { useSocket } from "../providers/socket-provider";
 import { useSaveStatus } from "@/hooks/use-save-status";
-
-type ModifiedDocument = Document & {
-  isOwner: boolean;
-  role: CollaboratorRole | null;
-};
+import { DocumentWithMeta } from "@/types/shared";
 
 interface TitleProps {
-  initialData: ModifiedDocument;
+  initialData: DocumentWithMeta;
 }
 
 export const Title = ({ initialData }: TitleProps) => {

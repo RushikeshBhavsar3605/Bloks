@@ -4,28 +4,14 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Item } from "./item";
 import { cn } from "@/lib/utils";
-import { Collaborator, CollaboratorRole, Document } from "@prisma/client";
+import { Document } from "@prisma/client";
 import { FileIcon } from "lucide-react";
 import { useSocket } from "../providers/socket-provider";
-
-type ChildDocuments = Document & {
-  role: CollaboratorRole | "OWNER" | null;
-};
+import { DocumentWithMeta } from "@/types/shared";
 
 type RootDocuments = {
-  ownedDocuments: (Document & {
-    childDocuments: Document[];
-    collaborators: Collaborator[];
-  })[];
-  sharedDocuments: (Document & {
-    childDocuments: Document[];
-    collaborators: Collaborator[];
-    role: CollaboratorRole | null;
-    owner: {
-      name: string | null;
-      image: string | null;
-    };
-  })[];
+  ownedDocuments: Document[];
+  sharedDocuments: DocumentWithMeta[];
 };
 
 interface DocumentListProps {
@@ -41,9 +27,9 @@ export const DocumentList = ({
   const { socket } = useSocket();
   const params = useParams();
   const router = useRouter();
-  const [documents, setDocuments] = useState<ChildDocuments[] | RootDocuments>(
-    []
-  );
+  const [documents, setDocuments] = useState<
+    DocumentWithMeta[] | RootDocuments
+  >([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const onExpand = (documentId: string) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Collaborator, CollaboratorRole, Document } from "@prisma/client";
+import { Document } from "@prisma/client";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -9,21 +9,11 @@ import { Search, Trash, Undo } from "lucide-react";
 import { Input } from "../ui/input";
 import { ConfirmModal } from "../modals/confirm-modal";
 import { useSocket } from "../providers/socket-provider";
+import { DocumentWithMeta } from "@/types/shared";
 
 type ModifiedDocument = {
-  ownedArchived: (Document & {
-    isOwner: boolean;
-    role: CollaboratorRole | null;
-  })[];
-  sharedArchived: (Document & {
-    collaborators: Collaborator[];
-    owner: {
-      name: string | null;
-      image: string | null;
-    };
-    isOwner: boolean;
-    role: CollaboratorRole | null;
-  })[];
+  ownedArchived: DocumentWithMeta[];
+  sharedArchived: DocumentWithMeta[];
 };
 
 export const TrashBox = () => {

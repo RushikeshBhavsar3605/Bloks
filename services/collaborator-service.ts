@@ -1,23 +1,23 @@
 import { db } from "@/lib/db";
+import { CollaboratorWithMeta } from "@/types/shared";
 import { CollaboratorRole } from "@prisma/client";
 
-interface AddCollaboratorProps {
-  documentId: string;
+interface DocumentActionProps {
   userId: string;
+  documentId: string;
+}
+
+interface AddCollaboratorProps extends DocumentActionProps {
   collaboratorEmail: string;
   role?: CollaboratorRole;
 }
 
-interface UpdateCollaboratorRoleProps {
-  documentId: string;
-  userId: string;
+interface UpdateCollaboratorRoleProps extends DocumentActionProps {
   collaboratorId: string;
   newRole: CollaboratorRole;
 }
 
-interface RemoveCollaboratorProps {
-  documentId: string;
-  userId: string;
+interface RemoveCollaboratorProps extends DocumentActionProps {
   collaboratorId: string;
 }
 
@@ -28,13 +28,17 @@ type ServiceResponse<T> = {
   status?: number;
 };
 
-// Add collaborator to document
+// COLLABORATOR MANAGEMENT
+
+/**
+ * Adds a collaborator to a document and all its children
+ */
 export const addCollaborator = async ({
   documentId,
   userId,
   collaboratorEmail,
   role = CollaboratorRole.VIEWER,
-}: AddCollaboratorProps): Promise<ServiceResponse<any>> => {
+}: AddCollaboratorProps): Promise<ServiceResponse<CollaboratorWithMeta>> => {
   try {
     // Check if current user is the owner
     const document = await db.document.findUnique({
@@ -113,27 +117,69 @@ export const addCollaborator = async ({
       },
     });
 
+    // Recursively add collaborator to all child documents
+    const addToChildrenRecursively = async (parentId: string) => {
+      const children = await db.document.findMany({
+        where: { parentDocumentId: parentId },
+        select: { id: true },
+      });
+
+      for (const child of children) {
+        // Check if collaboration already exists
+        const existingCollab = await db.collaborator.findUnique({
+          where: {
+            userId_documentId: {
+              userId: collaboratorUser.id,
+              documentId: child.id,
+            },
+          },
+        });
+
+        if (!existingCollab) {
+          // Create if existingCollab doesn't exist
+          await db.collaborator.create({
+            data: {
+              documentId: child.id,
+              userId: collaboratorUser.id,
+              role,
+            },
+          });
+        }
+
+        // Process children recursively
+        await addToChildrenRecursively(child.id);
+      }
+    };
+
+    // Start recursive process for all children
+    await addToChildrenRecursively(documentId);
+
     return {
       success: true,
       data: newCollaborator,
       status: 200,
     };
   } catch (error) {
-    console.error("[ERROR_ADDING_COLLABORATOR]: ", error);
+    console.error("[ADD_COLLABORATOR]: ", error);
     return {
       success: false,
-      error: "An unexpected error occured",
+      error: "Failed to add collaborator",
       status: 500,
     };
   }
 };
 
+/**
+ * Updates a collaborator's role on a document and all its children
+ */
 export const updateCollaboratorRole = async ({
   documentId,
   userId,
   collaboratorId,
   newRole,
-}: UpdateCollaboratorRoleProps): Promise<ServiceResponse<any>> => {
+}: UpdateCollaboratorRoleProps): Promise<
+  ServiceResponse<CollaboratorWithMeta>
+> => {
   try {
     const document = await db.document.findUnique({
       where: {
@@ -165,6 +211,7 @@ export const updateCollaboratorRole = async ({
       };
     }
 
+    // Update collaborator on the current document
     const updatedCollaborator = await db.collaborator.update({
       where: {
         id: collaboratorId,
@@ -184,27 +231,181 @@ export const updateCollaboratorRole = async ({
       },
     });
 
+    // Recursively update role on all child documents
+    const updateChildrenRecursively = async (parentId: string) => {
+      const children = await db.document.findMany({
+        where: { parentDocumentId: parentId },
+        select: { id: true },
+      });
+
+      for (const child of children) {
+        // Check if collaboration exists
+        const existingCollab = await db.collaborator.findUnique({
+          where: {
+            userId_documentId: {
+              userId: collaboratorId,
+              documentId: child.id,
+            },
+          },
+        });
+
+        if (existingCollab) {
+          // Update if exists
+          await db.collaborator.update({
+            where: {
+              userId_documentId: {
+                userId: collaboratorId,
+                documentId: child.id,
+              },
+            },
+            data: { role: newRole },
+          });
+        }
+
+        // Process children recursively
+        await updateChildrenRecursively(child.id);
+      }
+    };
+
+    // Start recursive process for all children
+    await updateChildrenRecursively(documentId);
+
     return {
       success: true,
       data: updatedCollaborator,
       status: 200,
     };
   } catch (error) {
-    console.error("[ERROR_UPDATING_COLLABORATOR_ROLE]: ", error);
+    console.error("[UPDATE_COLLABORATOR_ROLE]: ", error);
     return {
       success: false,
-      error: "An unexpected error occurred",
+      error: "Failed to update collaborator role",
       status: 500,
     };
   }
 };
 
-// Remove collaborator from document
+/**
+ * Mark collaborator as verified on a document and all its children
+ */
+export const verifyCollaborator = async ({
+  documentId,
+  userId,
+}: DocumentActionProps): Promise<ServiceResponse<CollaboratorWithMeta>> => {
+  try {
+    // Find the collaborator to verify
+    const collaborator = await db.collaborator.findUnique({
+      where: {
+        userId_documentId: {
+          userId,
+          documentId,
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+      },
+    });
+
+    if (!collaborator) {
+      return {
+        success: false,
+        error: "Collaborator not found",
+        status: 404,
+      };
+    }
+
+    // Verify the collaborator on the current document
+    const verifiedCollaborator = await db.collaborator.update({
+      where: {
+        userId_documentId: {
+          userId,
+          documentId,
+        },
+      },
+      data: {
+        isVerified: new Date(),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+      },
+    });
+
+    // Recursively verify collaboration on all child documents
+    const verifyChildrenRecursively = async (parentId: string) => {
+      const children = await db.document.findMany({
+        where: { parentDocumentId: parentId },
+        select: { id: true },
+      });
+
+      for (const child of children) {
+        // Check if collaboration exists but is not verified
+        const existingCollab = await db.collaborator.findUnique({
+          where: {
+            userId_documentId: {
+              userId,
+              documentId: child.id,
+            },
+          },
+        });
+
+        if (existingCollab && !existingCollab.isVerified) {
+          // Verify if exists and not already verified
+          await db.collaborator.update({
+            where: {
+              userId_documentId: {
+                userId,
+                documentId: child.id,
+              },
+            },
+            data: { isVerified: new Date() },
+          });
+        }
+
+        // Process children recursively
+        await verifyChildrenRecursively(child.id);
+      }
+    };
+
+    // Start recursive process for all children
+    await verifyChildrenRecursively(documentId);
+
+    return {
+      success: true,
+      data: verifiedCollaborator,
+      status: 200,
+    };
+  } catch (error) {
+    console.error("[VERIFY_COLLABORATOR]: ", error);
+    return {
+      success: false,
+      error: "Failed to verify collaborator",
+      status: 500,
+    };
+  }
+};
+
+/**
+ * Removes a collaborator from a document and all its children
+ */
 export const removeCollaborator = async ({
   documentId,
   userId,
   collaboratorId,
-}: RemoveCollaboratorProps): Promise<ServiceResponse<any>> => {
+}: RemoveCollaboratorProps): Promise<ServiceResponse<{ id: string }>> => {
   try {
     // Check if current user is the owner
     const document = await db.document.findUnique({
@@ -239,30 +440,82 @@ export const removeCollaborator = async ({
     }
 
     // Delete the collaboration
-    await db.collaborator.delete({
+    const deletedCollaborator = await db.collaborator.delete({
       where: {
         id: collaboratorId,
       },
     });
 
+    // Recursively remove from all child documents
+    const removeFromChildrenRecursively = async (parentId: string) => {
+      const children = await db.document.findMany({
+        where: { parentDocumentId: parentId },
+        select: { id: true },
+      });
+
+      for (const child of children) {
+        // Check if collaboration exists
+        const existingCollab = await db.collaborator.findUnique({
+          where: {
+            userId_documentId: {
+              userId: collaboratorId,
+              documentId: child.id,
+            },
+          },
+        });
+
+        if (existingCollab) {
+          // Delete if exists
+          await db.collaborator.delete({
+            where: {
+              userId_documentId: {
+                userId: collaboratorId,
+                documentId: child.id,
+              },
+            },
+          });
+        }
+
+        // Process children recursively
+        await removeFromChildrenRecursively(child.id);
+      }
+    };
+
+    // Start recursive process for all children
+    await removeFromChildrenRecursively(documentId);
+
     return {
       success: true,
+      data: { id: deletedCollaborator.id },
       status: 204,
     };
   } catch (error) {
-    console.error("[ERROR_REMOVING_COLLABORATOR]: ", error);
+    console.error("[REMOVE_COLLABORATOR]: ", error);
     return {
       success: false,
-      error: "An unexpected error occurred",
+      error: "Failed to remove collaborator",
       status: 500,
     };
   }
 };
 
+/**
+ * Get collaborators from a specified document
+ */
 export const getDocumentCollaborators = async (
   documentId: string,
   userId: string
-): Promise<ServiceResponse<any>> => {
+): Promise<
+  ServiceResponse<{
+    collaborators: CollaboratorWithMeta[];
+    owner: {
+      id: string;
+      name: string | null;
+      email: string | null;
+      image: string | null;
+    };
+  }>
+> => {
   try {
     const document = await db.document.findUnique({
       where: {
@@ -299,6 +552,26 @@ export const getDocumentCollaborators = async (
       }
     }
 
+    const owner = await db.user.findUnique({
+      where: {
+        id: document.userId,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+      },
+    });
+
+    if (!owner) {
+      return {
+        success: false,
+        error: "Document doen't contain owner",
+        status: 404,
+      };
+    }
+
     const collaborators = await db.collaborator.findMany({
       where: {
         documentId,
@@ -317,76 +590,14 @@ export const getDocumentCollaborators = async (
 
     return {
       success: true,
-      data: collaborators,
+      data: { collaborators, owner },
       status: 200,
     };
   } catch (error) {
-    console.error("[ERROR_GETTING_DOCUMENT_COLLABORATORS]: ", error);
+    console.error("[GET_DOCUMENT_COLLABORATORS]: ", error);
     return {
       success: false,
-      error: "An unexpected error occurred",
-      status: 500,
-    };
-  }
-};
-
-export const getUserAccessibleDocuments = async (
-  userId: string
-): Promise<ServiceResponse<any>> => {
-  try {
-    const ownedDocuments = await db.document.findMany({
-      where: {
-        userId,
-        isArchived: false,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    const collaborations = await db.collaborator.findMany({
-      where: {
-        userId,
-        isVerified: {
-          not: null,
-        },
-        document: {
-          isArchived: false,
-        },
-      },
-      include: {
-        document: true,
-      },
-    });
-
-    const collaboratedDocuments = collaborations
-      .map((collab) => ({
-        ...collab.document,
-        role: collab.role,
-        isCollaborator: true,
-      }))
-      .filter((doc) => doc);
-
-    const ownedDocsWithMeta = ownedDocuments.map((doc) => ({
-      ...doc,
-      isOwner: true,
-      role: null,
-    }));
-
-    return {
-      success: true,
-      data: {
-        owned: ownedDocsWithMeta,
-        collaborated: collaboratedDocuments,
-        all: [...ownedDocsWithMeta, ...collaboratedDocuments],
-      },
-      status: 200,
-    };
-  } catch (error) {
-    console.error("[ERROR_GETTING_USER_ACCESSIBLE_DOCUMENTS]: ", error);
-    return {
-      success: false,
-      error: "An unexpected error occurred",
+      error: "Failed to get document collaborator",
       status: 500,
     };
   }

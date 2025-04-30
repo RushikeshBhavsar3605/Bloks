@@ -11,11 +11,7 @@ import { SaveIndicator } from "../save-indicator";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { CollaboratorsSetting } from "./collaborators-setting";
-
-type ModifiedDocument = Document & {
-  isOwner: boolean;
-  role: CollaboratorRole | null;
-};
+import { DocumentWithMeta } from "@/types/shared";
 
 interface NavbarProps {
   isCollapsed: boolean;
@@ -25,7 +21,7 @@ interface NavbarProps {
 export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
   const { socket } = useSocket();
   const params = useParams();
-  const [document, setDocument] = useState<ModifiedDocument>();
+  const [document, setDocument] = useState<DocumentWithMeta>();
 
   const fetchDocuments = async () => {
     const response = await fetch(
@@ -43,7 +39,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
     if (!socket) return;
 
     if (!document?.id) return;
-    const handleUpdate = (data: ModifiedDocument) => {
+    const handleUpdate = (data: DocumentWithMeta) => {
       setDocument(data);
     };
 

@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { currentUser } from "@/lib/auth-server";
 import { NextApiRequest } from "next";
 import { NextApiResponseServerIo } from "@/types";
+import { verifyCollaborator } from "@/services/collaborator-service";
 
 export default async function handler(
   req: NextApiRequest,
@@ -43,16 +44,9 @@ export default async function handler(
     return res.status(404).json({ error: "Collaborator Relation Not Found!" });
   }
 
-  const collaborator = await db.collaborator.update({
-    where: {
-      userId_documentId: {
-        userId: collaboratorUser?.id as string,
-        documentId: tokenEntry.documentId,
-      },
-    },
-    data: {
-      isVerified: new Date(),
-    },
+  const collaborator = await verifyCollaborator({
+    documentId: tokenEntry.documentId,
+    userId: collaboratorUser?.id as string,
   });
 
   await db.collaboratorVerificationToken.delete({

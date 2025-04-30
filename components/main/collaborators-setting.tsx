@@ -5,18 +5,7 @@ import EmailSelector, {
   EmailSelectorRef,
 } from "../ui/multi-selector";
 import CollaboratorUserItem from "./collaborator-user-item";
-import { Collaborator } from "@prisma/client";
-
-type User = {
-  id: string;
-  name: string | null;
-  email: string | null;
-  image: string | null;
-};
-
-type CollaboratorType = Collaborator & {
-  user: User;
-};
+import { CollaboratorWithMeta } from "@/types/shared";
 
 export const CollaboratorsSetting = ({
   documentId,
@@ -24,7 +13,23 @@ export const CollaboratorsSetting = ({
   documentId: string;
 }) => {
   const emailSelectorRef = useRef<EmailSelectorRef>(null);
-  const [collaborators, setCollaborators] = useState<CollaboratorType[]>([]);
+  const [collaborators, setCollaborators] = useState<{
+    collaborators: CollaboratorWithMeta[];
+    owner: {
+      id: string;
+      name: string | null;
+      email: string | null;
+      image: string | null;
+    };
+  }>({
+    collaborators: [], // Initial empty array
+    owner: {
+      id: "", // Can be empty or null depending on your logic
+      name: null,
+      email: null,
+      image: null,
+    },
+  });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const user = useCurrentUser();
 
@@ -51,8 +56,11 @@ export const CollaboratorsSetting = ({
           throw new Error(error || "Failed to add collaborator");
         }
 
-        const data = await response.json();
-        setCollaborators([...collaborators, data]);
+        const data: CollaboratorWithMeta = await response.json();
+        setCollaborators((prevState) => ({
+          ...prevState,
+          collaborators: [...prevState.collaborators, data],
+        }));
       } catch (error: any) {
         setIsLoading(false);
         console.error(error);
@@ -106,18 +114,26 @@ export const CollaboratorsSetting = ({
 
       <div className="space-y-2">
         <CollaboratorUserItem
-          name={user?.name as string}
-          email={user?.email as string}
-          label="You"
+          name={collaborators.owner.name as string}
+          email={collaborators.owner.email as string}
+          label={
+            user?.id === collaborators.owner.id ? "(Owner) (You)" : "(Owner)"
+          }
           role="OWNER"
         />
 
-        {collaborators?.map((collaborator) => (
+        {collaborators?.collaborators.map((collaborator) => (
           <div key={collaborator.id}>
             <CollaboratorUserItem
               name={collaborator.user.name as string}
               email={collaborator.user.email as string}
-              label={collaborator.isVerified ? "" : "Invited"}
+              label={
+                collaborator.isVerified
+                  ? user?.id === collaborator.user.id
+                    ? "(Verified) (You)"
+                    : "(Verified)"
+                  : "(Invited)"
+              }
               role={collaborator.role}
             />
           </div>

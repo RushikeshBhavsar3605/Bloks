@@ -1,8 +1,8 @@
 import { currentUser } from "@/lib/auth-server";
 import {
   createDocument,
-  fetchAllDocuments,
-  getDocuments,
+  fetchDocuments,
+  getRootDocuments,
 } from "@/services/document-service";
 import { NextApiResponseServerIo } from "@/types";
 import { NextApiRequest } from "next";
@@ -24,9 +24,9 @@ export default async function handler(
       (req.query.parentDocumentId as string) || undefined;
 
     if (!parentDocumentId) {
-      response = await getDocuments(user.id);
+      response = await getRootDocuments(user.id);
     } else {
-      response = await fetchAllDocuments({
+      response = await fetchDocuments({
         userId: user.id,
         documentId: parentDocumentId,
       });
