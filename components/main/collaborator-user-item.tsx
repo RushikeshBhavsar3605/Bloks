@@ -8,14 +8,12 @@ interface CollaboratorUserItemProps {
   email: string;
   label?: string;
   imageSrc?: string;
-  role: CollaboratorRole | "OWNER";
 }
 const CollaboratorUserItem = ({
   name,
   email,
   label,
   imageSrc,
-  role,
 }: CollaboratorUserItemProps) => {
   return (
     <div className="flex items-center justify-between py-2">
@@ -38,13 +36,6 @@ const CollaboratorUserItem = ({
             {email}
           </span>
         </div>
-      </div>
-      <div className="flex items-center">
-        <span className="text-gray-600 dark:text-gray-400 mr-1 text-sm">
-          {role === "OWNER" && <>Full access</>}
-          {role === "VIEWER" && <>Viewer</>}
-          {role === "EDITOR" && <>Editor</>}
-        </span>
       </div>
     </div>
   );

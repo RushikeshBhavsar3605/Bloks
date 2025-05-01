@@ -6,6 +6,15 @@ import EmailSelector, {
 } from "../ui/multi-selector";
 import CollaboratorUserItem from "./collaborator-user-item";
 import { CollaboratorWithMeta } from "@/types/shared";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { CollaboratorRole } from "@prisma/client";
+import { toast } from "sonner";
 
 export const CollaboratorsSetting = ({
   documentId,
@@ -70,6 +79,47 @@ export const CollaboratorsSetting = ({
     });
   };
 
+  // Function to handle role change
+  const handleRoleChange = async (
+    collaboratorId: string,
+    newRole: CollaboratorRole
+  ) => {
+    try {
+      const promise = fetch(
+        `/api/socket/documents/${documentId}/collaborators/${collaboratorId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            role: newRole,
+          }),
+        }
+      ).then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to update collaborator role");
+        }
+
+        // Update the local state after successful API call
+        setCollaborators((prevState) => ({
+          ...prevState,
+          collaborators: prevState.collaborators.map((collab) =>
+            collab.id === collaboratorId ? { ...collab, role: newRole } : collab
+          ),
+        }));
+      });
+
+      toast.promise(promise, {
+        loading: "Updating role...",
+        success: "Role updated!",
+        error: "Failed to update role.",
+      });
+    } catch (error) {
+      console.error("Error updating role:", error);
+    }
+  };
+
   useEffect(() => {
     const fetchCollaborators = async () => {
       try {
@@ -95,6 +145,9 @@ export const CollaboratorsSetting = ({
     fetchCollaborators();
   }, [documentId]);
 
+  // Check if current user is the owner
+  const isOwner = user?.id === collaborators.owner.id;
+
   return (
     <div className="">
       <div className="flex items-center space-x-2 mb-4">
@@ -113,17 +166,24 @@ export const CollaboratorsSetting = ({
       </div>
 
       <div className="space-y-2">
-        <CollaboratorUserItem
-          name={collaborators.owner.name as string}
-          email={collaborators.owner.email as string}
-          label={
-            user?.id === collaborators.owner.id ? "(Owner) (You)" : "(Owner)"
-          }
-          role="OWNER"
-        />
+        <div className="flex items-center justify-between">
+          <CollaboratorUserItem
+            name={collaborators.owner.name as string}
+            email={collaborators.owner.email as string}
+            label={
+              user?.id === collaborators.owner.id ? "(Owner) (You)" : "(Owner)"
+            }
+          />
+          <span className="text-gray-700 dark:text-gray-400 mr-4 text-sm">
+            Full Access
+          </span>
+        </div>
 
         {collaborators?.collaborators.map((collaborator) => (
-          <div key={collaborator.id}>
+          <div
+            key={collaborator.id}
+            className="flex items-center justify-between"
+          >
             <CollaboratorUserItem
               name={collaborator.user.name as string}
               email={collaborator.user.email as string}
@@ -134,8 +194,37 @@ export const CollaboratorsSetting = ({
                     : "(Verified)"
                   : "(Invited)"
               }
-              role={collaborator.role}
             />
+
+            {isOwner ? (
+              <div onPointerDown={(e) => e.stopPropagation()}>
+                <Select
+                  value={collaborator.role}
+                  onValueChange={(value) =>
+                    handleRoleChange(collaborator.id, value as CollaboratorRole)
+                  }
+                  disabled={!isOwner}
+                >
+                  <SelectTrigger className="w-24 text-sm dark:border-gray-600 focus:ring-0 focus:ring-offset-0 focus:border-gray-600 text-gray-700 dark:text-gray-400">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
+                    <SelectItem value={CollaboratorRole.VIEWER}>
+                      Viewer
+                    </SelectItem>
+                    <SelectItem value={CollaboratorRole.EDITOR}>
+                      Editor
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-700 dark:text-gray-400 mr-4">
+                {collaborator.role === CollaboratorRole.EDITOR
+                  ? "Editor"
+                  : "Viewer"}
+              </div>
+            )}
           </div>
         ))}
       </div>

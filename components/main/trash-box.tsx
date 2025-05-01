@@ -1,6 +1,6 @@
 "use client";
 
-import { Document } from "@prisma/client";
+import { CollaboratorRole, Document } from "@prisma/client";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -10,6 +10,8 @@ import { Input } from "../ui/input";
 import { ConfirmModal } from "../modals/confirm-modal";
 import { useSocket } from "../providers/socket-provider";
 import { DocumentWithMeta } from "@/types/shared";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { Separator } from "../ui/separator";
 
 type ModifiedDocument = {
   ownedArchived: DocumentWithMeta[];
@@ -20,6 +22,7 @@ export const TrashBox = () => {
   const { socket } = useSocket();
   const router = useRouter();
   const params = useParams();
+  const user = useCurrentUser();
 
   const [search, setSearch] = useState<string>("");
   const [documents, setDocuments] = useState<ModifiedDocument>();
@@ -121,6 +124,7 @@ export const TrashBox = () => {
 
   return (
     <div className="text-sm">
+      {/* Search Header */}
       <div className="flex items-center gap-x-1 p-2">
         <Search className="h-4 w-4" />
         <Input
@@ -132,73 +136,93 @@ export const TrashBox = () => {
       </div>
 
       <div className="mt-2 px-1 pb-1">
+        {/* Empty state message */}
         <p className="hidden last:block text-xs text-center text-muted-foreground pb-2">
           No documents found.
         </p>
 
-        {filteredOwnedDocuments &&
-          filteredOwnedDocuments?.length > 0 &&
-          filteredOwnedDocuments?.map((document) => (
-            <div
-              key={document.id}
-              role="button"
-              onClick={() => onClick(document.id)}
-              className="text-sm rounded-sm w-full hover:bg-primary/5 flex items-center text-primary justify-between"
-            >
-              <span className="truncate pl-2">{document.title}</span>
+        {/* Private Documents Section */}
+        {filteredOwnedDocuments && filteredOwnedDocuments?.length > 0 && (
+          <div className="mb-4">
+            <div className="text-gray-700 dark:text-gray-400 text-sm font-medium px-2 py-2">
+              Private Documents
+            </div>
+            <Separator className="mx-2 w-auto h-[1.5px]" />
+            {filteredOwnedDocuments?.map((document) => (
+              <div
+                key={document.id}
+                role="button"
+                onClick={() => onClick(document.id)}
+                className="text-sm rounded-sm w-full hover:bg-primary/5 flex items-center text-primary justify-between"
+              >
+                <span className="truncate pl-2">{document.title}</span>
 
-              <div className="flex items-center">
-                <div
-                  onClick={(e) => onRestore(e, document.id)}
-                  role="button"
-                  className="rounded-sm p-2 hover:bg-neutral-200 dark:hover:bg-neutral-600"
-                >
-                  <Undo className="h-4 w-4 text-muted-foreground" />
-                </div>
-
-                <ConfirmModal onConfirm={() => onRemove(document.id)}>
+                <div className="flex items-center">
                   <div
+                    onClick={(e) => onRestore(e, document.id)}
                     role="button"
                     className="rounded-sm p-2 hover:bg-neutral-200 dark:hover:bg-neutral-600"
                   >
-                    <Trash className="h-4 w-4 text-muted-foreground" />
+                    <Undo className="h-4 w-4 text-muted-foreground" />
                   </div>
-                </ConfirmModal>
-              </div>
-            </div>
-          ))}
 
-        {filteredSharedDocuments &&
-          filteredSharedDocuments.length > 0 &&
-          filteredSharedDocuments?.map((document) => (
-            <div
-              key={document.id}
-              role="button"
-              onClick={() => onClick(document.id)}
-              className="text-sm rounded-sm w-full hover:bg-primary/5 flex items-center text-primary justify-between"
-            >
-              <span className="truncate pl-2">{document.title}</span>
-
-              <div className="flex items-center">
-                <div
-                  onClick={(e) => onRestore(e, document.id)}
-                  role="button"
-                  className="rounded-sm p-2 hover:bg-neutral-200 dark:hover:bg-neutral-600"
-                >
-                  <Undo className="h-4 w-4 text-muted-foreground" />
+                  <ConfirmModal onConfirm={() => onRemove(document.id)}>
+                    <div
+                      role="button"
+                      className="rounded-sm p-2 hover:bg-neutral-200 dark:hover:bg-neutral-600"
+                    >
+                      <Trash className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </ConfirmModal>
                 </div>
-
-                <ConfirmModal onConfirm={() => onRemove(document.id)}>
-                  <div
-                    role="button"
-                    className="rounded-sm p-2 hover:bg-neutral-200 dark:hover:bg-neutral-600"
-                  >
-                    <Trash className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </ConfirmModal>
               </div>
+            ))}
+          </div>
+        )}
+
+        {/* Shared Documents Section */}
+        {filteredSharedDocuments && filteredSharedDocuments.length > 0 && (
+          <div>
+            <div className="text-gray-700 dark:text-gray-400 text-sm font-medium px-2 py-2">
+              Shared
             </div>
-          ))}
+            <Separator className="mx-2 w-auto h-[1.5px]" />
+            {filteredSharedDocuments?.map((document) => (
+              <div
+                key={document.id}
+                role="button"
+                onClick={() => onClick(document.id)}
+                className="text-sm rounded-sm w-full hover:bg-primary/5 flex items-center text-primary justify-between"
+              >
+                <span className="truncate pl-2">{document.title}</span>
+
+                <div className="flex items-center">
+                  {(document.userId === user?.id ||
+                    document.role === CollaboratorRole.EDITOR) && (
+                    <div
+                      onClick={(e) => onRestore(e, document.id)}
+                      role="button"
+                      className="rounded-sm p-2 hover:bg-neutral-200 dark:hover:bg-neutral-600"
+                    >
+                      <Undo className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  )}
+
+                  {document.userId === user?.id && (
+                    <ConfirmModal onConfirm={() => onRemove(document.id)}>
+                      <div
+                        role="button"
+                        className="rounded-sm p-2 hover:bg-neutral-200 dark:hover:bg-neutral-600"
+                      >
+                        <Trash className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </ConfirmModal>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
