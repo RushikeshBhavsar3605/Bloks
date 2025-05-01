@@ -231,6 +231,8 @@ export const updateCollaboratorRole = async ({
       },
     });
 
+    const collaboratorUser = updatedCollaborator.userId;
+
     // Recursively update role on all child documents
     const updateChildrenRecursively = async (parentId: string) => {
       const children = await db.document.findMany({
@@ -243,7 +245,7 @@ export const updateCollaboratorRole = async ({
         const existingCollab = await db.collaborator.findUnique({
           where: {
             userId_documentId: {
-              userId: collaboratorId,
+              userId: collaboratorUser,
               documentId: child.id,
             },
           },
@@ -254,7 +256,7 @@ export const updateCollaboratorRole = async ({
           await db.collaborator.update({
             where: {
               userId_documentId: {
-                userId: collaboratorId,
+                userId: collaboratorUser,
                 documentId: child.id,
               },
             },
