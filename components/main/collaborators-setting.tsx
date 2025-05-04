@@ -15,6 +15,11 @@ import {
 } from "../ui/select";
 import { CollaboratorRole } from "@prisma/client";
 import { toast } from "sonner";
+import { Button } from "../ui/button";
+import { Trash2 } from "lucide-react";
+import { Separator } from "../ui/separator";
+import { cn } from "@/lib/utils";
+import { ConfirmModal } from "../modals/confirm-modal";
 
 export const CollaboratorsSetting = ({
   documentId,
@@ -41,6 +46,35 @@ export const CollaboratorsSetting = ({
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const user = useCurrentUser();
+
+  const handleRemoveCollaborator = async (collaboratorId: string) => {
+    try {
+      const promise = fetch(
+        `/api/socket/documents/${documentId}/collaborators/${collaboratorId}`,
+        {
+          method: "DELETE",
+        }
+      ).then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Failed to remove collaborator");
+        }
+        setCollaborators((prev) => ({
+          ...prev,
+          collaborators: prev.collaborators.filter(
+            (c) => c.id !== collaboratorId
+          ),
+        }));
+      });
+
+      toast.promise(promise, {
+        loading: "Removing collaborator...",
+        success: "Collaborator removed!",
+        error: "Failed to remove collaborator.",
+      });
+    } catch (error) {
+      console.error("Error removing collaborator:", error);
+    }
+  };
 
   const handleInvite = (emails: EmailOption[]) => {
     console.log(
@@ -174,10 +208,17 @@ export const CollaboratorsSetting = ({
               user?.id === collaborators.owner.id ? "(Owner) (You)" : "(Owner)"
             }
           />
-          <span className="text-gray-700 dark:text-gray-400 mr-4 text-sm">
+          <span
+            className={cn(
+              "text-gray-700 dark:text-gray-400 text-sm bg-primary/5 px-2 rounded-lg",
+              isOwner ? "w-[8.5rem] py-[6px]" : "w-24 py-1"
+            )}
+          >
             Full Access
           </span>
         </div>
+
+        {collaborators.collaborators.length > 0 && <Separator />}
 
         {collaborators?.collaborators.map((collaborator) => (
           <div
@@ -198,28 +239,65 @@ export const CollaboratorsSetting = ({
 
             {isOwner ? (
               <div onPointerDown={(e) => e.stopPropagation()}>
-                <Select
-                  value={collaborator.role}
-                  onValueChange={(value) =>
-                    handleRoleChange(collaborator.id, value as CollaboratorRole)
-                  }
-                  disabled={!isOwner}
-                >
-                  <SelectTrigger className="w-24 text-sm dark:border-gray-600 focus:ring-0 focus:ring-offset-0 focus:border-gray-600 text-gray-700 dark:text-gray-400">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
-                    <SelectItem value={CollaboratorRole.VIEWER}>
-                      Viewer
-                    </SelectItem>
-                    <SelectItem value={CollaboratorRole.EDITOR}>
-                      Editor
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={collaborator.role}
+                    onValueChange={(value) =>
+                      handleRoleChange(
+                        collaborator.id,
+                        value as CollaboratorRole
+                      )
+                    }
+                    disabled={!isOwner}
+                  >
+                    <SelectTrigger className="w-24 h-8 text-sm text-gray-700 focus:ring-0 focus:ring-offset-0 focus:border-gray-600 dark:border-gray-600 dark:text-gray-400">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
+                      <SelectItem value={CollaboratorRole.VIEWER}>
+                        Viewer
+                      </SelectItem>
+                      <SelectItem value={CollaboratorRole.EDITOR}>
+                        Editor
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <ConfirmModal
+                    onConfirm={() => handleRemoveCollaborator(collaborator.id)}
+                    title="Remove Collaborator Access?"
+                    description={
+                      <>
+                        This action will immediately revoke access for:
+                        <br />
+                        <span className="text-orange-500 dark:text-orange-400 font-medium">
+                          {collaborator.user.name || "User"} (
+                          {collaborator.user.email})
+                        </span>
+                        <ul className="list-disc pl-6 mt-1">
+                          <li>All document permissions will be removed</li>
+                          <li className="text-orange-500 dark:text-orange-400">
+                            Immediate loss of editing/viewing capabilities
+                          </li>
+                          <li>
+                            Collaborator will disappear from all shared
+                            instances
+                          </li>
+                          <li>Can be re-added later if needed</li>
+                        </ul>
+                      </>
+                    }
+                  >
+                    <div
+                      role="button"
+                      className="text-red-500 hover:bg-neutral-200 dark:hover:bg-neutral-600 p-2 rounded-sm"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </div>
+                  </ConfirmModal>
+                </div>
               </div>
             ) : (
-              <div className="text-sm text-gray-700 dark:text-gray-400 mr-4">
+              <div className="text-sm text-gray-700 dark:text-gray-400 w-24 bg-primary/5 px-2 py-1 rounded-lg">
                 {collaborator.role === CollaboratorRole.EDITOR
                   ? "Editor"
                   : "Viewer"}

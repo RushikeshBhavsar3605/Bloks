@@ -460,7 +460,7 @@ export const removeCollaborator = async ({
         const existingCollab = await db.collaborator.findUnique({
           where: {
             userId_documentId: {
-              userId: collaboratorId,
+              userId: collaborator.userId,
               documentId: child.id,
             },
           },
@@ -471,7 +471,7 @@ export const removeCollaborator = async ({
           await db.collaborator.delete({
             where: {
               userId_documentId: {
-                userId: collaboratorId,
+                userId: collaborator.userId,
                 documentId: child.id,
               },
             },

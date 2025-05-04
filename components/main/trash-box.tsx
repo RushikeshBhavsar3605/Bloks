@@ -166,7 +166,32 @@ export const TrashBox = () => {
                     <Undo className="h-4 w-4 text-muted-foreground" />
                   </div>
 
-                  <ConfirmModal onConfirm={() => onRemove(document.id)}>
+                  <ConfirmModal
+                    onConfirm={() => onRemove(document.id)}
+                    title="Permanently Delete Document?"
+                    description={
+                      <>
+                        This action is irreversible.
+                        <br />
+                        The document{" "}
+                        <span className="text-red-500 dark:text-red-400 font-medium">
+                          {document.title} (ID: {document.id})
+                        </span>{" "}
+                        will be:
+                        <ul className="list-disc pl-6 mt-1">
+                          <li>
+                            Immediately removed from all collaborators' access
+                          </li>
+                          <li className="text-red-500 dark:text-red-400">
+                            Permanently deleted from our servers
+                          </li>
+                          <li>
+                            Cannot be recovered through support or backups
+                          </li>
+                        </ul>
+                      </>
+                    }
+                  >
                     <div
                       role="button"
                       className="rounded-sm p-2 hover:bg-neutral-200 dark:hover:bg-neutral-600"
@@ -209,7 +234,32 @@ export const TrashBox = () => {
                   )}
 
                   {document.userId === user?.id && (
-                    <ConfirmModal onConfirm={() => onRemove(document.id)}>
+                    <ConfirmModal
+                      onConfirm={() => onRemove(document.id)}
+                      title="Permanently Delete Document?"
+                      description={
+                        <>
+                          This action is irreversible.
+                          <br />
+                          The document{" "}
+                          <span className="text-red-500 dark:text-red-400 font-medium">
+                            {document.title} (ID: {document.id})
+                          </span>{" "}
+                          will be:
+                          <ul className="list-disc pl-6 mt-1">
+                            <li>
+                              Immediately removed from all collaborators' access
+                            </li>
+                            <li className="text-red-500 dark:text-red-400">
+                              Permanently deleted from our servers
+                            </li>
+                            <li>
+                              Cannot be recovered through support or backups
+                            </li>
+                          </ul>
+                        </>
+                      }
+                    >
                       <div
                         role="button"
                         className="rounded-sm p-2 hover:bg-neutral-200 dark:hover:bg-neutral-600"
