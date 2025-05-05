@@ -88,11 +88,22 @@ export const addCollaborator = async ({
           documentId,
         },
       },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+      },
     });
 
     if (existingCollaborator) {
       return {
-        success: false,
+        success: true,
+        data: existingCollaborator,
         error: "User is already a collaborator on this document",
         status: 400,
       };

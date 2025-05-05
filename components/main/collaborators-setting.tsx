@@ -76,13 +76,25 @@ export const CollaboratorsSetting = ({
     }
   };
 
-  const handleInvite = (emails: EmailOption[]) => {
-    console.log(
-      "Inviting emails:",
-      emails.map((email) => email.value)
+  const handleInvite = async (emails: EmailOption[]) => {
+    const loadingToastId = toast.loading(
+      emails.length > 1
+        ? `Inviting ${emails.length} collaborators...`
+        : `Inviting ${emails[0]?.value || "collaborator"}`
     );
-    emails.map(async (email) => {
+
+    let successCount = 0;
+    const failedInvites: { email: string; error: string }[] = [];
+
+    for (let index = 0; index < emails.length; index++) {
+      const email = emails[index];
+
       try {
+        toast.loading(
+          `Processing ${index + 1}/${emails.length}: ${email.value}`,
+          { id: loadingToastId }
+        );
+
         const response = await fetch("/api/socket/collaborators/invite", {
           method: "POST",
           headers: {
@@ -94,23 +106,53 @@ export const CollaboratorsSetting = ({
           }),
         });
 
+        const data: CollaboratorWithMeta = await response.json();
         if (!response.ok) {
-          const error = await response.text();
-          throw new Error(error || "Failed to add collaborator");
+          throw new Error("Invite failed");
         }
 
-        const data: CollaboratorWithMeta = await response.json();
         setCollaborators((prevState) => ({
           ...prevState,
-          collaborators: [...prevState.collaborators, data],
+          collaborators: [
+            ...prevState.collaborators.filter((c) => c.id !== data.id),
+            data,
+          ],
         }));
+
+        successCount++;
       } catch (error: any) {
-        setIsLoading(false);
+        failedInvites.push({
+          email: email.value,
+          error: error.message || "Failed to send invitation",
+        });
         console.error(error);
-      } finally {
-        setIsLoading(false);
       }
-    });
+    }
+
+    // Dismiss loading toast
+    toast.dismiss(loadingToastId);
+
+    // Show summary toast
+    if (successCount > 0 || failedInvites.length > 0) {
+      if (failedInvites.length === 0) {
+        toast.success(
+          emails.length > 1
+            ? `${successCount} collaborators invited successfully!`
+            : `${emails[0]?.value} invited successfully`
+        );
+      } else {
+        toast[successCount > 0 ? "warning" : "error"](
+          `${successCount} succeeded, ${failedInvites.length} failed`,
+          {
+            description:
+              failedInvites.length > 0
+                ? `Failed: ${failedInvites.map((f) => f.email).join(", ")}`
+                : undefined,
+            duration: 5000,
+          }
+        );
+      }
+    }
   };
 
   // Function to handle role change

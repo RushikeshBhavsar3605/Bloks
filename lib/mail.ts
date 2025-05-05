@@ -75,7 +75,7 @@ export const sendCollaboratorVerificationEmail = async (
   email: string,
   token: string
 ) => {
-  const confirmLink = `${domain}/collaborate/verify?token=${token}`;
+  const confirmLink = `${domain}/verify/new-collaborator?token=${token}`;
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
