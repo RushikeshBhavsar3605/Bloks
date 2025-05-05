@@ -1,8 +1,8 @@
 "use client";
 
 import { MenuIcon } from "lucide-react";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { Title } from "./title";
 import { SocketIndicator } from "../socket-indicator";
 import { useSocket } from "../providers/socket-provider";
@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { CollaboratorsSetting } from "./collaborators-setting";
 import { DocumentWithMeta } from "@/types/shared";
+import { toast } from "sonner";
 
 interface NavbarProps {
   isCollapsed: boolean;
@@ -18,21 +19,38 @@ interface NavbarProps {
 }
 
 export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
+  const router = useRouter();
   const { socket } = useSocket();
   const params = useParams();
   const [document, setDocument] = useState<DocumentWithMeta>();
 
-  const fetchDocuments = async () => {
-    const response = await fetch(
-      `/api/socket/documents/${params?.documentId as string}`
-    );
-    const data = await response.json();
-    setDocument(data);
-  };
+  const fetchDocuments = useCallback(async () => {
+    try {
+      if (!params?.documentId) {
+        return router.push("/documents");
+      }
 
-  if (document?.id != params?.documentId) {
+      const response = await fetch(
+        `/api/socket/documents/${params?.documentId}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = (await response.json()) as DocumentWithMeta;
+
+      setDocument(data);
+    } catch (error) {
+      console.error("Failed to fetch document:", error);
+      toast.error("Failed to load document");
+      router.push("/documents");
+    }
+  }, [params?.documentId, router]);
+
+  useEffect(() => {
     fetchDocuments();
-  }
+  }, [params?.documentId]);
 
   useEffect(() => {
     if (!socket) return;
@@ -48,10 +66,6 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
       socket.off(`document:update:${document.id}`, handleUpdate);
     };
   }, [socket, document?.id]);
-
-  useEffect(() => {
-    fetchDocuments();
-  }, []);
 
   if (document === undefined) {
     return <p>Loading...</p>;
