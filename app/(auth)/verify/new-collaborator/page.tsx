@@ -56,7 +56,7 @@ export default function VerifyCollaboratorPage() {
     };
 
     verifyToken();
-  }, [params, router]);
+  }, [params, router, success, error]);
 
   return (
     <CardWrapper

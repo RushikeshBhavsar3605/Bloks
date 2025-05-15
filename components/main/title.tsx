@@ -1,7 +1,7 @@
 "use client";
 
-import { CollaboratorRole, Document } from "@prisma/client";
-import { useCallback, useRef, useState } from "react";
+import { CollaboratorRole } from "@prisma/client";
+import { useMemo, useRef, useState } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import debounce from "lodash.debounce";
@@ -39,24 +39,27 @@ export const Title = ({ initialData }: TitleProps) => {
     initialData.title = title;
   };
 
-  const saveToDB = useCallback(
-    debounce(async (title: string) => {
-      await fetch(`/api/socket/documents/${initialData.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: title || "Untitled",
-        }),
-      });
+  const saveToDB = useMemo(
+    () =>
+      debounce(async (title: string) => {
+        await fetch(`/api/socket/documents/${initialData.id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title: title || "Untitled",
+          }),
+        });
 
-      setSaved();
-    }, 2000),
-    [initialData.id]
+        setSaved();
+      }, 2000),
+    [initialData.id, setSaved]
   );
 
   const onChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!socket) return;
+
     setSaving();
     setTitle(event.target.value);
 

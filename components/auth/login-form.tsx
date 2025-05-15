@@ -25,7 +25,7 @@ export const LoginForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlError =
-    searchParams.get("error") === "OAuthAccountNotLinked" ? true : false;
+    searchParams?.get("error") === "OAuthAccountNotLinked" ? true : false;
 
   if (urlError) {
     router.push("/auth/error?error=OAuthAccountNotLinked");

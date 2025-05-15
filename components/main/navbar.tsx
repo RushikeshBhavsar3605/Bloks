@@ -50,7 +50,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
 
   useEffect(() => {
     fetchDocuments();
-  }, [params?.documentId]);
+  }, [fetchDocuments]);
 
   useEffect(() => {
     if (!socket) return;

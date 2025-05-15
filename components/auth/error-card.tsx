@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 export const ErrorCard = () => {
   const searchParams = useSearchParams();
   const urlError =
-    searchParams.get("error") === "OAuthAccountNotLinked"
+    searchParams?.get("error") === "OAuthAccountNotLinked"
       ? "Email already in use with different provider!"
       : "Oops! Something went wrong!";
 

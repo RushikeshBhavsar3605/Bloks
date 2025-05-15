@@ -11,7 +11,7 @@ import {
   Trash,
 } from "lucide-react";
 import { useParams, usePathname } from "next/navigation";
-import { ElementRef, useEffect, useRef, useState } from "react";
+import { ElementRef, useCallback, useEffect, useRef, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 import UserItem from "./user-item";
 import { Item } from "./item";
@@ -63,20 +63,6 @@ export const Navigation = () => {
     });
   };
 
-  useEffect(() => {
-    if (isMobile) {
-      collapse();
-    } else {
-      resetWidth();
-    }
-  }, [isMobile]);
-
-  useEffect(() => {
-    if (isMobile) {
-      collapse();
-    }
-  }, [pathname, isMobile]);
-
   const handleMouseMove = (event: MouseEvent) => {
     if (!isResizingRef.current) return;
 
@@ -112,7 +98,7 @@ export const Navigation = () => {
     document.addEventListener("mouseup", handleMouseUp);
   };
 
-  const resetWidth = () => {
+  const resetWidth = useCallback(() => {
     if (sidebarRef.current && navbarRef.current) {
       setIsCollapsed(false);
       setIsResetting(true);
@@ -125,7 +111,7 @@ export const Navigation = () => {
       navbarRef.current.style.setProperty("left", isMobile ? "100%" : "240px");
       setTimeout(() => setIsResetting(false), 300);
     }
-  };
+  }, [isMobile]);
 
   const collapse = () => {
     if (sidebarRef.current && navbarRef.current) {
@@ -138,6 +124,20 @@ export const Navigation = () => {
       setTimeout(() => setIsResetting(false), 300);
     }
   };
+
+  useEffect(() => {
+    if (isMobile) {
+      collapse();
+    } else {
+      resetWidth();
+    }
+  }, [isMobile, resetWidth]);
+
+  useEffect(() => {
+    if (isMobile) {
+      collapse();
+    }
+  }, [pathname, isMobile]);
 
   return (
     <>
@@ -175,7 +175,7 @@ export const Navigation = () => {
               <Item label="Trash" icon={Trash} />
             </PopoverTrigger>
             <PopoverContent
-              className="p-0 w-72"
+              className="p-0 w-[300px] max-h-[80vh] overflow-hidden rounded-xl bg-white dark:bg-neutral-900 shadow-xl flex flex-col"
               side={isMobile ? "bottom" : "right"}
             >
               <TrashBox />
