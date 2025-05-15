@@ -123,7 +123,7 @@ export const TrashBox = () => {
   }
 
   return (
-    <div className="text-sm">
+    <div className="text-sm max-h-[80vh] flex flex-col">
       {/* Search Header */}
       <div className="flex items-center gap-x-1 p-2">
         <Search className="h-4 w-4" />
@@ -135,7 +135,8 @@ export const TrashBox = () => {
         />
       </div>
 
-      <div className="mt-2 px-1 pb-1">
+      {/*Scrollable Content*/}
+      <div className="overflow-y-auto mt-2 px-1 pb-1">
         {/* Empty state message */}
         <p className="hidden last:block text-xs text-center text-muted-foreground pb-2">
           No documents found.
@@ -180,7 +181,8 @@ export const TrashBox = () => {
                         will be:
                         <ul className="list-disc pl-6 mt-1">
                           <li>
-                            Immediately removed from all collaborators' access
+                            Immediately removed from all collaborators&apos;s
+                            access
                           </li>
                           <li className="text-red-500 dark:text-red-400">
                             Permanently deleted from our servers
@@ -248,7 +250,8 @@ export const TrashBox = () => {
                           will be:
                           <ul className="list-disc pl-6 mt-1">
                             <li>
-                              Immediately removed from all collaborators' access
+                              Immediately removed from all collaborators&apos;s
+                              access
                             </li>
                             <li className="text-red-500 dark:text-red-400">
                               Permanently deleted from our servers
