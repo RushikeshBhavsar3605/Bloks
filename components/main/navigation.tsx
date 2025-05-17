@@ -22,7 +22,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import { TrashBox } from "./trash-box";
+import { TrashBox } from "./trash-box/trash-box";
 import { useSearch } from "@/hooks/use-search";
 import { useSettings } from "@/hooks/use-settings";
 import { Navbar } from "./navbar";

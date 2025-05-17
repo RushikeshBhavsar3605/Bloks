@@ -49,11 +49,26 @@ export default async function handler(
       parentDocumentId,
     });
 
-    if (!response.success) {
+    if (!response.success || !response.data) {
       return res.status(response.status || 400).json({ error: response.error });
     }
 
-    res?.socket?.server?.io?.emit("document:created", response.data);
+    const documentId = response.data.id;
+    const room = `room:document:${documentId}`;
+
+    // Join creator to the document's room
+    res?.socket?.server?.io?.in(user.id).socketsJoin(room);
+
+    if (parentDocumentId) {
+      const parentRoom = `room:document:${parentDocumentId}`;
+      const createEvent = `document:created:${parentDocumentId}`;
+
+      res?.socket?.server?.io?.to(parentRoom).emit(createEvent, response.data);
+    } else {
+      res?.socket?.server?.io
+        ?.to(`user:${user.id}`)
+        .emit("document:created:root", response.data);
+    }
 
     return res.status(response.status || 200).json(response.data);
   }

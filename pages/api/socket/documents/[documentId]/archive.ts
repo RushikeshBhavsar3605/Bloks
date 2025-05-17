@@ -23,9 +23,22 @@ export default async function handler(
       return res.status(response.status || 400).json({ error: response.error });
     }
 
-    res?.socket?.server?.io?.emit("document:archived", response.data);
+    const parentDocumentId = response.data?.parentDocumentId;
 
-    return res.status(response.status || 200).json(response.data);
+    if (parentDocumentId) {
+      const parentRoom = `room:document:${parentDocumentId}`;
+      const archiveEvent = `document:archived:${parentDocumentId}`;
+
+      res?.socket?.server?.io
+        ?.to(parentRoom)
+        .emit(archiveEvent, response.data?.id);
+    } else {
+      res?.socket?.server?.io
+        ?.to(`user:${user.id}`)
+        .emit("document:archived:root", response.data?.id);
+    }
+
+    return res.status(response.status || 200).json(response.data?.id);
   }
 
   // Method not allowed

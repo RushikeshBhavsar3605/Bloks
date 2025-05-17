@@ -21,6 +21,8 @@ import {
 } from "../ui/dropdown-menu";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { CollaboratorRole, Document } from "@prisma/client";
+import { useEffect } from "react";
+import { useSocket } from "../providers/socket-provider";
 
 interface ItemProps {
   id?: string;
@@ -51,6 +53,21 @@ export const Item = ({
 }: ItemProps) => {
   const user = useCurrentUser();
   const router = useRouter();
+  const { socket, joinDocument, leaveDocument } = useSocket();
+
+  // Join room for these document
+  useEffect(() => {
+    if (!socket || !id || !user?.id) return;
+
+    const documentId = id;
+    const userId = user.id;
+
+    joinDocument(documentId, userId);
+
+    return () => {
+      leaveDocument(documentId, userId);
+    };
+  }, [socket, id, user?.id, joinDocument, leaveDocument]);
 
   const onArchive = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     event.stopPropagation();

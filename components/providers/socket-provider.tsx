@@ -1,16 +1,21 @@
 "use client";
 
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { createContext, useContext, useEffect, useState } from "react";
-import { io as ClientIO } from "socket.io-client";
+import { io as ClientIO, Socket } from "socket.io-client";
 
 type SocketContextType = {
-  socket: any | null;
+  socket: Socket | null;
   isConnected: boolean;
+  joinDocument: (documentId: string, userId: string) => void;
+  leaveDocument: (documentId: string, userId: string) => void;
 };
 
 const SocketContext = createContext<SocketContextType>({
   socket: null,
   isConnected: false,
+  joinDocument: () => {},
+  leaveDocument: () => {},
 });
 
 export const useSocket = () => {
@@ -18,8 +23,9 @@ export const useSocket = () => {
 };
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
-  const [socket, setSocket] = useState(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const user = useCurrentUser();
 
   useEffect(() => {
     fetch("/api/socket/io").catch((err) => {
@@ -31,6 +37,9 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       {
         path: "/api/socket/io",
         addTrailingSlash: false,
+        query: {
+          userId: user?.id || "",
+        },
       }
     );
 
@@ -47,10 +56,26 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       socketInstance.disconnect();
     };
-  }, []);
+  }, [user?.id]);
+
+  const joinDocument = (documentId: string, userId: string) => {
+    console.log("Out: ", documentId, userId);
+    if (socket) {
+      console.log("In: ", documentId, userId);
+      socket.emit("join-document", { documentId, userId });
+    }
+  };
+
+  const leaveDocument = (documentId: string, userId: string) => {
+    if (socket) {
+      socket.emit("leave-document", { documentId, userId });
+    }
+  };
 
   return (
-    <SocketContext.Provider value={{ socket, isConnected }}>
+    <SocketContext.Provider
+      value={{ socket, isConnected, joinDocument, leaveDocument }}
+    >
       {children}
     </SocketContext.Provider>
   );

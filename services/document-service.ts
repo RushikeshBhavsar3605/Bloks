@@ -116,8 +116,29 @@ export const createDocument = async ({
   userId,
   title,
   parentDocumentId,
-}: CreateDocumentProps): Promise<ServiceResponse<Document>> => {
+}: CreateDocumentProps): Promise<ServiceResponse<DocumentWithMeta>> => {
   try {
+    // Check access rights (must be owner or EDITOR)
+    if (parentDocumentId) {
+      const access = await getDirectDocumentAccess(parentDocumentId, userId);
+
+      if (!access.success || !access.data?.hasAccess) {
+        return {
+          success: false,
+          error: "Document not found or no access",
+          status: 404,
+        };
+      }
+
+      if (!access.data.isOwner) {
+        return {
+          success: false,
+          error: "You don't have permission to restore this document",
+          status: 403,
+        };
+      }
+    }
+
     // Create the document first
     const document = await db.document.create({
       data: {
@@ -157,9 +178,31 @@ export const createDocument = async ({
       }
     }
 
+    const existingDocument = await db.document.findUnique({
+      where: {
+        id: document.id,
+      },
+      include: {
+        owner: {
+          select: {
+            name: true,
+            image: true,
+          },
+        },
+      },
+    });
+
+    if (!existingDocument) {
+      return {
+        success: false,
+        error: "Document not found!",
+        status: 404,
+      };
+    }
+
     return {
       success: true,
-      data: document,
+      data: { ...existingDocument, isOwner: true, role: "OWNER" },
       status: 200,
     };
   } catch (error) {
@@ -539,7 +582,7 @@ export const archiveDocument = async ({
   userId,
   documentId,
 }: DocumentActionProps): Promise<
-  ServiceResponse<{ id: string; isArchived: boolean }>
+  ServiceResponse<{ id: string; isArchived: boolean; parentDocumentId: string }>
 > => {
   try {
     // Check access rights (must be owner or EDITOR)
@@ -598,7 +641,11 @@ export const archiveDocument = async ({
 
     return {
       success: true,
-      data: { id: documentId, isArchived: true },
+      data: {
+        id: documentId,
+        isArchived: true,
+        parentDocumentId: document.parentDocumentId || "",
+      },
       status: 200,
     };
   } catch (error) {
@@ -617,9 +664,7 @@ export const archiveDocument = async ({
 export const restoreDocument = async ({
   userId,
   documentId,
-}: DocumentActionProps): Promise<
-  ServiceResponse<{ id: string; isArchived: boolean; parentDocumentId: string }>
-> => {
+}: DocumentActionProps): Promise<ServiceResponse<DocumentWithMeta>> => {
   try {
     // Check access rights (must be owner or EDITOR)
     const access = await getDirectDocumentAccess(documentId, userId);
@@ -640,8 +685,16 @@ export const restoreDocument = async ({
       };
     }
 
-    const document = await db.document.findUnique({
+    let document = await db.document.findUnique({
       where: { id: documentId },
+      include: {
+        owner: {
+          select: {
+            name: true,
+            image: true,
+          },
+        },
+      },
     });
 
     if (!document) {
@@ -688,18 +741,27 @@ export const restoreDocument = async ({
 
     // Update the parent reference if needed
     if (parentDocumentId !== document.parentDocumentId) {
-      await db.document.update({
+      document = await db.document.update({
         where: { id: documentId },
         data: { parentDocumentId },
+        include: {
+          owner: {
+            select: {
+              name: true,
+              image: true,
+            },
+          },
+        },
       });
     }
 
     return {
       success: true,
       data: {
-        id: documentId,
+        ...document,
         isArchived: false,
-        parentDocumentId: parentDocumentId || "",
+        isOwner: access.data.isOwner,
+        role: access.data.role,
       },
       status: 200,
     };
@@ -719,7 +781,9 @@ export const restoreDocument = async ({
 export const removeDocument = async ({
   userId,
   documentId,
-}: DocumentActionProps): Promise<ServiceResponse<Document>> => {
+}: DocumentActionProps): Promise<
+  ServiceResponse<{ id: string; parentDocumentId: string }>
+> => {
   try {
     // First verify the document belongs to this user
     const document = await db.document.findUnique({
@@ -794,7 +858,10 @@ export const removeDocument = async ({
 
     return {
       success: true,
-      data: deletedDocument,
+      data: {
+        id: deletedDocument.id,
+        parentDocumentId: deletedDocument.parentDocumentId || "",
+      },
       status: 200,
     };
   } catch (error) {

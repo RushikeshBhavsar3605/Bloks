@@ -23,7 +23,18 @@ export default async function handler(
       return res.status(response.status || 400).json({ error: response.error });
     }
 
-    res?.socket?.server?.io?.emit("document:restore", response.data);
+    const parentDocumentId = response.data?.parentDocumentId;
+
+    if (parentDocumentId) {
+      const parentRoom = `room:document:${parentDocumentId}`;
+      const restoreEvent = `document:restore:${parentDocumentId}`;
+
+      res?.socket?.server?.io?.to(parentRoom).emit(restoreEvent, response.data);
+    } else {
+      res?.socket?.server?.io
+        ?.to(`user:${user.id}`)
+        .emit("document:restore:root", response.data);
+    }
 
     return res.status(response.status || 200).json(response.data);
   }

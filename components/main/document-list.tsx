@@ -1,13 +1,14 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Item } from "./item";
 import { cn } from "@/lib/utils";
 import { Document } from "@prisma/client";
 import { FileIcon } from "lucide-react";
 import { useSocket } from "../providers/socket-provider";
 import { DocumentWithMeta } from "@/types/shared";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 type RootDocuments = {
   ownedDocuments: Document[];
@@ -26,6 +27,7 @@ export const DocumentList = ({
 }: DocumentListProps) => {
   const { socket } = useSocket();
   const params = useParams();
+  const user = useCurrentUser();
   const router = useRouter();
   const [documents, setDocuments] = useState<
     DocumentWithMeta[] | RootDocuments
@@ -39,7 +41,8 @@ export const DocumentList = ({
     }));
   };
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
+    if (!socket) return;
     try {
       let data;
       if (!parentDocumentId) {
@@ -56,34 +59,88 @@ export const DocumentList = ({
     } catch (error) {
       console.log("Failed to fetch documents", error);
     }
-  };
+  }, [socket, parentDocumentId]);
 
   useEffect(() => {
     if (!socket) return;
 
-    const handleCreated = (data: Document) => {
-      fetchDocuments();
+    const handleCreated = (data: DocumentWithMeta) => {
+      setDocuments((prevDocs) => {
+        if (prevDocs && Array.isArray(prevDocs)) {
+          return [data, ...prevDocs];
+        }
+
+        if (prevDocs && !Array.isArray(prevDocs)) {
+          return {
+            ...prevDocs,
+            ownedDocuments: [data, ...prevDocs.ownedDocuments],
+          };
+        }
+
+        return prevDocs;
+      });
     };
 
-    const handleArchived = (data: Document) => {
-      fetchDocuments();
+    const handleArchived = (id: string) => {
+      setDocuments((prevDocs) => {
+        if (prevDocs && Array.isArray(prevDocs)) {
+          return prevDocs.filter((doc) => doc.id !== id);
+        }
+
+        if (prevDocs && !Array.isArray(prevDocs)) {
+          return {
+            ...prevDocs,
+            ownedDocuments: prevDocs.ownedDocuments.filter(
+              (doc) => doc.id !== id
+            ),
+            sharedDocuments: prevDocs.sharedDocuments.filter(
+              (doc) => doc.id !== id
+            ),
+          };
+        }
+
+        return prevDocs;
+      });
     };
 
-    const handleRestore = (data: Document) => {
-      fetchDocuments();
+    const handleRestore = (data: DocumentWithMeta) => {
+      setDocuments((prevDocs) => {
+        if (prevDocs && Array.isArray(prevDocs)) {
+          return [data, ...prevDocs];
+        }
+
+        if (prevDocs && !Array.isArray(prevDocs)) {
+          if (data.isOwner) {
+            return {
+              ...prevDocs,
+              ownedDocuments: [data, ...prevDocs.ownedDocuments],
+            };
+          } else {
+            return {
+              ...prevDocs,
+              sharedDocuments: [data, ...prevDocs.sharedDocuments],
+            };
+          }
+        }
+
+        return prevDocs;
+      });
     };
 
     const handleUpdateTitle = ({
-      id,
+      documentId,
       title,
     }: {
-      id: string;
+      documentId: string;
       title: string;
     }) => {
+      console.log("ID: ", documentId);
+      console.log("Title: ", title);
+
       setDocuments((prevDocs) => {
         if (Array.isArray(prevDocs)) {
           return prevDocs.map((doc) =>
-            doc.id == id ? { ...doc, title } : doc
+            doc.id == documentId ? { ...doc, title } : doc
           );
         }
 
@@ -91,33 +148,41 @@ export const DocumentList = ({
           return {
             ...prevDocs,
             ownedDocuments: prevDocs.ownedDocuments.map((doc) =>
-              doc.id === id ? { ...doc, title } : doc
+              doc.id === documentId ? { ...doc, title } : doc
             ),
             sharedDocuments: prevDocs.sharedDocuments.map((doc) =>
-              doc.id === id ? { ...doc, title } : doc
+              doc.id === documentId ? { ...doc, title } : doc
             ),
           };
         }
+
         return prevDocs;
       });
     };
 
-    socket.on("document:created", handleCreated);
-    socket.on("document:archived", handleArchived);
-    socket.on("document:restore", handleRestore);
-    socket.on("document:receive:title", handleUpdateTitle);
+    const createEvent = `document:created:${parentDocumentId || "root"}`;
+    const archiveEvent = `document:archived:${parentDocumentId || "root"}`;
+    const restoreEvent = `document:restore:${parentDocumentId || "root"}`;
+    const titleChangeEvent = `document:receive:title:${
+      parentDocumentId || "root"
+    }`;
+
+    socket.on(createEvent, handleCreated);
+    socket.on(archiveEvent, handleArchived);
+    socket.on(restoreEvent, handleRestore);
+    socket.on(titleChangeEvent, handleUpdateTitle);
 
     return () => {
-      socket.off("document:created", handleCreated);
-      socket.off("document:archived", handleArchived);
-      socket.off("document:restore", handleRestore);
-      socket.off("document:receive:title", handleUpdateTitle);
+      socket.off(createEvent, handleCreated);
+      socket.off(archiveEvent, handleArchived);
+      socket.off(restoreEvent, handleRestore);
+      socket.off(titleChangeEvent, handleUpdateTitle);
     };
-  }, [socket]);
+  }, [socket, fetchDocuments, user?.image, user?.name, parentDocumentId]);
 
   useEffect(() => {
     fetchDocuments();
-  }, [parentDocumentId]);
+  }, [fetchDocuments]);
 
   const onRedirect = (documentId: string) => {
     router.push(`/documents/${documentId}`);
@@ -152,14 +217,14 @@ export const DocumentList = ({
         No pages inside
       </p>
 
-      {!Array.isArray(documents) && documents.ownedDocuments.length > 0 && (
+      {!Array.isArray(documents) && documents?.ownedDocuments?.length > 0 && (
         <div className="text-gray-700 dark:text-gray-400 text-sm font-medium px-3 py-2 mt-4 tracking-wide">
           Private Documents
         </div>
       )}
 
       {!Array.isArray(documents) &&
-        documents.ownedDocuments.map((document) => (
+        documents.ownedDocuments?.map((document) => (
           <div key={document.id}>
             <Item
               id={document.id}
@@ -180,7 +245,7 @@ export const DocumentList = ({
           </div>
         ))}
 
-      {!Array.isArray(documents) && documents.sharedDocuments.length > 0 && (
+      {!Array.isArray(documents) && documents?.sharedDocuments?.length > 0 && (
         <div className="text-gray-700 dark:text-gray-400 text-sm font-medium px-3 py-2 mt-4 tracking-wide">
           Shared
         </div>

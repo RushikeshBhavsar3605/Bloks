@@ -64,7 +64,8 @@ export const Title = ({ initialData }: TitleProps) => {
     setTitle(event.target.value);
 
     socket.emit("document:update:title", {
-      id: initialData.id,
+      documentId: initialData.id,
+      parentDocumentId: initialData.parentDocumentId,
       title: event.target.value,
     });
     saveToDB(event.target.value);
