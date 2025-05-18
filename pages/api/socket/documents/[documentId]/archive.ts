@@ -23,20 +23,10 @@ export default async function handler(
       return res.status(response.status || 400).json({ error: response.error });
     }
 
-    const parentDocumentId = response.data?.parentDocumentId;
+    const room = `room:document:${documentId}`;
+    const archiveEvent = `document:archived:${documentId}`;
 
-    if (parentDocumentId) {
-      const parentRoom = `room:document:${parentDocumentId}`;
-      const archiveEvent = `document:archived:${parentDocumentId}`;
-
-      res?.socket?.server?.io
-        ?.to(parentRoom)
-        .emit(archiveEvent, response.data?.id);
-    } else {
-      res?.socket?.server?.io
-        ?.to(`user:${user.id}`)
-        .emit("document:archived:root", response.data?.id);
-    }
+    res?.socket?.server?.io?.to(room).emit(archiveEvent, response.data?.id);
 
     return res.status(response.status || 200).json(response.data?.id);
   }

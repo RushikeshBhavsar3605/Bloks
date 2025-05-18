@@ -42,9 +42,7 @@ export const TrashDocumentItem = ({
     const restoreEvent = `document:restore:${
       document.parentDocumentId || "root"
     }`;
-    const removeEvent = `document:remove:${
-      document.parentDocumentId || "root"
-    }`;
+    const removeEvent = `document:remove:${document.id}`;
 
     joinDocument(documentId, userId);
     socket.on(restoreEvent, handleRestore);

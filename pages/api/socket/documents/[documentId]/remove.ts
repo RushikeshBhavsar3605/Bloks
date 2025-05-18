@@ -23,20 +23,10 @@ export default async function handler(
       return res.status(response.status || 400).json({ error: response.error });
     }
 
-    const parentDocumentId = response.data?.parentDocumentId;
+    const room = `room:document:${documentId}`;
+    const removeEvent = `document:remove:${documentId}`;
 
-    if (parentDocumentId) {
-      const parentRoom = `room:document:${parentDocumentId}`;
-      const restoreEvent = `document:remove:${parentDocumentId}`;
-
-      res?.socket?.server?.io
-        ?.to(parentRoom)
-        .emit(restoreEvent, response.data?.id);
-    } else {
-      res?.socket?.server?.io
-        ?.to(`user:${user.id}`)
-        .emit("document:remove:root", response.data?.id);
-    }
+    res?.socket?.server?.io?.to(room).emit(removeEvent, response.data?.id);
 
     return res.status(response.status || 200).json(response.data?.id);
   }

@@ -582,7 +582,7 @@ export const archiveDocument = async ({
   userId,
   documentId,
 }: DocumentActionProps): Promise<
-  ServiceResponse<{ id: string; isArchived: boolean; parentDocumentId: string }>
+  ServiceResponse<{ id: string; isArchived: boolean }>
 > => {
   try {
     // Check access rights (must be owner or EDITOR)
@@ -644,7 +644,6 @@ export const archiveDocument = async ({
       data: {
         id: documentId,
         isArchived: true,
-        parentDocumentId: document.parentDocumentId || "",
       },
       status: 200,
     };
@@ -781,9 +780,7 @@ export const restoreDocument = async ({
 export const removeDocument = async ({
   userId,
   documentId,
-}: DocumentActionProps): Promise<
-  ServiceResponse<{ id: string; parentDocumentId: string }>
-> => {
+}: DocumentActionProps): Promise<ServiceResponse<{ id: string }>> => {
   try {
     // First verify the document belongs to this user
     const document = await db.document.findUnique({
@@ -860,7 +857,6 @@ export const removeDocument = async ({
       success: true,
       data: {
         id: deletedDocument.id,
-        parentDocumentId: deletedDocument.parentDocumentId || "",
       },
       status: 200,
     };

@@ -81,28 +81,6 @@ export const DocumentList = ({
       });
     };
 
-    const handleArchived = (id: string) => {
-      setDocuments((prevDocs) => {
-        if (prevDocs && Array.isArray(prevDocs)) {
-          return prevDocs.filter((doc) => doc.id !== id);
-        }
-
-        if (prevDocs && !Array.isArray(prevDocs)) {
-          return {
-            ...prevDocs,
-            ownedDocuments: prevDocs.ownedDocuments.filter(
-              (doc) => doc.id !== id
-            ),
-            sharedDocuments: prevDocs.sharedDocuments.filter(
-              (doc) => doc.id !== id
-            ),
-          };
-        }
-
-        return prevDocs;
-      });
-    };
-
     const handleRestore = (data: DocumentWithMeta) => {
       setDocuments((prevDocs) => {
         if (prevDocs && Array.isArray(prevDocs)) {
@@ -127,62 +105,73 @@ export const DocumentList = ({
       });
     };
 
-    const handleUpdateTitle = ({
-      documentId,
-      title,
-    }: {
-      documentId: string;
-      title: string;
-    }) => {
-      console.log("ID: ", documentId);
-      console.log("Title: ", title);
-
-      setDocuments((prevDocs) => {
-        if (Array.isArray(prevDocs)) {
-          return prevDocs.map((doc) =>
-            doc.id == documentId ? { ...doc, title } : doc
-          );
-        }
-
-        if (prevDocs && !Array.isArray(prevDocs)) {
-          return {
-            ...prevDocs,
-            ownedDocuments: prevDocs.ownedDocuments.map((doc) =>
-              doc.id === documentId ? { ...doc, title } : doc
-            ),
-            sharedDocuments: prevDocs.sharedDocuments.map((doc) =>
-              doc.id === documentId ? { ...doc, title } : doc
-            ),
-          };
-        }
-
-        return prevDocs;
-      });
-    };
-
     const createEvent = `document:created:${parentDocumentId || "root"}`;
-    const archiveEvent = `document:archived:${parentDocumentId || "root"}`;
     const restoreEvent = `document:restore:${parentDocumentId || "root"}`;
-    const titleChangeEvent = `document:receive:title:${
-      parentDocumentId || "root"
-    }`;
 
     socket.on(createEvent, handleCreated);
-    socket.on(archiveEvent, handleArchived);
     socket.on(restoreEvent, handleRestore);
-    socket.on(titleChangeEvent, handleUpdateTitle);
 
     return () => {
       socket.off(createEvent, handleCreated);
-      socket.off(archiveEvent, handleArchived);
       socket.off(restoreEvent, handleRestore);
-      socket.off(titleChangeEvent, handleUpdateTitle);
     };
   }, [socket, fetchDocuments, user?.image, user?.name, parentDocumentId]);
 
   useEffect(() => {
     fetchDocuments();
   }, [fetchDocuments]);
+
+  const handleArchived = (id: string) => {
+    setDocuments((prevDocs) => {
+      if (prevDocs && Array.isArray(prevDocs)) {
+        return prevDocs.filter((doc) => doc.id !== id);
+      }
+
+      if (prevDocs && !Array.isArray(prevDocs)) {
+        return {
+          ...prevDocs,
+          ownedDocuments: prevDocs.ownedDocuments.filter(
+            (doc) => doc.id !== id
+          ),
+          sharedDocuments: prevDocs.sharedDocuments.filter(
+            (doc) => doc.id !== id
+          ),
+        };
+      }
+
+      return prevDocs;
+    });
+  };
+
+  const handleUpdateTitle = ({
+    documentId,
+    title,
+  }: {
+    documentId: string;
+    title: string;
+  }) => {
+    setDocuments((prevDocs) => {
+      if (Array.isArray(prevDocs)) {
+        return prevDocs.map((doc) =>
+          doc.id == documentId ? { ...doc, title } : doc
+        );
+      }
+
+      if (prevDocs && !Array.isArray(prevDocs)) {
+        return {
+          ...prevDocs,
+          ownedDocuments: prevDocs.ownedDocuments.map((doc) =>
+            doc.id === documentId ? { ...doc, title } : doc
+          ),
+          sharedDocuments: prevDocs.sharedDocuments.map((doc) =>
+            doc.id === documentId ? { ...doc, title } : doc
+          ),
+        };
+      }
+
+      return prevDocs;
+    });
+  };
 
   const onRedirect = (documentId: string) => {
     router.push(`/documents/${documentId}`);
@@ -237,6 +226,8 @@ export const DocumentList = ({
               onExpand={() => onExpand(document.id)}
               expanded={expanded[document.id]}
               role={"OWNER"}
+              handleArchived={handleArchived}
+              handleUpdateTitle={handleUpdateTitle}
             />
 
             {expanded[document.id] && (
@@ -265,6 +256,8 @@ export const DocumentList = ({
               onExpand={() => onExpand(document.id)}
               expanded={expanded[document.id]}
               role={document.role}
+              handleArchived={handleArchived}
+              handleUpdateTitle={handleUpdateTitle}
             />
 
             {expanded[document.id] && (
@@ -287,6 +280,8 @@ export const DocumentList = ({
               onExpand={() => onExpand(document.id)}
               expanded={expanded[document.id]}
               role={document.role}
+              handleArchived={handleArchived}
+              handleUpdateTitle={handleUpdateTitle}
             />
 
             {expanded[document.id] && (

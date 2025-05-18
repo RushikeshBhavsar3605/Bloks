@@ -70,7 +70,6 @@ export const TrashBox = () => {
       const res = await fetch("/api/socket/documents/trash");
       const data = await res.json();
       setDocuments(data);
-      console.log("DOC: ", JSON.stringify(data));
     } catch (error) {
       console.log("Failed to fetch trash documents", error);
     }
@@ -92,14 +91,18 @@ export const TrashBox = () => {
     });
   };
 
-  const handleRemove = (id: string) => {
+  const handleRemove = (documentId: string) => {
     setDocuments((prevDocs) => {
       if (!prevDocs) return prevDocs;
 
       return {
         ...prevDocs,
-        ownedArchived: prevDocs?.ownedArchived.filter((doc) => doc.id !== id),
-        sharedArchived: prevDocs?.sharedArchived.filter((doc) => doc.id !== id),
+        ownedArchived: prevDocs?.ownedArchived.filter(
+          (doc) => doc.id !== documentId
+        ),
+        sharedArchived: prevDocs?.sharedArchived.filter(
+          (doc) => doc.id !== documentId
+        ),
       };
     });
   };
