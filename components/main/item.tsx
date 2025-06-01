@@ -21,8 +21,6 @@ import {
 } from "../ui/dropdown-menu";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { CollaboratorRole, Document } from "@prisma/client";
-import { useEffect } from "react";
-import { useSocket } from "../providers/socket-provider";
 
 interface ItemProps {
   id?: string;
@@ -36,14 +34,6 @@ interface ItemProps {
   onClick?: () => void;
   icon: LucideIcon;
   role?: CollaboratorRole | "OWNER" | null;
-  handleArchived?: (documentId: string) => void;
-  handleUpdateTitle?: ({
-    documentId,
-    title,
-  }: {
-    documentId: string;
-    title: string;
-  }) => void;
 }
 
 export const Item = ({
@@ -58,42 +48,9 @@ export const Item = ({
   onClick,
   icon: Icon,
   role,
-  handleArchived,
-  handleUpdateTitle,
 }: ItemProps) => {
   const user = useCurrentUser();
   const router = useRouter();
-  const { socket, joinDocument, leaveDocument } = useSocket();
-
-  // Join room for these document
-  useEffect(() => {
-    if (!socket || !id || !user?.id || !handleArchived || !handleUpdateTitle)
-      return;
-
-    const documentId = id;
-    const userId = user.id;
-
-    const archiveEvent = `document:archived`;
-    const titleChangeEvent = `document:receive:title`;
-
-    joinDocument(documentId, userId);
-    socket.on(archiveEvent, handleArchived);
-    socket.on(titleChangeEvent, handleUpdateTitle);
-
-    return () => {
-      leaveDocument(documentId, userId);
-      socket.off(archiveEvent, handleArchived);
-      socket.off(titleChangeEvent, handleUpdateTitle);
-    };
-  }, [
-    socket,
-    id,
-    user?.id,
-    joinDocument,
-    leaveDocument,
-    handleArchived,
-    handleUpdateTitle,
-  ]);
 
   const onArchive = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     event.stopPropagation();

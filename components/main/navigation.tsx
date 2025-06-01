@@ -16,7 +16,7 @@ import { useMediaQuery } from "usehooks-ts";
 import UserItem from "./user-item";
 import { Item } from "./item";
 import { toast } from "sonner";
-import { DocumentList } from "./document-list";
+import { DocumentTree } from "./document-list/document-tree";
 import {
   Popover,
   PopoverTrigger,
@@ -168,7 +168,7 @@ export const Navigation = () => {
         </div>
 
         <div className="mt-4">
-          <DocumentList />
+          <DocumentTree />
           <Item label="Add a page" icon={Plus} onClick={onCreate} />
           <Popover>
             <PopoverTrigger className="w-full mt-4">

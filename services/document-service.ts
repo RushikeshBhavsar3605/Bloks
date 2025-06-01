@@ -299,7 +299,7 @@ export const getRootDocuments = async (
   userId: string
 ): Promise<
   ServiceResponse<{
-    ownedDocuments: Document[];
+    ownedDocuments: DocumentWithMeta[];
     sharedDocuments: DocumentWithMeta[];
   }>
 > => {
@@ -310,6 +310,14 @@ export const getRootDocuments = async (
         userId,
         isArchived: false,
         parentDocumentId: "",
+      },
+      include: {
+        owner: {
+          select: {
+            name: true,
+            image: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -386,9 +394,22 @@ export const getRootDocuments = async (
       };
     });
 
+    const enhancedOwnedDocuments = ownedDocuments.map((doc) => {
+      const role: CollaboratorRole | "OWNER" | null = "OWNER";
+
+      return {
+        ...doc,
+        isOwner: true,
+        role,
+      };
+    });
+
     return {
       success: true,
-      data: { ownedDocuments, sharedDocuments: enhancedSharedDocuments },
+      data: {
+        ownedDocuments: enhancedOwnedDocuments,
+        sharedDocuments: enhancedSharedDocuments,
+      },
       status: 200,
     };
   } catch (error) {

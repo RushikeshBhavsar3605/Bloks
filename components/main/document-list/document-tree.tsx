@@ -2,31 +2,31 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Item } from "./item";
-import { cn } from "@/lib/utils";
+import { Item } from "../item";
 import { Collaborator, CollaboratorRole, Document } from "@prisma/client";
-import { FileIcon } from "lucide-react";
-import { useSocket } from "../providers/socket-provider";
+import { useSocket } from "../../providers/socket-provider";
 import { DocumentWithMeta } from "@/types/shared";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { DocumentSection } from "./document-section";
+import { DocumentEmpty } from "./document-empty";
 
 type RootDocuments = {
-  ownedDocuments: Document[];
+  ownedDocuments: DocumentWithMeta[];
   sharedDocuments: DocumentWithMeta[];
 };
 
-interface DocumentListProps {
+interface DocumentTreeProps {
   parentDocumentId?: string;
   level?: number;
   data?: string;
   role?: CollaboratorRole | "OWNER" | null;
 }
 
-export const DocumentList = ({
+export const DocumentTree = ({
   parentDocumentId,
   level = 0,
   role,
-}: DocumentListProps) => {
+}: DocumentTreeProps) => {
   const { socket } = useSocket();
   const params = useParams();
   const user = useCurrentUser();
@@ -150,7 +150,6 @@ export const DocumentList = ({
   }, [fetchDocuments]);
 
   const handleArchived = useCallback((id: string) => {
-    console.log("Archived: ", id);
     setDocuments((prevDocs) => {
       if (prevDocs && Array.isArray(prevDocs)) {
         return prevDocs.filter((doc) => doc.id !== id);
@@ -174,7 +173,6 @@ export const DocumentList = ({
 
   const handleUpdateTitle = useCallback(
     ({ documentId, title }: { documentId: string; title: string }) => {
-      console.log("Update Tite: ", documentId, title);
       setDocuments((prevDocs) => {
         if (Array.isArray(prevDocs)) {
           return prevDocs.map((doc) =>
@@ -220,110 +218,48 @@ export const DocumentList = ({
 
   return (
     <>
-      <p
-        style={{
-          paddingLeft: level ? `${level * 12 + 25}px` : undefined,
-        }}
-        className={cn(
-          "hidden text-sm font-medium text-muted-foreground/80",
-          expanded && "last:block",
-          level === 0 && "hidden"
-        )}
-      >
-        No pages inside
-      </p>
+      <DocumentEmpty level={level} expanded={!!expanded} />
 
       {!Array.isArray(documents) && documents?.ownedDocuments?.length > 0 && (
-        <div className="text-gray-700 dark:text-gray-400 text-sm font-medium px-3 py-2 mt-4 tracking-wide">
-          Private Documents
-        </div>
+        <DocumentSection
+          title="Private Documents"
+          documents={documents.ownedDocuments}
+          level={level}
+          expanded={expanded}
+          onExpand={onExpand}
+          onRedirect={onRedirect}
+          handleArchived={handleArchived}
+          handleUpdateTitle={handleUpdateTitle}
+          activeDocumentId={params?.documentId as string}
+        />
       )}
-
-      {!Array.isArray(documents) &&
-        documents.ownedDocuments?.map((document) => (
-          <div key={document.id}>
-            <Item
-              id={document.id}
-              onClick={() => onRedirect(document.id)}
-              label={document.title}
-              icon={FileIcon}
-              documentIcon={document.icon || undefined}
-              active={params?.documentId === document.id}
-              level={level}
-              onExpand={() => onExpand(document.id)}
-              expanded={expanded[document.id]}
-              role={"OWNER"}
-              handleArchived={handleArchived}
-              handleUpdateTitle={handleUpdateTitle}
-            />
-
-            {expanded[document.id] && (
-              <DocumentList parentDocumentId={document.id} level={level + 1} />
-            )}
-          </div>
-        ))}
 
       {!Array.isArray(documents) && documents?.sharedDocuments?.length > 0 && (
-        <div className="text-gray-700 dark:text-gray-400 text-sm font-medium px-3 py-2 mt-4 tracking-wide">
-          Shared
-        </div>
+        <DocumentSection
+          title="Shared"
+          documents={documents.sharedDocuments}
+          level={level}
+          expanded={expanded}
+          onExpand={onExpand}
+          onRedirect={onRedirect}
+          handleArchived={handleArchived}
+          handleUpdateTitle={handleUpdateTitle}
+          activeDocumentId={params?.documentId as string}
+        />
       )}
 
-      {!Array.isArray(documents) &&
-        documents.sharedDocuments?.map((document) => (
-          <div key={document.id}>
-            <Item
-              id={document.id}
-              onClick={() => onRedirect(document.id)}
-              label={document.title}
-              icon={FileIcon}
-              documentIcon={document.icon || undefined}
-              active={params?.documentId === document.id}
-              level={level}
-              onExpand={() => onExpand(document.id)}
-              expanded={expanded[document.id]}
-              role={document.role}
-              handleArchived={handleArchived}
-              handleUpdateTitle={handleUpdateTitle}
-            />
-
-            {expanded[document.id] && (
-              <DocumentList
-                parentDocumentId={document.id}
-                level={level + 1}
-                role={document.role}
-              />
-            )}
-          </div>
-        ))}
-
-      {Array.isArray(documents) &&
-        documents.map((document) => (
-          <div key={document.id}>
-            <Item
-              id={document.id}
-              onClick={() => onRedirect(document.id)}
-              label={document.title}
-              icon={FileIcon}
-              documentIcon={document.icon || undefined}
-              active={params?.documentId === document.id}
-              level={level}
-              onExpand={() => onExpand(document.id)}
-              expanded={expanded[document.id]}
-              role={document.role}
-              handleArchived={handleArchived}
-              handleUpdateTitle={handleUpdateTitle}
-            />
-
-            {expanded[document.id] && (
-              <DocumentList
-                parentDocumentId={document.id}
-                level={level + 1}
-                role={document.role}
-              />
-            )}
-          </div>
-        ))}
+      {Array.isArray(documents) && (
+        <DocumentSection
+          documents={documents}
+          level={level}
+          expanded={expanded}
+          onExpand={onExpand}
+          onRedirect={onRedirect}
+          handleArchived={handleArchived}
+          handleUpdateTitle={handleUpdateTitle}
+          activeDocumentId={params?.documentId as string}
+        />
+      )}
     </>
   );
 };

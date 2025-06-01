@@ -270,7 +270,7 @@ class SocketDocumentManager {
         return console.warn(`[Socket.io] User not in room ${documentId}`);
       }
 
-      const updateTitleEvent = `document:receive:title`;
+      const updateTitleEvent = `document:receive:title:${documentId}`;
       this.io.to(room).emit(updateTitleEvent, { documentId, title });
     } catch (error) {
       this.emitError(
