@@ -73,8 +73,8 @@ export const Item = ({
     const documentId = id;
     const userId = user.id;
 
-    const archiveEvent = `document:archived:${id}`;
-    const titleChangeEvent = `document:receive:title:${id}`;
+    const archiveEvent = `document:archived`;
+    const titleChangeEvent = `document:receive:title`;
 
     joinDocument(documentId, userId);
     socket.on(archiveEvent, handleArchived);

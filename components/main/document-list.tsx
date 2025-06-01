@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Item } from "./item";
 import { cn } from "@/lib/utils";
-import { Document } from "@prisma/client";
+import { Collaborator, CollaboratorRole, Document } from "@prisma/client";
 import { FileIcon } from "lucide-react";
 import { useSocket } from "../providers/socket-provider";
 import { DocumentWithMeta } from "@/types/shared";
@@ -19,11 +19,13 @@ interface DocumentListProps {
   parentDocumentId?: string;
   level?: number;
   data?: string;
+  role?: CollaboratorRole | "OWNER" | null;
 }
 
 export const DocumentList = ({
   parentDocumentId,
   level = 0,
+  role,
 }: DocumentListProps) => {
   const { socket } = useSocket();
   const params = useParams();
@@ -65,6 +67,12 @@ export const DocumentList = ({
     if (!socket) return;
 
     const handleCreated = (data: DocumentWithMeta) => {
+      const isOwner = user?.id === data.userId;
+      if (!role && !isOwner) return;
+
+      data.isOwner = isOwner;
+      data.role = role ?? null;
+
       setDocuments((prevDocs) => {
         if (prevDocs && Array.isArray(prevDocs)) {
           return [data, ...prevDocs];
@@ -81,22 +89,42 @@ export const DocumentList = ({
       });
     };
 
-    const handleRestore = (data: DocumentWithMeta) => {
+    const handleRestore = (
+      data: Document & {
+        owner: {
+          name: string | null;
+          image: string | null;
+        };
+        collaborators: Collaborator[];
+      }
+    ) => {
+      const { collaborators, ...rest } = data;
+      const isOwner = user?.id === rest.userId;
+      const role: CollaboratorRole | "OWNER" | null = isOwner
+        ? "OWNER"
+        : collaborators.find((c) => c.userId === user?.id)?.role ?? null;
+
+      const modifiedData: DocumentWithMeta = {
+        ...rest,
+        isOwner,
+        role,
+      };
+
       setDocuments((prevDocs) => {
         if (prevDocs && Array.isArray(prevDocs)) {
-          return [data, ...prevDocs];
+          return [modifiedData, ...prevDocs];
         }
 
         if (prevDocs && !Array.isArray(prevDocs)) {
-          if (data.isOwner) {
+          if (modifiedData.isOwner) {
             return {
               ...prevDocs,
-              ownedDocuments: [data, ...prevDocs.ownedDocuments],
+              ownedDocuments: [modifiedData, ...prevDocs.ownedDocuments],
             };
           } else {
             return {
               ...prevDocs,
-              sharedDocuments: [data, ...prevDocs.sharedDocuments],
+              sharedDocuments: [modifiedData, ...prevDocs.sharedDocuments],
             };
           }
         }
@@ -115,13 +143,14 @@ export const DocumentList = ({
       socket.off(createEvent, handleCreated);
       socket.off(restoreEvent, handleRestore);
     };
-  }, [socket, fetchDocuments, user?.image, user?.name, parentDocumentId]);
+  }, [socket, fetchDocuments, user?.id, role, parentDocumentId]);
 
   useEffect(() => {
     fetchDocuments();
   }, [fetchDocuments]);
 
-  const handleArchived = (id: string) => {
+  const handleArchived = useCallback((id: string) => {
+    console.log("Archived: ", id);
     setDocuments((prevDocs) => {
       if (prevDocs && Array.isArray(prevDocs)) {
         return prevDocs.filter((doc) => doc.id !== id);
@@ -141,37 +170,35 @@ export const DocumentList = ({
 
       return prevDocs;
     });
-  };
+  }, []);
 
-  const handleUpdateTitle = ({
-    documentId,
-    title,
-  }: {
-    documentId: string;
-    title: string;
-  }) => {
-    setDocuments((prevDocs) => {
-      if (Array.isArray(prevDocs)) {
-        return prevDocs.map((doc) =>
-          doc.id == documentId ? { ...doc, title } : doc
-        );
-      }
+  const handleUpdateTitle = useCallback(
+    ({ documentId, title }: { documentId: string; title: string }) => {
+      console.log("Update Tite: ", documentId, title);
+      setDocuments((prevDocs) => {
+        if (Array.isArray(prevDocs)) {
+          return prevDocs.map((doc) =>
+            doc.id == documentId ? { ...doc, title } : doc
+          );
+        }
 
-      if (prevDocs && !Array.isArray(prevDocs)) {
-        return {
-          ...prevDocs,
-          ownedDocuments: prevDocs.ownedDocuments.map((doc) =>
-            doc.id === documentId ? { ...doc, title } : doc
-          ),
-          sharedDocuments: prevDocs.sharedDocuments.map((doc) =>
-            doc.id === documentId ? { ...doc, title } : doc
-          ),
-        };
-      }
+        if (prevDocs && !Array.isArray(prevDocs)) {
+          return {
+            ...prevDocs,
+            ownedDocuments: prevDocs.ownedDocuments.map((doc) =>
+              doc.id === documentId ? { ...doc, title } : doc
+            ),
+            sharedDocuments: prevDocs.sharedDocuments.map((doc) =>
+              doc.id === documentId ? { ...doc, title } : doc
+            ),
+          };
+        }
 
-      return prevDocs;
-    });
-  };
+        return prevDocs;
+      });
+    },
+    []
+  );
 
   const onRedirect = (documentId: string) => {
     router.push(`/documents/${documentId}`);
@@ -261,7 +288,11 @@ export const DocumentList = ({
             />
 
             {expanded[document.id] && (
-              <DocumentList parentDocumentId={document.id} level={level + 1} />
+              <DocumentList
+                parentDocumentId={document.id}
+                level={level + 1}
+                role={document.role}
+              />
             )}
           </div>
         ))}
@@ -285,7 +316,11 @@ export const DocumentList = ({
             />
 
             {expanded[document.id] && (
-              <DocumentList parentDocumentId={document.id} level={level + 1} />
+              <DocumentList
+                parentDocumentId={document.id}
+                level={level + 1}
+                role={document.role}
+              />
             )}
           </div>
         ))}

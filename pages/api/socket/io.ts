@@ -24,33 +24,30 @@ type TitleUpdateEvent = {
 };
 
 class SocketDocumentManager {
-  private documentRooms = new Set<string>();
-
-  private listeners = {
-    join: (data: DocumentRoomAction) => this.joinDocumentRoom(data),
-    leave: (data: DocumentRoomAction) => this.leaveDocumentRoom(data),
-    titleUpdate: (data: TitleUpdateEvent) => this.handleTitleUpdate(data),
-  };
+  private activeRoom: string | null = null;
 
   constructor(
     private socket: Socket,
     private io: ServerIO,
     private userId: string
   ) {
-    // Setup listeners with tracked references
-    socket.on("join-document", this.listeners.join);
-    socket.on("leave-document", this.listeners.leave);
-    socket.on("document:update:title", this.listeners.titleUpdate);
+    // Sidebar listeners (metadata only)
+    socket.on("join-document", this.joinDocumentRoom);
+    socket.on("leave-document", this.leaveDocumentRoom);
+
+    // Editor presence listeners (full doc presence)
+    socket.on("join-active-document", this.joinActiveRoom);
+    socket.on("leave-active-document", this.leaveActiveRoom);
+
+    socket.on("document:update:title", this.handleTitleUpdate);
   }
 
-  private emitError(event: string, message: string, code: string) {
-    this.socket.emit("error", { event, message, code });
-  }
+  // >------->>-------|----->>----> Sidebar subscription <----<<-----|-------<<-------<
 
-  async joinDocumentRoom({
+  private joinDocumentRoom = async ({
     documentId,
     userId: joinUserId,
-  }: DocumentRoomAction) {
+  }: DocumentRoomAction) => {
     try {
       if (joinUserId !== this.userId) {
         this.emitError("join-document", "User ID mismatch", "USER_ID_MISMATCH");
@@ -68,7 +65,9 @@ class SocketDocumentManager {
         return console.warn(`[Socket.io] Missing documentId for join-document`);
       }
 
-      if (this.documentRooms.has(documentId)) {
+      const room = `room:document:${documentId}`;
+
+      if (this.socket.rooms.has(room)) {
         this.emitError(
           "join-document",
           "Already in document room",
@@ -88,9 +87,7 @@ class SocketDocumentManager {
         );
       }
 
-      const room = `room:document:${documentId}`;
       this.socket.join(room);
-      this.documentRooms.add(documentId);
       console.log(`[Socket.io] User ${this.userId} joined room ${room}`);
     } catch (error) {
       this.emitError(
@@ -100,9 +97,12 @@ class SocketDocumentManager {
       );
       console.error("[Socket.io] Join document error:", error);
     }
-  }
+  };
 
-  leaveDocumentRoom({ documentId, userId: leaveUserId }: DocumentRoomAction) {
+  private leaveDocumentRoom = ({
+    documentId,
+    userId: leaveUserId,
+  }: DocumentRoomAction) => {
     try {
       if (leaveUserId !== this.userId) {
         this.emitError(
@@ -115,14 +115,14 @@ class SocketDocumentManager {
         );
       }
 
-      if (!this.documentRooms.has(documentId)) {
+      const room = `room:document:${documentId}`;
+
+      if (!this.socket.rooms.has(room)) {
         this.emitError("leave-document", "Not in document room", "NOT_IN_ROOM");
         return console.warn(`[Socket.io] User is not in room ${documentId}`);
       }
 
-      const room = `room:document:${documentId}`;
       this.socket.leave(room);
-      this.documentRooms.delete(documentId);
       console.log(`[Socket.io] User ${this.userId} left room ${room}`);
     } catch (error) {
       this.emitError(
@@ -132,9 +132,123 @@ class SocketDocumentManager {
       );
       console.error("[Socket.io] Leave document error:", error);
     }
-  }
+  };
 
-  private handleTitleUpdate({ documentId, title }: TitleUpdateEvent) {
+  // >------->>-------|----->>----> Editor presence subscription <----<<-----|-------<<-------<
+
+  private joinActiveRoom = async ({
+    documentId,
+    userId,
+  }: DocumentRoomAction) => {
+    try {
+      if (userId !== this.userId) {
+        this.emitError(
+          "join-active-document",
+          "User ID mismatch",
+          "USER_ID_MISMATCH"
+        );
+        return console.warn(
+          `[Socket.io] User ID mismatch: ${userId} vs ${this.userId}`
+        );
+      }
+
+      if (!documentId) {
+        this.emitError(
+          "join-active-document",
+          "Missing document ID",
+          "MISSING_DOCUMENT_ID"
+        );
+        return console.warn(`[Socket.io] Missing documentId for join-document`);
+      }
+
+      if (this.activeRoom === documentId) {
+        this.emitError(
+          "join-active-document",
+          "Already in document room",
+          "ALREADY_IN_ROOM"
+        );
+        return console.warn(`[Socket.io] User already in room ${documentId}`);
+      }
+
+      const documentExists = await verifyDocumentAccess(
+        documentId,
+        this.userId
+      );
+      if (!documentExists) {
+        this.emitError(
+          "join-active-document",
+          "Unauthorized access",
+          "UNAUTHORIZED"
+        );
+        return console.warn(
+          `[Socket.io] User not authorized to access document`
+        );
+      }
+
+      const room = `room:active:document:${documentId}`;
+      this.socket.join(room);
+      this.activeRoom = documentId;
+
+      this.io
+        .to(room)
+        .emit(`active-users:update`, { documentId, userId, action: "joined" });
+      console.log(`[Socket.io] User ${this.userId} joined room ${room}`);
+    } catch (error) {
+      this.emitError(
+        "join-active-document",
+        "Failed to join document room",
+        "INTERNAL_ERROR"
+      );
+      console.error("[Socket.io] Join Active document error:", error);
+    }
+  };
+
+  private leaveActiveRoom = async ({
+    documentId,
+    userId,
+  }: DocumentRoomAction) => {
+    try {
+      if (userId !== this.userId) {
+        this.emitError(
+          "leave-active-document",
+          "User ID mismatch",
+          "USER_ID_MISMATCH"
+        );
+        return console.warn(
+          `[Socket.io] User ID mismatch on leave: ${userId} vs ${this.userId}`
+        );
+      }
+
+      if (this.activeRoom !== documentId) {
+        this.emitError(
+          "leave-active-document",
+          "Not in document room",
+          "NOT_IN_ROOM"
+        );
+        return console.warn(`[Socket.io] User is not in room ${documentId}`);
+      }
+
+      const room = `room:active:document:${documentId}`;
+      this.socket.leave(room);
+      this.activeRoom = null;
+
+      this.io
+        .to(room)
+        .emit(`active-users:update`, { documentId, userId, action: "left" });
+      console.log(`[Socket.io] User ${this.userId} left room ${room}`);
+    } catch (error) {
+      this.emitError(
+        "leave-active-document",
+        "Failed to leave document room",
+        "INTERNAL_ERROR"
+      );
+      console.error("[Socket.io] Leave Active document error:", error);
+    }
+  };
+
+  // >------->>-------|----->>----> Title updates (sidebar) <----<<-----|-------<<-------<
+
+  private handleTitleUpdate = ({ documentId, title }: TitleUpdateEvent) => {
     try {
       if (!documentId || typeof title !== "string") {
         this.emitError(
@@ -145,7 +259,9 @@ class SocketDocumentManager {
         return console.warn("[Socket.io] Invalid documentId or title");
       }
 
-      if (!this.documentRooms.has(documentId)) {
+      const room = `room:document:${documentId}`;
+
+      if (!this.socket.rooms.has(room)) {
         this.emitError(
           "document:update:title",
           "Not in document room",
@@ -154,9 +270,7 @@ class SocketDocumentManager {
         return console.warn(`[Socket.io] User not in room ${documentId}`);
       }
 
-      const room = `room:document:${documentId}`;
-      const updateTitleEvent = `document:receive:title:${documentId}`;
-
+      const updateTitleEvent = `document:receive:title`;
       this.io.to(room).emit(updateTitleEvent, { documentId, title });
     } catch (error) {
       this.emitError(
@@ -166,28 +280,28 @@ class SocketDocumentManager {
       );
       console.error("[Socket.io] Title update error:", error);
     }
+  };
+
+  // >------->>-------|----->>----> Utilities <----<<-----|-------<<-------<
+
+  private emitError(event: string, message: string, code: string) {
+    this.socket.emit("error", { event, message, code });
   }
 
   handleDisconnect() {
     try {
       // Clean up all listeners
-      this.socket.off("join-document", this.listeners.join);
-      this.socket.off("leave-document", this.listeners.leave);
-      this.socket.off("document:update:title", this.listeners.titleUpdate);
+      this.socket.off("join-document", this.joinDocumentRoom);
+      this.socket.off("leave-document", this.leaveDocumentRoom);
+
+      this.socket.off("join-active-document", this.joinActiveRoom);
+      this.socket.off("leave-active-document", this.leaveActiveRoom);
+
+      this.socket.off("document:update:title", this.handleTitleUpdate);
 
       // Clean up rooms
       this.socket.leave(`user:${this.userId}`);
-      this.documentRooms.forEach((documentId) => {
-        this.io
-          .to(`room:document:${documentId}`)
-          .emit("user-left", this.userId);
-        this.socket.leave(`room:document:${documentId}`);
-      });
-      this.documentRooms.clear();
-
-      // Clear references
-      (this.socket as Socket | null) = null;
-      (this.io as any) = null;
+      this.activeRoom = null;
     } catch (error) {
       console.error("[Socket.io] Disconnect cleanup error:", error);
     }

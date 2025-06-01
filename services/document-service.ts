@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { DocumentWithMeta } from "@/types/shared";
-import { CollaboratorRole, Document } from "@prisma/client";
+import { Collaborator, CollaboratorRole, Document } from "@prisma/client";
 
 type ServiceResponse<T> = {
   success: boolean;
@@ -663,7 +663,17 @@ export const archiveDocument = async ({
 export const restoreDocument = async ({
   userId,
   documentId,
-}: DocumentActionProps): Promise<ServiceResponse<DocumentWithMeta>> => {
+}: DocumentActionProps): Promise<
+  ServiceResponse<
+    Document & {
+      owner: {
+        name: string | null;
+        image: string | null;
+      };
+      collaborators: Collaborator[];
+    }
+  >
+> => {
   try {
     // Check access rights (must be owner or EDITOR)
     const access = await getDirectDocumentAccess(documentId, userId);
@@ -693,6 +703,7 @@ export const restoreDocument = async ({
             image: true,
           },
         },
+        collaborators: true,
       },
     });
 
@@ -750,6 +761,7 @@ export const restoreDocument = async ({
               image: true,
             },
           },
+          collaborators: true,
         },
       });
     }
@@ -759,8 +771,6 @@ export const restoreDocument = async ({
       data: {
         ...document,
         isArchived: false,
-        isOwner: access.data.isOwner,
-        role: access.data.role,
       },
       status: 200,
     };

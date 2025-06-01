@@ -24,7 +24,7 @@ export default async function handler(
     }
 
     const room = `room:document:${documentId}`;
-    const archiveEvent = `document:archived:${documentId}`;
+    const archiveEvent = `document:archived`;
 
     res?.socket?.server?.io?.to(room).emit(archiveEvent, response.data?.id);
 
