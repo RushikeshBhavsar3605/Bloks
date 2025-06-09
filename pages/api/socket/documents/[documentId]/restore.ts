@@ -23,7 +23,14 @@ export default async function handler(
       return res.status(response.status || 400).json({ error: response.error });
     }
 
-    const parentDocumentId = response.data?.parentDocumentId;
+    if (!response.data) {
+      return res
+        .status(500)
+        .json({ error: "Restore operation returned no data" });
+    }
+
+    const { restoredDocument, restoredIds } = response.data;
+    const parentDocumentId = restoredDocument.parentDocumentId;
 
     if (parentDocumentId) {
       const parentRoom = `room:document:${parentDocumentId}`;

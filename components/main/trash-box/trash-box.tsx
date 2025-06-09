@@ -75,33 +75,40 @@ export const TrashBox = () => {
     }
   };
 
-  const handleRestore = (data: Document) => {
+  const handleRestore = (data: {
+    restoredDocument: Document;
+    restoredIds: string[];
+  }) => {
+    const restoredIdsSet = new Set(data.restoredIds);
+
     setDocuments((prevDocs) => {
       if (!prevDocs) return prevDocs;
 
       return {
         ...prevDocs,
         ownedArchived: prevDocs?.ownedArchived.filter(
-          (doc) => doc.id !== data.id
+          (doc) => !restoredIdsSet.has(doc.id)
         ),
         sharedArchived: prevDocs?.sharedArchived.filter(
-          (doc) => doc.id !== data.id
+          (doc) => !restoredIdsSet.has(doc.id)
         ),
       };
     });
   };
 
-  const handleRemove = (documentId: string) => {
+  const handleRemove = (data: { removedIds: string[] }) => {
+    const removedIdsSet = new Set(data.removedIds);
+
     setDocuments((prevDocs) => {
       if (!prevDocs) return prevDocs;
 
       return {
         ...prevDocs,
         ownedArchived: prevDocs?.ownedArchived.filter(
-          (doc) => doc.id !== documentId
+          (doc) => !removedIdsSet.has(doc.id)
         ),
         sharedArchived: prevDocs?.sharedArchived.filter(
-          (doc) => doc.id !== documentId
+          (doc) => !removedIdsSet.has(doc.id)
         ),
       };
     });

@@ -1,6 +1,7 @@
 import { TrashDocumentItem } from "./trash-document-item";
 import { Separator } from "@/components/ui/separator";
 import { DocumentWithMeta } from "@/types/shared";
+import { Document } from "@prisma/client";
 
 interface TrashDocumentSectionProps {
   label: string;
@@ -11,8 +12,11 @@ interface TrashDocumentSectionProps {
     id: string
   ) => void;
   onRemove: (id: string) => void;
-  handleRestore: (data: DocumentWithMeta) => void;
-  handleRemove: (id: string) => void;
+  handleRestore: (data: {
+    restoredDocument: Document;
+    restoredIds: string[];
+  }) => void;
+  handleRemove: (data: { removedIds: string[] }) => void;
 }
 
 export const TrashDocumentSection = ({

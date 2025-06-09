@@ -71,7 +71,7 @@ export const DocumentTree = ({
       if (!role && !isOwner) return;
 
       data.isOwner = isOwner;
-      data.role = role ?? null;
+      data.role = isOwner ? "OWNER" : role ?? null;
 
       setDocuments((prevDocs) => {
         if (prevDocs && Array.isArray(prevDocs)) {
@@ -89,16 +89,17 @@ export const DocumentTree = ({
       });
     };
 
-    const handleRestore = (
-      data: Document & {
+    const handleRestore = (data: {
+      restoredDocument: Document & {
         owner: {
           name: string | null;
           image: string | null;
         };
         collaborators: Collaborator[];
-      }
-    ) => {
-      const { collaborators, ...rest } = data;
+      };
+      restoredIds: string[];
+    }) => {
+      const { collaborators, ...rest } = data.restoredDocument;
       const isOwner = user?.id === rest.userId;
       const role: CollaboratorRole | "OWNER" | null = isOwner
         ? "OWNER"

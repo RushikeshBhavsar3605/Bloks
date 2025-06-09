@@ -26,9 +26,9 @@ export default async function handler(
     const room = `room:document:${documentId}`;
     const removeEvent = `document:remove:${documentId}`;
 
-    res?.socket?.server?.io?.to(room).emit(removeEvent, response.data?.id);
+    res?.socket?.server?.io?.to(room).emit(removeEvent, response.data);
 
-    return res.status(response.status || 200).json(response.data?.id);
+    return res.status(response.status || 200).json(response.data);
   }
 
   // Method not allowed

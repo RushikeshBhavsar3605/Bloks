@@ -4,6 +4,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { DocumentWithMeta } from "@/types/shared";
 import { Trash, Undo } from "lucide-react";
 import { useEffect } from "react";
+import { Document } from "@prisma/client";
 
 interface TrashDocumentItemProps {
   document: DocumentWithMeta;
@@ -15,8 +16,11 @@ interface TrashDocumentItemProps {
     id: string
   ) => void;
   onRemove: (id: string) => void;
-  handleRestore: (data: DocumentWithMeta) => void;
-  handleRemove: (id: string) => void;
+  handleRestore: (data: {
+    restoredDocument: Document;
+    restoredIds: string[];
+  }) => void;
+  handleRemove: (data: { removedIds: string[] }) => void;
 }
 
 export const TrashDocumentItem = ({

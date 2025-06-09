@@ -685,15 +685,16 @@ export const restoreDocument = async ({
   userId,
   documentId,
 }: DocumentActionProps): Promise<
-  ServiceResponse<
-    Document & {
+  ServiceResponse<{
+    restoredDocument: Document & {
       owner: {
         name: string | null;
         image: string | null;
       };
       collaborators: Collaborator[];
-    }
-  >
+    };
+    restoredIds: string[];
+  }>
 > => {
   try {
     // Check access rights (must be owner or EDITOR)
@@ -750,7 +751,11 @@ export const restoreDocument = async ({
     }
 
     // Recursively restore all children
+    const restoredDocs: string[] = [];
     const restoreRecursively = async (docId: string) => {
+      restoredDocs.push(docId);
+
+      // Find all direct child documents
       const children = await db.document.findMany({
         where: { parentDocumentId: docId },
         select: { id: true },
@@ -790,8 +795,8 @@ export const restoreDocument = async ({
     return {
       success: true,
       data: {
-        ...document,
-        isArchived: false,
+        restoredDocument: { ...document, isArchived: false },
+        restoredIds: restoredDocs,
       },
       status: 200,
     };
@@ -811,7 +816,7 @@ export const restoreDocument = async ({
 export const removeDocument = async ({
   userId,
   documentId,
-}: DocumentActionProps): Promise<ServiceResponse<{ id: string }>> => {
+}: DocumentActionProps): Promise<ServiceResponse<{ removedIds: string[] }>> => {
   try {
     // First verify the document belongs to this user
     const document = await db.document.findUnique({
@@ -839,7 +844,10 @@ export const removeDocument = async ({
     }
 
     // Remove all child documents
+    const removedDocs: string[] = [];
     const deleteRecursively = async (documentId: string) => {
+      removedDocs.push(documentId);
+
       // Find all direct child documents
       const children = await db.document.findMany({
         where: {
@@ -887,7 +895,7 @@ export const removeDocument = async ({
     return {
       success: true,
       data: {
-        id: deletedDocument.id,
+        removedIds: removedDocs,
       },
       status: 200,
     };
