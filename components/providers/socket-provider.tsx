@@ -9,6 +9,8 @@ type SocketContextType = {
   isConnected: boolean;
   joinDocument: (documentId: string, userId: string) => void;
   leaveDocument: (documentId: string, userId: string) => void;
+  joinActiveDocument: (documentId: string, userId: string) => void;
+  leaveActiveDocument: (documentId: string, userId: string) => void;
 };
 
 const SocketContext = createContext<SocketContextType>({
@@ -16,6 +18,8 @@ const SocketContext = createContext<SocketContextType>({
   isConnected: false,
   joinDocument: () => {},
   leaveDocument: () => {},
+  joinActiveDocument: () => {},
+  leaveActiveDocument: () => {},
 });
 
 export const useSocket = () => {
@@ -72,9 +76,29 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const joinActiveDocument = (documentId: string, userId: string) => {
+    if (socket) {
+      console.log("Active In: ", documentId, userId);
+      socket.emit("join-active-document", { documentId, userId });
+    }
+  };
+
+  const leaveActiveDocument = (documentId: string, userId: string) => {
+    if (socket) {
+      socket.emit("leave-active-document", { documentId, userId });
+    }
+  };
+
   return (
     <SocketContext.Provider
-      value={{ socket, isConnected, joinDocument, leaveDocument }}
+      value={{
+        socket,
+        isConnected,
+        joinDocument,
+        leaveDocument,
+        joinActiveDocument,
+        leaveActiveDocument,
+      }}
     >
       {children}
     </SocketContext.Provider>
