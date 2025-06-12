@@ -88,7 +88,6 @@ class SocketDocumentManager {
       }
 
       this.socket.join(room);
-      console.log(`[Socket.io] User ${this.userId} joined room ${room}`);
     } catch (error) {
       this.emitError(
         "join-document",
@@ -123,7 +122,6 @@ class SocketDocumentManager {
       }
 
       this.socket.leave(room);
-      console.log(`[Socket.io] User ${this.userId} left room ${room}`);
     } catch (error) {
       this.emitError(
         "leave-document",
@@ -192,7 +190,7 @@ class SocketDocumentManager {
       this.io
         .to(room)
         .emit(`active-users:update`, { documentId, userId, action: "joined" });
-      console.log(`[Socket.io] User ${this.userId} joined room ${room}`);
+      console.log(`[Socket.io] User ${this.userId} joined active room ${room}`);
     } catch (error) {
       this.emitError(
         "join-active-document",
@@ -235,7 +233,7 @@ class SocketDocumentManager {
       this.io
         .to(room)
         .emit(`active-users:update`, { documentId, userId, action: "left" });
-      console.log(`[Socket.io] User ${this.userId} left room ${room}`);
+      console.log(`[Socket.io] User ${this.userId} leave active room ${room}`);
     } catch (error) {
       this.emitError(
         "leave-active-document",
@@ -319,8 +317,6 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIo) => {
     });
 
     io.on("connection", async (socket) => {
-      console.log("[Socket.io] Client connected", socket.id);
-
       try {
         const userId = socket.handshake.query.userId as string;
         const isValid = await verifyUserSession(userId);
@@ -337,7 +333,6 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIo) => {
         // Join user's personal room
         const userRoom = `user:${userId}`;
         socket.join(userRoom);
-        console.log(`[Socket.io] User ${userId} joined room ${userRoom}`);
 
         // Initialize document room manager
         const documentManager = new SocketDocumentManager(socket, io, userId);

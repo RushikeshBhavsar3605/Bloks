@@ -16,55 +16,57 @@ export default async function handler(
 
   try {
     const { email, documentId } = req.body;
-    const user = await currentUser(req);
 
+    // Get current authenticated user
+    const user = await currentUser(req);
     if (!user) {
       return res.status(401).json({ error: "Not authenticated!" });
     }
 
+    // Validate document ownership
     const document = await db.document.findUnique({
       where: {
         id: documentId,
       },
     });
-
     if (!document || document.userId !== user.id) {
       return res.status(403).json({ error: "Not allowed" });
     }
 
+    // Check if invited user exists
     const invitedUser = await db.user.findUnique({
       where: {
         email,
       },
     });
-
-    if (!invitedUser) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    if (document.userId === invitedUser.id) {
+    if (invitedUser && document.userId === invitedUser.id) {
       return res.status(403).json({ error: "Not allowed" });
     }
 
+    // Generate verification token and send invite email
     const token = await generateCollaboratorVerificationToken(
       email,
       documentId
     );
-
     await sendCollaboratorVerificationEmail(token.email, token.token);
 
+    // Add collaborator (record can be added even if user doesn't exist yet)
     const collaborator = await addCollaborator({
       documentId,
       userId: user.id,
       collaboratorEmail: email,
     });
 
-    res?.socket?.server?.io?.emit(
-      "document:collaborator:settings",
-      collaborator.data
-    );
+    // Emit real-time update via Socket.io
+    res?.socket?.server?.io?.emit("document:collaborator:settings", {
+      invited: true,
+      newCollaborator: collaborator.data ?? null,
+    });
 
-    return res.status(200).json(collaborator.data);
+    // Return response
+    return res
+      .status(200)
+      .json({ invited: true, newCollaborator: collaborator.data ?? null });
   } catch (error) {
     console.error("[CREATE_DOCUMENT]", error);
     return res.status(500).json({ error: "Internal Error" });

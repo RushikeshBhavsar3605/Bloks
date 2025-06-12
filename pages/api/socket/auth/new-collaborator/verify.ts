@@ -1,8 +1,10 @@
 import { db } from "@/lib/db";
-import { currentUser } from "@/lib/auth-server";
 import { NextApiRequest } from "next";
 import { NextApiResponseServerIo } from "@/types";
-import { verifyCollaborator } from "@/services/collaborator-service";
+import {
+  addCollaborator,
+  verifyCollaborator,
+} from "@/services/collaborator-service";
 
 export default async function handler(
   req: NextApiRequest,
@@ -11,8 +13,8 @@ export default async function handler(
   try {
     // Validate request and authentication
     const token = req.query.token as string;
-    const user = await currentUser(req);
-    if (!token || !user) {
+    // const user = await currentUser(req);
+    if (!token) {
       return res.status(400).json({ error: "Invalid request" });
     }
 
@@ -23,6 +25,16 @@ export default async function handler(
     if (!tokenEntry || tokenEntry.expires < new Date()) {
       return res.status(400).json({ error: "Token expired or invalid" });
     }
+
+    // Fetch document owner
+    const documentOwnerId = await db.document.findUnique({
+      where: {
+        id: tokenEntry.documentId,
+      },
+      select: {
+        userId: true,
+      },
+    });
 
     // Find associated user
     const collaboratorUser = await db.user.findUnique({
@@ -37,14 +49,22 @@ export default async function handler(
     // Check if already a collaborator
     const existing = await db.collaborator.findFirst({
       where: {
-        userId: collaboratorUser?.id,
+        userId: collaboratorUser.id,
         documentId: tokenEntry.documentId,
       },
     });
     if (!existing) {
-      return res
-        .status(404)
-        .json({ error: "Collaborator Relation Not Found!" });
+      // Create the collaboration (as token is valid)
+      await addCollaborator({
+        documentId: tokenEntry.documentId,
+        userId: documentOwnerId?.userId as string,
+        collaboratorEmail: tokenEntry.email,
+      });
+    }
+
+    // Check user verification
+    if (!collaboratorUser.emailVerified) {
+      return res.status(404).json({ error: "Not verified" });
     }
 
     // Verify collaborator and clean up
