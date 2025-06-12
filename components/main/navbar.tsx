@@ -9,7 +9,7 @@ import { useSocket } from "../providers/socket-provider";
 import { SaveIndicator } from "../save-indicator";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
-import { CollaboratorsSetting } from "./collaborators-setting";
+import { CollaboratorsSetting } from "./collaborators/collaborators-setting";
 import { DocumentWithMeta } from "@/types/shared";
 import { toast } from "sonner";
 
