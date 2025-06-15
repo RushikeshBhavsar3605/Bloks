@@ -63,9 +63,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   }, [user?.id]);
 
   const joinDocument = (documentId: string, userId: string) => {
-    console.log("Out: ", documentId, userId);
     if (socket) {
-      console.log("In: ", documentId, userId);
       socket.emit("join-document", { documentId, userId });
     }
   };

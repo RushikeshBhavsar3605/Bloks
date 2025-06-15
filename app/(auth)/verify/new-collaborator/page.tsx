@@ -1,36 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { toast } from "sonner";
+import Link from "next/link";
 import { CardWrapper } from "@/components/auth/card-wrapper";
 import { FormSuccess } from "@/components/form-success";
 import { FormError } from "@/components/form-error";
+import { useEffect, useState } from "react";
 import { BeatLoader } from "react-spinners";
-import Link from "next/link";
-import { useSocket } from "@/components/providers/socket-provider";
-import { CollaboratorWithMeta } from "@/types/shared";
+import { toast } from "sonner";
 
 export default function VerifyCollaboratorPage() {
   const params = useSearchParams();
   const router = useRouter();
-  const { socket } = useSocket();
 
   const [error, setError] = useState<string | undefined>();
   const [success, setSuccess] = useState<string | undefined>();
-
-  useEffect(() => {
-    if (!socket) return;
-
-    const temp = (data: CollaboratorWithMeta) => {
-      console.log("Data: ", data);
-    };
-
-    socket.on("document:collaborator:settings", temp);
-    return () => {
-      socket.off("document:collaborator:settings", temp);
-    };
-  }, [socket]);
 
   useEffect(() => {
     if (success || error) return;

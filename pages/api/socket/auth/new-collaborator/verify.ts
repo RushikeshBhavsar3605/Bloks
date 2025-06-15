@@ -45,6 +45,9 @@ export default async function handler(
     if (!collaboratorUser) {
       return res.status(404).json({ error: "User not found" });
     }
+    if (!collaboratorUser.emailVerified) {
+      return res.status(404).json({ error: "Not verified" });
+    }
 
     // Check if already a collaborator
     const existing = await db.collaborator.findFirst({
@@ -62,11 +65,6 @@ export default async function handler(
       });
     }
 
-    // Check user verification
-    if (!collaboratorUser.emailVerified) {
-      return res.status(404).json({ error: "Not verified" });
-    }
-
     // Verify collaborator and clean up
     const collaborator = await verifyCollaborator({
       documentId: tokenEntry.documentId,
@@ -80,10 +78,10 @@ export default async function handler(
     });
 
     // Emit real-time update
-    res?.socket?.server?.io?.emit(
-      "document:collaborator:settings",
-      collaborator
-    );
+    const room = `room:document:${tokenEntry.documentId}`;
+    res?.socket?.server?.io
+      ?.to(room)
+      .emit("collaborator:settings:verified", collaborator);
 
     // Return success response
     return res.status(200).json({

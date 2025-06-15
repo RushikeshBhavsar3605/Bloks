@@ -7,7 +7,11 @@ export const SocketIndicator = () => {
   const { isConnected } = useSocket();
 
   if (!isConnected) {
-    return <Badge variant="destructive">Not connected</Badge>;
+    return (
+      <Badge variant="destructive" className="whitespace-nowrap">
+        Not connected
+      </Badge>
+    );
   }
 
   return <Badge variant="connected">Connected</Badge>;

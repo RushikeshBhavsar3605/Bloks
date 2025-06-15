@@ -9,6 +9,7 @@ import EmailSelector, {
 } from "@/components/ui/multi-selector";
 import { useRef } from "react";
 import { toast } from "sonner";
+import { Spinner } from "@/components/spinner";
 
 export const CollaboratorsSetting = ({
   documentId,
@@ -16,9 +17,9 @@ export const CollaboratorsSetting = ({
   documentId: string;
 }) => {
   const emailSelectorRef = useRef<EmailSelectorRef>(null);
+  const user = useCurrentUser();
   const { owner, isLoading, error, collaborators, setCollaborators } =
     useCollaborators(documentId);
-  const user = useCurrentUser();
   const isOwner = user?.id === owner?.id;
 
   // Function to handle invite collaborators
@@ -169,7 +170,13 @@ export const CollaboratorsSetting = ({
     });
   };
 
-  if (isLoading) return <div>Loading Collaborators...</div>;
+  if (isLoading)
+    return (
+      <div className="h-full flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+
   if (error) return <div>Error: {error}</div>;
   if (!owner) return <div>No owner data available.</div>;
 

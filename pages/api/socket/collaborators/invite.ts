@@ -58,9 +58,17 @@ export default async function handler(
     });
 
     // Emit real-time update via Socket.io
-    res?.socket?.server?.io?.emit("document:collaborator:settings", {
+    const room = `room:document:${documentId}`;
+    res?.socket?.server?.io?.to(room).emit("collaborator:settings:invite", {
       invited: true,
-      newCollaborator: collaborator.data ?? null,
+      userExist: collaborator.data ? true : false,
+      newCollaborator: {
+        userName: collaborator.data ? collaborator.data.user.name : undefined,
+        email: email,
+        documentId: document.id,
+        documentTitle: document.title,
+        addedBy: { name: user.name, id: user.id },
+      },
     });
 
     // Return response
