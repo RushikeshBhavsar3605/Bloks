@@ -39,6 +39,24 @@ interface DocumentItemProps {
       id: string;
     };
   }) => void;
+  handleCollaboratorRoleChange: ({
+    updatedBy,
+    updatedUser,
+    newRole,
+    prevRole,
+  }: {
+    documentId: string;
+    updatedBy: {
+      id: string;
+      name: string;
+    };
+    updatedUser: {
+      id: string;
+      name: string;
+    };
+    newRole: CollaboratorRole;
+    prevRole: CollaboratorRole;
+  }) => void;
   activeDocumentId?: string;
 }
 
@@ -52,6 +70,7 @@ export const DocumentItem = ({
   handleArchived,
   handleUpdateTitle,
   handleCollaboratorRemove,
+  handleCollaboratorRoleChange,
   activeDocumentId,
 }: DocumentItemProps) => {
   const user = useCurrentUser();
@@ -74,17 +93,20 @@ export const DocumentItem = ({
     const archiveEvent = `document:archived:${document.id}`;
     const titleChangeEvent = `document:receive:title:${document.id}`;
     const collaboratorRemoveEvent = "collaborator:settings:remove";
+    const collaboratorRoleChangeEvent = "collaborator:settings:role";
 
     joinDocument(documentId, userId);
     socket.on(archiveEvent, handleArchived);
     socket.on(titleChangeEvent, handleUpdateTitle);
     socket.on(collaboratorRemoveEvent, handleCollaboratorRemove);
+    socket.on(collaboratorRoleChangeEvent, handleCollaboratorRoleChange);
 
     return () => {
       leaveDocument(documentId, userId);
       socket.off(archiveEvent, handleArchived);
       socket.off(titleChangeEvent, handleUpdateTitle);
       socket.off(collaboratorRemoveEvent, handleCollaboratorRemove);
+      socket.off(collaboratorRoleChangeEvent, handleCollaboratorRoleChange);
     };
   }, [
     socket,
@@ -95,6 +117,7 @@ export const DocumentItem = ({
     handleArchived,
     handleUpdateTitle,
     handleCollaboratorRemove,
+    handleCollaboratorRoleChange,
   ]);
 
   return (

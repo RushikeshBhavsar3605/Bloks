@@ -188,7 +188,7 @@ export const updateCollaboratorRole = async ({
   collaboratorId,
   newRole,
 }: UpdateCollaboratorRoleProps): Promise<
-  ServiceResponse<CollaboratorWithMeta>
+  ServiceResponse<CollaboratorWithMeta & { prevRole: CollaboratorRole }>
 > => {
   try {
     const document = await db.document.findUnique({
@@ -284,7 +284,7 @@ export const updateCollaboratorRole = async ({
 
     return {
       success: true,
-      data: updatedCollaborator,
+      data: { ...updatedCollaborator, prevRole: collaborator.role },
       status: 200,
     };
   } catch (error) {

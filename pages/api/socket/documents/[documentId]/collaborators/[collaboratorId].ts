@@ -27,20 +27,34 @@ export default async function handler(
     if (req.method === "PATCH") {
       const { role } = req.body;
 
-      const response = await updateCollaboratorRole({
+      const updatedCollaborator = await updateCollaboratorRole({
         documentId,
         userId: user.id,
         collaboratorId,
         newRole: role as CollaboratorRole,
       });
 
-      if (!response.success) {
+      if (!updatedCollaborator.success) {
         return res
-          .status(response.status || 400)
-          .json({ error: response.error });
+          .status(updatedCollaborator.status || 400)
+          .json({ error: updatedCollaborator.error });
       }
 
-      return res.status(response.status || 200).json(response.data);
+      const room = `room:document:${documentId}`;
+      res.socket.server.io.to(room).emit("collaborator:settings:role", {
+        documentId: documentId,
+        updatedBy: { id: user.id, name: user.name },
+        updatedUser: {
+          id: updatedCollaborator.data?.user.id,
+          name: updatedCollaborator.data?.user.name,
+        },
+        newRole: updatedCollaborator.data?.role,
+        prevRole: updatedCollaborator.data?.prevRole,
+      });
+
+      return res
+        .status(updatedCollaborator.status || 200)
+        .json(updatedCollaborator.data);
     }
 
     // DELETE - Remove a collaborator

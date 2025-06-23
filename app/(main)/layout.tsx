@@ -5,6 +5,7 @@ import { SearchCommand } from "@/components/search-command";
 import { Spinner } from "@/components/spinner";
 import { CollaboratorInviteToast } from "@/lib/toasts/collaborator-invite-toast";
 import { CollaboratorRemoveToast } from "@/lib/toasts/collaborator-remove-toast";
+import { CollaboratorUpdateToast } from "@/lib/toasts/collaborator-update-toast";
 import { useSession } from "next-auth/react";
 
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
@@ -25,6 +26,7 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
         <SearchCommand />
         <CollaboratorInviteToast />
         <CollaboratorRemoveToast />
+        <CollaboratorUpdateToast />
         {children}
       </main>
     </div>

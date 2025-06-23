@@ -236,6 +236,44 @@ export const DocumentTree = ({
     router.replace("/documents");
   };
 
+  const handleCollaboratorRoleChange = (data: {
+    documentId: string;
+    updatedBy: {
+      id: string;
+      name: string;
+    };
+    updatedUser: {
+      id: string;
+      name: string;
+    };
+    newRole: CollaboratorRole;
+    prevRole: CollaboratorRole;
+  }) => {
+    if (user?.id !== data.updatedUser.id) return;
+
+    setDocuments((prevDocs) => {
+      if (Array.isArray(prevDocs)) {
+        return prevDocs.map((doc) =>
+          doc.id === data.documentId ? { ...doc, role: data.newRole } : doc
+        );
+      }
+
+      if (prevDocs && !Array.isArray(prevDocs)) {
+        return {
+          ...prevDocs,
+          ownedDocuments: prevDocs.ownedDocuments.map((doc) =>
+            doc.id === data.documentId ? { ...doc, role: data.newRole } : doc
+          ),
+          sharedDocuments: prevDocs.sharedDocuments.map((doc) =>
+            doc.id === data.documentId ? { ...doc, role: data.newRole } : doc
+          ),
+        };
+      }
+
+      return prevDocs;
+    });
+  };
+
   const onRedirect = (documentId: string) => {
     router.push(`/documents/${documentId}`);
   };
@@ -269,6 +307,7 @@ export const DocumentTree = ({
           handleArchived={handleArchived}
           handleUpdateTitle={handleUpdateTitle}
           handleCollaboratorRemove={handleCollaboratorRemove}
+          handleCollaboratorRoleChange={handleCollaboratorRoleChange}
           activeDocumentId={params?.documentId as string}
         />
       )}
@@ -284,6 +323,7 @@ export const DocumentTree = ({
           handleArchived={handleArchived}
           handleUpdateTitle={handleUpdateTitle}
           handleCollaboratorRemove={handleCollaboratorRemove}
+          handleCollaboratorRoleChange={handleCollaboratorRoleChange}
           activeDocumentId={params?.documentId as string}
         />
       )}
@@ -298,6 +338,7 @@ export const DocumentTree = ({
           handleArchived={handleArchived}
           handleUpdateTitle={handleUpdateTitle}
           handleCollaboratorRemove={handleCollaboratorRemove}
+          handleCollaboratorRoleChange={handleCollaboratorRoleChange}
           activeDocumentId={params?.documentId as string}
         />
       )}

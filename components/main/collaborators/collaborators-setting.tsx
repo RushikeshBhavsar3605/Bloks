@@ -78,20 +78,42 @@ export const CollaboratorsSetting = ({
       };
     }) => {
       setCollaborators((prevState) => [
-        ...prevState.filter((c) => c.id !== data.removedUser.id),
+        ...prevState.filter((c) => c.user.id !== data.removedUser.id),
       ]);
+    };
+
+    const handleCollaboratorRoleChange = (data: {
+      documentId: string;
+      updatedBy: {
+        id: string;
+        name: string;
+      };
+      updatedUser: {
+        id: string;
+        name: string;
+      };
+      newRole: CollaboratorRole;
+      prevRole: CollaboratorRole;
+    }) => {
+      setCollaborators((prevState) =>
+        prevState.map((c) =>
+          c.user.id === data.updatedUser.id ? { ...c, role: data.newRole } : c
+        )
+      );
     };
 
     socket.on("collaborator:settings:invite", handleCollaboratorInvite);
     socket.on("collaborator:settings:verified", handleCollaboratorVerified);
     socket.on("collaborator:settings:remove", handleCollaboratorRemove);
+    socket.on("collaborator:settings:role", handleCollaboratorRoleChange);
 
     return () => {
       socket.off("collaborator:settings:invite", handleCollaboratorInvite);
       socket.off("collaborator:settings:verified", handleCollaboratorVerified);
       socket.off("collaborator:settings:remove", handleCollaboratorRemove);
+      socket.off("collaborator:settings:role", handleCollaboratorRoleChange);
     };
-  }, [socket, user?.id, setCollaborators]);
+  }, [socket, user?.id, setCollaborators, collaborators]);
 
   // Function to handle invite collaborators
   const handleInvite = async (emails: EmailOption[]) => {

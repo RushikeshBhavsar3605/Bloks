@@ -1,5 +1,6 @@
 import { DocumentWithMeta } from "@/types/shared";
 import { DocumentItem } from "./document-item";
+import { CollaboratorRole } from "@prisma/client";
 
 interface DocumentSectionProps {
   title?: string;
@@ -33,6 +34,24 @@ interface DocumentSectionProps {
       id: string;
     };
   }) => void;
+  handleCollaboratorRoleChange: ({
+    updatedBy,
+    updatedUser,
+    newRole,
+    prevRole,
+  }: {
+    documentId: string;
+    updatedBy: {
+      id: string;
+      name: string;
+    };
+    updatedUser: {
+      id: string;
+      name: string;
+    };
+    newRole: CollaboratorRole;
+    prevRole: CollaboratorRole;
+  }) => void;
   activeDocumentId?: string;
 }
 
@@ -46,6 +65,7 @@ export const DocumentSection = ({
   handleArchived,
   handleUpdateTitle,
   handleCollaboratorRemove,
+  handleCollaboratorRoleChange,
   activeDocumentId,
 }: DocumentSectionProps) => {
   return (
@@ -68,6 +88,7 @@ export const DocumentSection = ({
           handleArchived={handleArchived}
           handleUpdateTitle={handleUpdateTitle}
           handleCollaboratorRemove={handleCollaboratorRemove}
+          handleCollaboratorRoleChange={handleCollaboratorRoleChange}
           activeDocumentId={activeDocumentId}
         />
       ))}
