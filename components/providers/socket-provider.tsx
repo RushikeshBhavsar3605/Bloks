@@ -1,8 +1,9 @@
 "use client";
 
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { getSocket } from "@/lib/client-socket";
 import { createContext, useContext, useEffect, useState } from "react";
-import { io as ClientIO, Socket } from "socket.io-client";
+import { Socket } from "socket.io-client";
 
 type SocketContextType = {
   socket: Socket | null;
@@ -32,20 +33,13 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const user = useCurrentUser();
 
   useEffect(() => {
+    if (!user?.id) return;
+
     fetch("/api/socket/io").catch((err) => {
       console.error("Socket server init failed", err);
     });
 
-    const socketInstance = new (ClientIO as any)(
-      process.env.NEXT_PUBLIC_APP_URL!,
-      {
-        path: "/api/socket/io",
-        addTrailingSlash: false,
-        query: {
-          userId: user?.id || "",
-        },
-      }
-    );
+    const socketInstance = getSocket(user.id);
 
     socketInstance.on("connect", () => {
       setIsConnected(true);
@@ -58,7 +52,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     setSocket(socketInstance);
 
     return () => {
-      socketInstance.disconnect();
+      socketInstance.off("connect");
+      socketInstance.off("disconnect");
     };
   }, [user?.id]);
 

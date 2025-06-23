@@ -16,6 +16,23 @@ interface DocumentSectionProps {
     documentId: string;
     title: string;
   }) => void;
+  handleCollaboratorRemove: ({
+    addedBy,
+    documentId,
+    documentTitle,
+    removedUser,
+  }: {
+    addedBy: {
+      name: string;
+      id: string;
+    };
+    documentId: string;
+    documentTitle: string;
+    removedUser: {
+      name: string;
+      id: string;
+    };
+  }) => void;
   activeDocumentId?: string;
 }
 
@@ -28,6 +45,7 @@ export const DocumentSection = ({
   onRedirect,
   handleArchived,
   handleUpdateTitle,
+  handleCollaboratorRemove,
   activeDocumentId,
 }: DocumentSectionProps) => {
   return (
@@ -49,6 +67,7 @@ export const DocumentSection = ({
           role={document.role}
           handleArchived={handleArchived}
           handleUpdateTitle={handleUpdateTitle}
+          handleCollaboratorRemove={handleCollaboratorRemove}
           activeDocumentId={activeDocumentId}
         />
       ))}

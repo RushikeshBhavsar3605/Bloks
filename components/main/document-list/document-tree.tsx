@@ -199,6 +199,43 @@ export const DocumentTree = ({
     []
   );
 
+  const handleCollaboratorRemove = (data: {
+    addedBy: {
+      name: string;
+      id: string;
+    };
+    documentId: string;
+    documentTitle: string;
+    removedUser: {
+      name: string;
+      id: string;
+    };
+  }) => {
+    if (user?.id !== data.removedUser.id) return;
+
+    setDocuments((prevDocs) => {
+      if (Array.isArray(prevDocs)) {
+        return prevDocs.filter((doc) => doc.id !== data.documentId);
+      }
+
+      if (prevDocs && !Array.isArray(prevDocs)) {
+        return {
+          ...prevDocs,
+          ownedDocuments: prevDocs.ownedDocuments.filter(
+            (doc) => doc.id !== data.documentId
+          ),
+          sharedDocuments: prevDocs.sharedDocuments.filter(
+            (doc) => doc.id !== data.documentId
+          ),
+        };
+      }
+
+      return prevDocs;
+    });
+
+    router.replace("/documents");
+  };
+
   const onRedirect = (documentId: string) => {
     router.push(`/documents/${documentId}`);
   };
@@ -231,6 +268,7 @@ export const DocumentTree = ({
           onRedirect={onRedirect}
           handleArchived={handleArchived}
           handleUpdateTitle={handleUpdateTitle}
+          handleCollaboratorRemove={handleCollaboratorRemove}
           activeDocumentId={params?.documentId as string}
         />
       )}
@@ -245,6 +283,7 @@ export const DocumentTree = ({
           onRedirect={onRedirect}
           handleArchived={handleArchived}
           handleUpdateTitle={handleUpdateTitle}
+          handleCollaboratorRemove={handleCollaboratorRemove}
           activeDocumentId={params?.documentId as string}
         />
       )}
@@ -258,6 +297,7 @@ export const DocumentTree = ({
           onRedirect={onRedirect}
           handleArchived={handleArchived}
           handleUpdateTitle={handleUpdateTitle}
+          handleCollaboratorRemove={handleCollaboratorRemove}
           activeDocumentId={params?.documentId as string}
         />
       )}

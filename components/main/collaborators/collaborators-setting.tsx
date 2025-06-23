@@ -7,9 +7,11 @@ import EmailSelector, {
   EmailOption,
   EmailSelectorRef,
 } from "@/components/ui/multi-selector";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Spinner } from "@/components/spinner";
+import { useSocket } from "@/components/providers/socket-provider";
+import { getCollaborator } from "@/actions/collaborators/get-collaborator";
 
 export const CollaboratorsSetting = ({
   documentId,
@@ -21,6 +23,75 @@ export const CollaboratorsSetting = ({
   const { owner, isLoading, error, collaborators, setCollaborators } =
     useCollaborators(documentId);
   const isOwner = user?.id === owner?.id;
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleCollaboratorInvite = async (data: {
+      invited: boolean;
+      userExist: boolean;
+      newCollaborator: {
+        userName: string;
+        email: string;
+        documentId: string;
+        documentTitle: string;
+        addedBy: { name: string; id: string };
+      };
+    }) => {
+      if (!data.invited) return;
+
+      const newCollaborator: CollaboratorWithMeta | null =
+        await getCollaborator({
+          email: data.newCollaborator.email,
+          documentId: data.newCollaborator.documentId,
+        });
+
+      if (!newCollaborator) return;
+
+      setCollaborators((prevState) => [
+        ...prevState.filter((c) => c.id !== newCollaborator.id),
+        newCollaborator,
+      ]);
+    };
+
+    const handleCollaboratorVerified = (payload: {
+      data: CollaboratorWithMeta;
+    }) => {
+      const verifiedCollaborator = payload.data;
+      setCollaborators((prevState) => [
+        ...prevState.filter((c) => c.id !== verifiedCollaborator.id),
+        verifiedCollaborator,
+      ]);
+    };
+
+    const handleCollaboratorRemove = (data: {
+      addedBy: {
+        name: string;
+        id: string;
+      };
+      documentId: string;
+      documentTitle: string;
+      removedUser: {
+        name: string;
+        id: string;
+      };
+    }) => {
+      setCollaborators((prevState) => [
+        ...prevState.filter((c) => c.id !== data.removedUser.id),
+      ]);
+    };
+
+    socket.on("collaborator:settings:invite", handleCollaboratorInvite);
+    socket.on("collaborator:settings:verified", handleCollaboratorVerified);
+    socket.on("collaborator:settings:remove", handleCollaboratorRemove);
+
+    return () => {
+      socket.off("collaborator:settings:invite", handleCollaboratorInvite);
+      socket.off("collaborator:settings:verified", handleCollaboratorVerified);
+      socket.off("collaborator:settings:remove", handleCollaboratorRemove);
+    };
+  }, [socket, user?.id, setCollaborators]);
 
   // Function to handle invite collaborators
   const handleInvite = async (emails: EmailOption[]) => {
@@ -67,11 +138,6 @@ export const CollaboratorsSetting = ({
 
         // If added as collaborator, update state
         if (data.newCollaborator) {
-          setCollaborators((prevState) => [
-            ...prevState.filter((c) => c.id !== data.newCollaborator.id),
-            data.newCollaborator,
-          ]);
-
           successfulInvites.push({ email: email.value });
           successCount++;
         } else {

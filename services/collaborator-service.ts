@@ -65,8 +65,8 @@ export const addCollaborator = async ({
 
     if (!collaboratorUser) {
       return {
-        success: false,
-        error: "User not found",
+        success: true,
+        error: "User not on platform",
         status: 404,
       };
     }
@@ -102,8 +102,7 @@ export const addCollaborator = async ({
 
     if (existingCollaborator) {
       return {
-        success: true,
-        data: existingCollaborator,
+        success: false,
         error: "User is already a collaborator on this document",
         status: 400,
       };
@@ -418,13 +417,27 @@ export const removeCollaborator = async ({
   documentId,
   userId,
   collaboratorId,
-}: RemoveCollaboratorProps): Promise<ServiceResponse<{ id: string }>> => {
+}: RemoveCollaboratorProps): Promise<
+  ServiceResponse<{
+    addedBy: { name: string; id: string };
+    documentId: string;
+    documentTitle: string;
+    removedUser: { name: string; id: string };
+  }>
+> => {
   try {
     // Check if current user is the owner
     const document = await db.document.findUnique({
       where: {
         id: documentId,
         userId,
+      },
+      include: {
+        owner: {
+          select: {
+            name: true,
+          },
+        },
       },
     });
 
@@ -456,6 +469,14 @@ export const removeCollaborator = async ({
     const deletedCollaborator = await db.collaborator.delete({
       where: {
         id: collaboratorId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
@@ -499,7 +520,15 @@ export const removeCollaborator = async ({
 
     return {
       success: true,
-      data: { id: deletedCollaborator.id },
+      data: {
+        addedBy: { id: userId, name: document.owner.name as string },
+        documentId: document.id,
+        documentTitle: document.title,
+        removedUser: {
+          id: deletedCollaborator.user.id,
+          name: deletedCollaborator.user.name as string,
+        },
+      },
       status: 204,
     };
   } catch (error) {

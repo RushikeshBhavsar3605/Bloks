@@ -43,13 +43,6 @@ export default async function handler(
       return res.status(403).json({ error: "Not allowed" });
     }
 
-    // Generate verification token and send invite email
-    const token = await generateCollaboratorVerificationToken(
-      email,
-      documentId
-    );
-    await sendCollaboratorVerificationEmail(token.email, token.token);
-
     // Add collaborator (record can be added even if user doesn't exist yet)
     const collaborator = await addCollaborator({
       documentId,
@@ -57,10 +50,21 @@ export default async function handler(
       collaboratorEmail: email,
     });
 
+    if (!collaborator.success) {
+      return res.status(400).json({ error: "Invalid" });
+    }
+
+    // Generate verification token and send invite email
+    const token = await generateCollaboratorVerificationToken(
+      email,
+      documentId
+    );
+    await sendCollaboratorVerificationEmail(token.email, token.token);
+
     // Emit real-time update via Socket.io
     const room = `room:document:${documentId}`;
     res?.socket?.server?.io?.to(room).emit("collaborator:settings:invite", {
-      invited: true,
+      invited: collaborator.success,
       userExist: collaborator.data ? true : false,
       newCollaborator: {
         userName: collaborator.data ? collaborator.data.user.name : undefined,

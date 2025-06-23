@@ -4,11 +4,12 @@ import {
   updateCollaboratorRole,
 } from "@/services/collaborator-service";
 import { CollaboratorRole } from "@prisma/client";
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextApiRequest } from "next";
+import { NextApiResponseServerIo } from "@/types";
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponseServerIo
 ) {
   try {
     const user = await currentUser(req);
@@ -44,10 +45,24 @@ export default async function handler(
 
     // DELETE - Remove a collaborator
     if (req.method === "DELETE") {
-      await removeCollaborator({
+      const deletedCollaborator = await removeCollaborator({
         documentId,
         userId: user.id,
         collaboratorId,
+      });
+
+      if (!deletedCollaborator.success) {
+        return res
+          .status(deletedCollaborator.status || 400)
+          .json({ error: deletedCollaborator.error });
+      }
+
+      const room = `room:document:${documentId}`;
+      res.socket.server.io.to(room).emit("collaborator:settings:remove", {
+        addedBy: deletedCollaborator.data?.addedBy,
+        documentId: deletedCollaborator.data?.documentId,
+        documentTitle: deletedCollaborator.data?.documentTitle,
+        removedUser: deletedCollaborator.data?.removedUser,
       });
 
       return res.status(200).json({ success: "Successfully Removed!" });

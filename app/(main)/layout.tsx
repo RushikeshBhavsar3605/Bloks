@@ -2,8 +2,9 @@
 
 import { Navigation } from "@/components/main/navigation";
 import { SearchCommand } from "@/components/search-command";
-import { CollaboratorInviteListener } from "@/components/socket/collaborator-invite-listener";
 import { Spinner } from "@/components/spinner";
+import { CollaboratorInviteToast } from "@/lib/toasts/collaborator-invite-toast";
+import { CollaboratorRemoveToast } from "@/lib/toasts/collaborator-remove-toast";
 import { useSession } from "next-auth/react";
 
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
@@ -22,7 +23,8 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
       <Navigation />
       <main className="flex-1 h-full overflow-y-auto">
         <SearchCommand />
-        <CollaboratorInviteListener />
+        <CollaboratorInviteToast />
+        <CollaboratorRemoveToast />
         {children}
       </main>
     </div>
