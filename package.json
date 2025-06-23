@@ -37,6 +37,7 @@
     "react-icons": "^5.2.1",
     "react-spinners": "^0.14.1",
     "resend": "^3.5.0",
+    "sharp": "^0.34.2",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "sonner": "^1.5.0",
