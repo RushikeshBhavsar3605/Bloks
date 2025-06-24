@@ -8,6 +8,7 @@ import debounce from "lodash.debounce";
 import { useSocket } from "../providers/socket-provider";
 import { useSaveStatus } from "@/hooks/use-save-status";
 import { DocumentWithMeta } from "@/types/shared";
+import { Skeleton } from "../ui/skeleton";
 
 interface TitleProps {
   initialData: DocumentWithMeta;
@@ -101,4 +102,8 @@ export const Title = ({ initialData }: TitleProps) => {
       )}
     </div>
   );
+};
+
+Title.Skeleton = function TitleSkeleton() {
+  return <Skeleton className="h-7 w-52 rounded-md" />;
 };

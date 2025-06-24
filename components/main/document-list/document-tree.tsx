@@ -35,6 +35,7 @@ export const DocumentTree = ({
     DocumentWithMeta[] | RootDocuments
   >([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState<boolean>(false);
 
   const onExpand = (documentId: string) => {
     setExpanded((prevExpanded) => ({
@@ -45,6 +46,7 @@ export const DocumentTree = ({
 
   const fetchDocuments = useCallback(async () => {
     if (!socket) return;
+    setLoading(true);
     try {
       let data;
       if (!parentDocumentId) {
@@ -60,6 +62,8 @@ export const DocumentTree = ({
       setDocuments(data);
     } catch (error) {
       console.log("Failed to fetch documents", error);
+    } finally {
+      setLoading(false);
     }
   }, [socket, parentDocumentId]);
 
@@ -278,7 +282,12 @@ export const DocumentTree = ({
     router.push(`/documents/${documentId}`);
   };
 
-  if (documents == undefined) {
+  const checkIsDocumentEmpty = (): boolean => {
+    if (Array.isArray(documents) && documents.length === 0) return true;
+    return false;
+  };
+
+  if (loading) {
     return (
       <>
         <Item.Skeleton level={level} />
@@ -294,7 +303,10 @@ export const DocumentTree = ({
 
   return (
     <>
-      <DocumentEmpty level={level} expanded={!!expanded} />
+      <DocumentEmpty
+        level={level}
+        expanded={!loading && checkIsDocumentEmpty()}
+      />
 
       {!Array.isArray(documents) && documents?.ownedDocuments?.length > 0 && (
         <DocumentSection
