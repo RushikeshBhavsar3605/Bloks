@@ -603,7 +603,7 @@ export const archiveDocument = async ({
   userId,
   documentId,
 }: DocumentActionProps): Promise<
-  ServiceResponse<{ id: string; isArchived: boolean }>
+  ServiceResponse<{ id: string; isArchived: boolean; archivedIds: string[] }>
 > => {
   try {
     // Check access rights (must be owner or EDITOR)
@@ -639,8 +639,11 @@ export const archiveDocument = async ({
       };
     }
 
-    // Recursively archive all children
+    // Recursively archive all
+    const archivedIds: string[] = [];
     const archiveRecursively = async (docId: string) => {
+      archivedIds.push(docId);
+
       const children = await db.document.findMany({
         where: { parentDocumentId: docId },
         select: { id: true },
@@ -665,6 +668,7 @@ export const archiveDocument = async ({
       data: {
         id: documentId,
         isArchived: true,
+        archivedIds,
       },
       status: 200,
     };

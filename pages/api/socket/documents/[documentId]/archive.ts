@@ -28,6 +28,15 @@ export default async function handler(
 
     res?.socket?.server?.io?.to(room).emit(archiveEvent, response.data?.id);
 
+    const archivedIds = response.data?.archivedIds;
+    if (archivedIds) {
+      for (const id of archivedIds) {
+        res.socket.server.io
+          .to(`room:document:${id}`)
+          .emit(`document:archived:${id}`, id);
+      }
+    }
+
     return res.status(response.status || 200).json(response.data?.id);
   }
 

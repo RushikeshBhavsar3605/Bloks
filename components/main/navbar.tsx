@@ -12,6 +12,9 @@ import { Button } from "../ui/button";
 import { CollaboratorsSetting } from "./collaborators/collaborators-setting";
 import { DocumentWithMeta } from "@/types/shared";
 import { toast } from "sonner";
+import { Banner } from "./banner";
+import { Collaborator, Document } from "@prisma/client";
+import { Menu } from "./menu";
 
 interface NavbarProps {
   isCollapsed: boolean;
@@ -60,17 +63,53 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
       setDocument(data);
     };
 
+    const handleArchived = (id: string) => {
+      setDocument((prev) => (prev ? { ...prev, isArchived: true } : undefined));
+    };
+
+    const handleRestore = (data: {
+      restoredDocument: Document & {
+        owner: {
+          name: string | null;
+          image: string | null;
+        };
+        collaborators: Collaborator[];
+      };
+      restoredIds: string[];
+    }) => {
+      const restoredIdsSet = new Set(data.restoredIds);
+
+      if (restoredIdsSet.has(document.id)) {
+        setDocument((prev) =>
+          prev ? { ...prev, isArchived: false } : undefined
+        );
+      }
+    };
+
     socket.on(`document:update:${document.id}`, handleUpdate);
+    socket.on(`document:archived:${document.id}`, handleArchived);
+    socket.on(
+      `document:restore:${document.parentDocumentId || "root"}`,
+      handleRestore
+    );
 
     return () => {
       socket.off(`document:update:${document.id}`, handleUpdate);
+      socket.off(`document:archived:${document.id}`, handleArchived);
+      socket.on(
+        `document:restore:${document.parentDocumentId || "root"}`,
+        handleRestore
+      );
     };
-  }, [socket, document?.id]);
+  }, [socket, document]);
 
   if (document === undefined) {
     return (
-      <nav className="bg-background dark:bg-[#1F1F1F] px-3 py-2 w-full flex items-center">
+      <nav className="bg-background dark:bg-[#1F1F1F] px-3 py-2 w-full flex items-center justify-between">
         <Title.Skeleton />
+        <div className="flex items-center gap-x-2">
+          <Menu.Skeleton />
+        </div>
       </nav>
     );
   }
@@ -92,6 +131,9 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
 
         <div className="flex items-center justify-between w-full">
           <Title initialData={document} />
+          <div className="flex items-center gap-x-2">
+            <Menu documentId={document.id} />
+          </div>
         </div>
 
         <div className="ml-auto flex items-center space-x-2">
@@ -114,6 +156,14 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
           <SocketIndicator />
         </div>
       </nav>
+
+      {document.isArchived && (
+        <Banner
+          documentId={document.id}
+          documentTitle={document.title}
+          isOwner={document.isOwner}
+        />
+      )}
     </>
   );
 };
