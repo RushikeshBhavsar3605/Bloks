@@ -14,6 +14,7 @@ interface DocumentItemProps {
   onExpand: (document: string) => void;
   onRedirect: (document: string) => void;
   role: CollaboratorRole | "OWNER" | null;
+  handleUpdate: (data: DocumentWithMeta) => void;
   handleArchived: (id: string) => void;
   handleUpdateTitle: ({
     documentId,
@@ -67,6 +68,7 @@ export const DocumentItem = ({
   onExpand,
   onRedirect,
   role,
+  handleUpdate,
   handleArchived,
   handleUpdateTitle,
   handleCollaboratorRemove,
@@ -96,6 +98,7 @@ export const DocumentItem = ({
     const collaboratorRoleChangeEvent = "collaborator:settings:role";
 
     joinDocument(documentId, userId);
+    socket.on(`document:update:${document.id}`, handleUpdate);
     socket.on(archiveEvent, handleArchived);
     socket.on(titleChangeEvent, handleUpdateTitle);
     socket.on(collaboratorRemoveEvent, handleCollaboratorRemove);
@@ -103,6 +106,7 @@ export const DocumentItem = ({
 
     return () => {
       leaveDocument(documentId, userId);
+      socket.off(`document:update:${document.id}`, handleUpdate);
       socket.off(archiveEvent, handleArchived);
       socket.off(titleChangeEvent, handleUpdateTitle);
       socket.off(collaboratorRemoveEvent, handleCollaboratorRemove);
@@ -114,6 +118,7 @@ export const DocumentItem = ({
     user?.id,
     joinDocument,
     leaveDocument,
+    handleUpdate,
     handleArchived,
     handleUpdateTitle,
     handleCollaboratorRemove,

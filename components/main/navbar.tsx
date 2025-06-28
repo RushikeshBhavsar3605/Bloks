@@ -56,11 +56,29 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
   }, [fetchDocuments]);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !document?.id) return;
 
-    if (!document?.id) return;
     const handleUpdate = (data: DocumentWithMeta) => {
       setDocument(data);
+    };
+
+    const handleUpdateTitle = ({
+      documentId,
+      title,
+      icon,
+    }: {
+      documentId: string;
+      title?: string;
+      icon?: string;
+    }) => {
+      setDocument((doc) => {
+        if (!doc) return doc;
+        return {
+          ...doc,
+          ...(title !== undefined && { title }),
+          ...(icon !== undefined && { icon }),
+        };
+      });
     };
 
     const handleArchived = (id: string) => {
@@ -86,7 +104,10 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
       }
     };
 
+    const titleChangeEvent = `document:receive:title:${document.id}`;
+
     socket.on(`document:update:${document.id}`, handleUpdate);
+    socket.on(titleChangeEvent, handleUpdateTitle);
     socket.on(`document:archived:${document.id}`, handleArchived);
     socket.on(
       `document:restore:${document.parentDocumentId || "root"}`,
@@ -95,6 +116,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
 
     return () => {
       socket.off(`document:update:${document.id}`, handleUpdate);
+      socket.off(titleChangeEvent, handleUpdateTitle);
       socket.off(`document:archived:${document.id}`, handleArchived);
       socket.on(
         `document:restore:${document.parentDocumentId || "root"}`,

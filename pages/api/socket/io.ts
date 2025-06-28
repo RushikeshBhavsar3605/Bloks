@@ -20,7 +20,8 @@ type DocumentRoomAction = {
 
 type TitleUpdateEvent = {
   documentId: string;
-  title: string;
+  title?: string;
+  icon?: string;
 };
 
 class SocketDocumentManager {
@@ -246,9 +247,13 @@ class SocketDocumentManager {
 
   // >------->>-------|----->>----> Title updates (sidebar) <----<<-----|-------<<-------<
 
-  private handleTitleUpdate = ({ documentId, title }: TitleUpdateEvent) => {
+  private handleTitleUpdate = ({
+    documentId,
+    title,
+    icon,
+  }: TitleUpdateEvent) => {
     try {
-      if (!documentId || typeof title !== "string") {
+      if (!documentId) {
         this.emitError(
           "document:update:title",
           "Invalid parameters",
@@ -269,7 +274,7 @@ class SocketDocumentManager {
       }
 
       const updateTitleEvent = `document:receive:title:${documentId}`;
-      this.io.to(room).emit(updateTitleEvent, { documentId, title });
+      this.io.to(room).emit(updateTitleEvent, { documentId, title, icon });
     } catch (error) {
       this.emitError(
         "document:update:title",
