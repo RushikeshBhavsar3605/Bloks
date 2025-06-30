@@ -1,7 +1,9 @@
 "use client";
 
+import { Editor } from "@/components/main/editor";
 import { Toolbar } from "@/components/main/toolbar";
 import { useSocket } from "@/components/providers/socket-provider";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { DocumentWithMeta } from "@/types/shared";
 import { useRouter } from "next/navigation";
@@ -85,7 +87,18 @@ const DocumentIdPage = () => {
   }, [fetchDocuments]);
 
   if (document === undefined) {
-    return <div>Loading...</div>;
+    return (
+      <div>
+        <div className="md:max-w-3xl lg:max-w-4xl mx-auto mt-10">
+          <div className="space-y-4 pl-8 pt-4">
+            <Skeleton className="h-14 w-[50%]" />
+            <Skeleton className="h-4 w-[80%]" />
+            <Skeleton className="h-4 w-[40%]" />
+            <Skeleton className="h-4 w-[60%]" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (document === null) {
@@ -94,9 +107,13 @@ const DocumentIdPage = () => {
 
   return (
     <div className="pb-40">
-      <div className="h-[35vh]" />
+      <div className="h-[12vh]" />
       <div className="md:max-w-3xl lg:max-w-4xl mx-auto">
         <Toolbar initialData={document} />
+        <Editor
+          onChange={() => {}}
+          initialContent={document.content ?? undefined}
+        />
       </div>
     </div>
   );
