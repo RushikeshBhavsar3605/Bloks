@@ -41,6 +41,7 @@ class SocketDocumentManager {
     socket.on("leave-active-document", this.leaveActiveRoom);
 
     socket.on("document:update:title", this.handleTitleUpdate);
+    socket.on("doc-change", this.handleDocChange);
   }
 
   // >------->>-------|----->>----> Sidebar subscription <----<<-----|-------<<-------<
@@ -161,12 +162,8 @@ class SocketDocumentManager {
       }
 
       if (this.activeRoom === documentId) {
-        this.emitError(
-          "join-active-document",
-          "Already in document room",
-          "ALREADY_IN_ROOM"
-        );
-        return console.warn(`[Socket.io] User already in room ${documentId}`);
+        console.log(`[Socket.io] User ${this.userId} already in active room ${documentId}`);
+        return; // Don't emit error, just return silently
       }
 
       const documentExists = await verifyDocumentAccess(
@@ -285,6 +282,57 @@ class SocketDocumentManager {
     }
   };
 
+  private handleDocChange = async (data: {
+    documentId: string;
+    userId: string;
+    steps: any[];
+    version: number;
+    timestamp: number;
+  }) => {
+    try {
+      const { documentId } = data;
+      
+      if (!documentId) {
+        this.emitError("doc-change", "Invalid parameters", "INVALID_PARAMETERS");
+        return console.warn("[Socket.io] Invalid documentId in doc-change");
+      }
+
+      const activeRoom = `room:active:document:${documentId}`;
+      
+      // If user is not in active room, try to join them first
+      if (!this.socket.rooms.has(activeRoom)) {
+        console.warn(`[Socket.io] User ${this.userId} not in active room ${documentId}, attempting to join`);
+        
+        // Try to join the active room
+        try {
+          const documentExists = await verifyDocumentAccess(documentId, this.userId);
+          if (documentExists) {
+            this.socket.join(activeRoom);
+            this.activeRoom = documentId;
+            console.log(`[Socket.io] Auto-joined user ${this.userId} to active room ${activeRoom}`);
+          } else {
+            this.emitError("doc-change", "Access denied", "UNAUTHORIZED");
+            return console.warn(`[Socket.io] User not authorized to access document ${documentId}`);
+          }
+        } catch (error) {
+          this.emitError("doc-change", "Failed to join room", "INTERNAL_ERROR");
+          return console.error("[Socket.io] Error joining active room:", error);
+        }
+      }
+
+      // Get all sockets in the room for debugging
+      const socketsInRoom = await this.io.in(activeRoom).allSockets();
+      console.log(`[Socket.io] Broadcasting doc-change from ${this.userId} to ${socketsInRoom.size - 1} other users in room ${activeRoom}`);
+
+      // Broadcast to all other users in the active document room (exclude sender)
+      this.socket.to(activeRoom).emit("doc-change", data);
+      console.log(`[Socket.io] Doc change broadcasted for document ${documentId} with ${data.steps.length} steps`);
+    } catch (error) {
+      this.emitError("doc-change", "Failed to broadcast change", "INTERNAL_ERROR");
+      console.error("[Socket.io] Doc change error:", error);
+    }
+  };
+
   // >------->>-------|----->>----> Utilities <----<<-----|-------<<-------<
 
   private emitError(event: string, message: string, code: string) {
@@ -301,6 +349,7 @@ class SocketDocumentManager {
       this.socket.off("leave-active-document", this.leaveActiveRoom);
 
       this.socket.off("document:update:title", this.handleTitleUpdate);
+      this.socket.off("doc-change", this.handleDocChange);
 
       // Clean up rooms
       this.socket.leave(`user:${this.userId}`);

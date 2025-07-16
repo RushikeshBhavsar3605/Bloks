@@ -71,11 +71,13 @@ const DocumentIdPage = () => {
 
     const titleChangeEvent = `document:receive:title:${documentId}`;
 
+    console.log(`[PAGE] Joining active document: ${documentId} for user: ${userId}`);
     joinActiveDocument(documentId, userId);
     socket.on(titleChangeEvent, handleUpdateTitle);
     socket.on(`document:update:${documentId}`, handleUpdate);
 
     return () => {
+      console.log(`[PAGE] Leaving active document: ${documentId} for user: ${userId}`);
       leaveActiveDocument(documentId, userId);
       socket.off(titleChangeEvent, handleUpdateTitle);
       socket.off(`document:update:${documentId}`, handleUpdate);
@@ -113,6 +115,7 @@ const DocumentIdPage = () => {
         <Editor
           onChange={() => {}}
           initialContent={document.content ?? undefined}
+          documentId={documentId}
         />
       </div>
     </div>

@@ -17,3 +17,11 @@ export type CollaboratorWithMeta = Collaborator & {
     image: string | null;
   };
 };
+
+export type DocChangeEvent = {
+  documentId: string;
+  userId: string;
+  steps: any[];
+  version: number;
+  timestamp: number;
+};

@@ -32,6 +32,9 @@ import {
   SelectionExtension,
   TrailingNodeExtension,
 } from "@/extensions/tiptap-extensions";
+import { CollaborationExtension } from "@/extensions/collaboration-extension";
+import { useSocket } from "@/components/providers/socket-provider";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/tiptap-utils";
@@ -56,6 +59,7 @@ interface SimpleEditorProps {
   placeholder?: string;
   className?: string;
   editable?: boolean;
+  documentId?: string;
 }
 
 export function SimpleEditor({
@@ -64,10 +68,13 @@ export function SimpleEditor({
   placeholder = "Start writing...",
   className,
   editable = true,
+  documentId,
 }: SimpleEditorProps) {
   const [darkMode, setDarkMode] = React.useState(false);
   const isMobile = useMobile();
-
+  const { socket } = useSocket();
+  const user = useCurrentUser();
+  
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -114,6 +121,14 @@ export function SimpleEditor({
       TrailingNodeExtension,
       CustomCodeBlock,
       Underline,
+      // Only include collaboration extension when all dependencies are available
+      ...(socket && documentId && user?.id ? [
+        CollaborationExtension.configure({
+          socket,
+          documentId,
+          userId: user.id,
+        })
+      ] : []),
     ],
     content,
     editable,
@@ -128,7 +143,14 @@ export function SimpleEditor({
         ),
       },
     },
-  });
+  }, [socket && documentId && user?.id]); // Only recreate when collaboration becomes available
+
+  // Setup collaboration when all dependencies are ready
+  React.useEffect(() => {
+    if (editor && socket && documentId && user?.id) {
+      console.log(`[${user.id}] All collaboration dependencies ready for document: ${documentId}`);
+    }
+  }, [editor, socket, documentId, user?.id]);
 
   React.useEffect(() => {
     if (editor && content !== editor.getHTML()) {
