@@ -33,6 +33,7 @@ import {
   TrailingNodeExtension,
 } from "@/extensions/tiptap-extensions";
 import { CollaborationExtension } from "@/extensions/collaboration-extension";
+import { LiveCollaborationExtension } from "@/extensions/live-collaboration-extension";
 import { useSocket } from "@/components/providers/socket-provider";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -127,7 +128,13 @@ export function SimpleEditor({
           socket,
           documentId,
           userId: user.id,
-        })
+        }),
+        LiveCollaborationExtension.configure({
+          socket,
+          documentId,
+          userId: user.id,
+          userName: user.name || "Anonymous",
+        }),
       ] : []),
     ],
     content,

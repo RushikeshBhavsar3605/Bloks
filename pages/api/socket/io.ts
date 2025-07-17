@@ -42,6 +42,8 @@ class SocketDocumentManager {
 
     socket.on("document:update:title", this.handleTitleUpdate);
     socket.on("doc-change", this.handleDocChange);
+    socket.on("cursor-update", this.handleCursorUpdate);
+    socket.on("collaborator-disconnect", this.handleCollaboratorDisconnect);
   }
 
   // >------->>-------|----->>----> Sidebar subscription <----<<-----|-------<<-------<
@@ -333,6 +335,55 @@ class SocketDocumentManager {
     }
   };
 
+  // >------->>-------|----->>----> Live Collaboration <----<<-----|-------<<-------<
+
+  private handleCursorUpdate = async (data: {
+    documentId: string;
+    userId: string;
+    userName: string;
+    color: string;
+    cursor?: number;
+    selection?: { from: number; to: number };
+    isActive?: boolean;
+  }) => {
+    try {
+      const { documentId } = data;
+      
+      if (!documentId) {
+        this.emitError("cursor-update", "Invalid parameters", "INVALID_PARAMETERS");
+        return console.warn("[Socket.io] Invalid documentId in cursor-update");
+      }
+
+      const activeRoom = `room:active:document:${documentId}`;
+      
+      // Ensure user is in the active room
+      if (!this.socket.rooms.has(activeRoom)) {
+        console.warn(`[Socket.io] User ${this.userId} not in active room for cursor update`);
+        return;
+      }
+
+      // Broadcast cursor update to all other users in the active document room
+      this.socket.to(activeRoom).emit("cursor-update", data);
+      console.log(`[Socket.io] Cursor update broadcasted for user ${data.userId} in document ${documentId}`);
+    } catch (error) {
+      this.emitError("cursor-update", "Failed to broadcast cursor update", "INTERNAL_ERROR");
+      console.error("[Socket.io] Cursor update error:", error);
+    }
+  };
+
+  private handleCollaboratorDisconnect = (data: { userId: string }) => {
+    try {
+      // Broadcast collaborator disconnect to all active rooms
+      if (this.activeRoom) {
+        const activeRoom = `room:active:document:${this.activeRoom}`;
+        this.socket.to(activeRoom).emit("collaborator-disconnect", data);
+        console.log(`[Socket.io] Collaborator disconnect broadcasted for user ${data.userId}`);
+      }
+    } catch (error) {
+      console.error("[Socket.io] Collaborator disconnect error:", error);
+    }
+  };
+
   // >------->>-------|----->>----> Utilities <----<<-----|-------<<-------<
 
   private emitError(event: string, message: string, code: string) {
@@ -350,6 +401,8 @@ class SocketDocumentManager {
 
       this.socket.off("document:update:title", this.handleTitleUpdate);
       this.socket.off("doc-change", this.handleDocChange);
+      this.socket.off("cursor-update", this.handleCursorUpdate);
+      this.socket.off("collaborator-disconnect", this.handleCollaboratorDisconnect);
 
       // Clean up rooms
       this.socket.leave(`user:${this.userId}`);

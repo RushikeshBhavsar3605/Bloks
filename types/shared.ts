@@ -25,3 +25,17 @@ export type DocChangeEvent = {
   version: number;
   timestamp: number;
 };
+
+export type CursorUpdateEvent = {
+  documentId: string;
+  userId: string;
+  userName: string;
+  color: string;
+  cursor?: number;
+  selection?: { from: number; to: number };
+  isActive?: boolean;
+};
+
+export type CollaboratorDisconnectEvent = {
+  userId: string;
+};

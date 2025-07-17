@@ -2,6 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Live Collaboration Styles */
+
+.live-cursor {
+  position: relative;
+  display: inline-block;
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+.live-cursor * {
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+/* Ensure no blinking from any source */
+.live-cursor,
+.live-cursor *,
+.live-cursor-label {
+  animation: none !important;
+  -webkit-animation: none !important;
+  -moz-animation: none !important;
+  -o-animation: none !important;
+  -ms-animation: none !important;
+}
+
+.live-cursor-label {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.live-selection {
+  position: relative;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.live-collaboration-editor .ProseMirror {
+  position: relative;
+}
+
 html,
 body,
 :root {
