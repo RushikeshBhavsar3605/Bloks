@@ -6,12 +6,142 @@ import {
   verifyDocumentAccess,
   verifyUserSession,
 } from "@/services/socket-service";
+import {
+  updateDocument,
+  getDirectDocumentAccess,
+} from "@/services/document-service";
+import debounce from "lodash.debounce";
 
 export const config = {
   api: {
     bodyParser: false,
   },
 };
+
+// Simple global document save manager - Map<documentId, debounced save function>
+const DocumentSaveManager = (() => {
+  const documentSaveDebounces = new Map<string, ReturnType<typeof debounce>>();
+  const pendingDocumentData = new Map<
+    string,
+    {
+      title?: string;
+      icon?: string;
+      content?: string;
+      lastAuthorizedUserId?: string; // Track the latest authorized user
+    }
+  >();
+  let ioInstance: any = null;
+
+  const createDebouncedSave = (documentId: string) => {
+    return debounce(async () => {
+      const data = pendingDocumentData.get(documentId);
+      if (!data || !data.lastAuthorizedUserId) return;
+
+      try {
+        const updatePayload: {
+          title?: string;
+          icon?: string;
+          content?: string;
+        } = {};
+        if (data.title !== undefined)
+          updatePayload.title = data.title !== "" ? data.title : "Untitled";
+        if (data.icon !== undefined) updatePayload.icon = data.icon;
+        if (data.content !== undefined) updatePayload.content = data.content;
+
+        const response = await updateDocument({
+          userId: data.lastAuthorizedUserId,
+          documentId,
+          ...updatePayload,
+        });
+
+        if (response.success) {
+          // Only clear pending data after successful save
+          pendingDocumentData.delete(documentId);
+
+          console.log(
+            `[DocumentSaveManager] Save successful for document ${documentId} by user ${data.lastAuthorizedUserId}`
+          );
+
+          if (ioInstance) {
+            const room = `room:document:${documentId}`;
+            ioInstance.to(room).emit("save:status", {
+              status: "saved",
+              documentId: documentId,
+            });
+            ioInstance.emit(`document:update:${documentId}`, { documentId });
+          }
+        } else {
+          console.error(
+            `[DocumentSaveManager] Save failed for document ${documentId}: ${response.error} by user ${data.lastAuthorizedUserId}`
+          );
+
+          if (ioInstance) {
+            const room = `room:document:${documentId}`;
+            ioInstance.to(room).emit("save:status", {
+              status: "error",
+              error: response.error,
+              documentId: documentId,
+            });
+          }
+        }
+      } catch (error) {
+        console.error(
+          `[DocumentSaveManager] Save error for document ${documentId}:`,
+          error
+        );
+
+        if (ioInstance) {
+          const room = `room:document:${documentId}`;
+          ioInstance.to(room).emit("save:status", {
+            status: "error",
+            error: "Failed to save document",
+            documentId: documentId,
+          });
+        }
+      }
+    }, 2000);
+  };
+
+  return {
+    setIoInstance: (io: any) => {
+      ioInstance = io;
+    },
+
+    queueSave: (
+      documentId: string,
+      userId: string,
+      data: { title?: string; icon?: string; content?: string }
+    ) => {
+      // Get or create debounced save function for this documentId
+      if (!documentSaveDebounces.has(documentId)) {
+        documentSaveDebounces.set(documentId, createDebouncedSave(documentId));
+      }
+
+      // Update pending data with latest changes
+      const currentData = pendingDocumentData.get(documentId) || {};
+      const updatedData = { ...currentData };
+
+      if (data.title !== undefined) updatedData.title = data.title;
+      if (data.icon !== undefined) updatedData.icon = data.icon;
+      if (data.content !== undefined) updatedData.content = data.content;
+
+      // Store the latest authorized user who made changes
+      updatedData.lastAuthorizedUserId = userId;
+
+      pendingDocumentData.set(documentId, updatedData);
+
+      // Trigger debounced save
+      const debouncedSave = documentSaveDebounces.get(documentId)!;
+      debouncedSave();
+    },
+
+    cleanup: (documentId: string) => {
+      documentSaveDebounces.delete(documentId);
+      pendingDocumentData.delete(documentId);
+      console.log(`[DocumentSaveManager] Cleaned up document ${documentId}`);
+    },
+  };
+})();
 
 type DocumentRoomAction = {
   documentId: string;
@@ -22,6 +152,12 @@ type TitleUpdateEvent = {
   documentId: string;
   title?: string;
   icon?: string;
+};
+
+type ContentUpdateEvent = {
+  documentId: string;
+  content: string;
+  userId: string;
 };
 
 class SocketDocumentManager {
@@ -41,6 +177,7 @@ class SocketDocumentManager {
     socket.on("leave-active-document", this.leaveActiveRoom);
 
     socket.on("document:update:title", this.handleTitleUpdate);
+    socket.on("document:update:content", this.handleContentUpdate);
     socket.on("doc-change", this.handleDocChange);
     socket.on("cursor-update", this.handleCursorUpdate);
     socket.on("collaborator-disconnect", this.handleCollaboratorDisconnect);
@@ -164,7 +301,9 @@ class SocketDocumentManager {
       }
 
       if (this.activeRoom === documentId) {
-        console.log(`[Socket.io] User ${this.userId} already in active room ${documentId}`);
+        console.log(
+          `[Socket.io] User ${this.userId} already in active room ${documentId}`
+        );
         return; // Don't emit error, just return silently
       }
 
@@ -230,6 +369,9 @@ class SocketDocumentManager {
       this.socket.leave(room);
       this.activeRoom = null;
 
+      // Clean up DocumentSaveManager state when leaving the document
+      DocumentSaveManager.cleanup(documentId);
+
       this.io
         .to(room)
         .emit(`active-users:update`, { documentId, userId, action: "left" });
@@ -246,7 +388,7 @@ class SocketDocumentManager {
 
   // >------->>-------|----->>----> Title updates (sidebar) <----<<-----|-------<<-------<
 
-  private handleTitleUpdate = ({
+  private handleTitleUpdate = async ({
     documentId,
     title,
     icon,
@@ -272,8 +414,41 @@ class SocketDocumentManager {
         return console.warn(`[Socket.io] User not in room ${documentId}`);
       }
 
+      // Broadcast real-time update to other users
       const updateTitleEvent = `document:receive:title:${documentId}`;
       this.io.to(room).emit(updateTitleEvent, { documentId, title, icon });
+
+      // Check if user is authorized to save first
+      const accessResult = await getDirectDocumentAccess(
+        documentId,
+        this.userId
+      );
+
+      if (!accessResult.success || !accessResult.data?.hasAccess) {
+        console.warn(
+          `[Socket.io] User ${this.userId} has no access to document ${documentId}`
+        );
+        return;
+      }
+
+      const role = accessResult.data.role;
+      const isOwner = accessResult.data.isOwner;
+
+      if (!isOwner && role !== "EDITOR") {
+        console.warn(
+          `[Socket.io] User ${this.userId} (${role}) has no write permission for document ${documentId}`
+        );
+        return;
+      }
+
+      // Queue debounced save using the global document manager
+      DocumentSaveManager.queueSave(documentId, this.userId, { title, icon });
+
+      // Emit saving status immediately
+      this.io.to(`user:${this.userId}`).emit("save:status", {
+        status: "saving",
+        documentId: documentId,
+      });
     } catch (error) {
       this.emitError(
         "document:update:title",
@@ -281,6 +456,87 @@ class SocketDocumentManager {
         "INTERNAL_ERROR"
       );
       console.error("[Socket.io] Title update error:", error);
+    }
+  };
+
+  private handleContentUpdate = async ({
+    documentId,
+    content,
+    userId,
+  }: ContentUpdateEvent) => {
+    try {
+      if (!documentId || content === undefined || !userId) {
+        this.emitError(
+          "document:update:content",
+          "Invalid parameters",
+          "INVALID_PARAMETERS"
+        );
+        return console.warn(
+          "[Socket.io] Invalid documentId, content, or userId"
+        );
+      }
+
+      // Verify the userId matches the socket's userId for security
+      if (userId !== this.userId) {
+        this.emitError(
+          "document:update:content",
+          "User ID mismatch",
+          "USER_ID_MISMATCH"
+        );
+        return console.warn(
+          `[Socket.io] User ID mismatch: ${userId} vs ${this.userId}`
+        );
+      }
+
+      console.log(`[USER ID FROM CONTENT UPDATE]: ${userId}`);
+      console.log(`[SOCKET OWNER]: ${this.userId}`);
+
+      const room = `room:document:${documentId}`;
+
+      if (!this.socket.rooms.has(room)) {
+        this.emitError(
+          "document:update:content",
+          "Not in document room",
+          "NOT_IN_ROOM"
+        );
+        return console.warn(`[Socket.io] User not in room ${documentId}`);
+      }
+
+      // Check if user is authorized to save first
+      const accessResult = await getDirectDocumentAccess(documentId, userId);
+
+      if (!accessResult.success || !accessResult.data?.hasAccess) {
+        console.warn(
+          `[Socket.io] User ${userId} has no access to document ${documentId}`
+        );
+        return;
+      }
+
+      const role = accessResult.data.role;
+      const isOwner = accessResult.data.isOwner;
+
+      if (!isOwner && role !== "EDITOR") {
+        console.warn(
+          `[Socket.io] User ${userId} (${role}) has no write permission for document ${documentId}`
+        );
+        return;
+      }
+
+      // Queue debounced save using the global document manager
+      DocumentSaveManager.queueSave(documentId, userId, { content });
+
+      // Emit saving status immediately
+      this.io.to(`user:${userId}`).emit("save:status", {
+        status: "saving",
+        documentId: documentId,
+      });
+    } catch (error) {
+      this.emitError(
+        "document:update:content",
+        "Failed to update content",
+        "INTERNAL_ERROR"
+      );
+      console.error("[Socket.io] Content update error:", error);
     }
   };
 
@@ -293,28 +549,41 @@ class SocketDocumentManager {
   }) => {
     try {
       const { documentId } = data;
-      
+
       if (!documentId) {
-        this.emitError("doc-change", "Invalid parameters", "INVALID_PARAMETERS");
+        this.emitError(
+          "doc-change",
+          "Invalid parameters",
+          "INVALID_PARAMETERS"
+        );
         return console.warn("[Socket.io] Invalid documentId in doc-change");
       }
 
       const activeRoom = `room:active:document:${documentId}`;
-      
+
       // If user is not in active room, try to join them first
       if (!this.socket.rooms.has(activeRoom)) {
-        console.warn(`[Socket.io] User ${this.userId} not in active room ${documentId}, attempting to join`);
-        
+        console.warn(
+          `[Socket.io] User ${this.userId} not in active room ${documentId}, attempting to join`
+        );
+
         // Try to join the active room
         try {
-          const documentExists = await verifyDocumentAccess(documentId, this.userId);
+          const documentExists = await verifyDocumentAccess(
+            documentId,
+            this.userId
+          );
           if (documentExists) {
             this.socket.join(activeRoom);
             this.activeRoom = documentId;
-            console.log(`[Socket.io] Auto-joined user ${this.userId} to active room ${activeRoom}`);
+            console.log(
+              `[Socket.io] Auto-joined user ${this.userId} to active room ${activeRoom}`
+            );
           } else {
             this.emitError("doc-change", "Access denied", "UNAUTHORIZED");
-            return console.warn(`[Socket.io] User not authorized to access document ${documentId}`);
+            return console.warn(
+              `[Socket.io] User not authorized to access document ${documentId}`
+            );
           }
         } catch (error) {
           this.emitError("doc-change", "Failed to join room", "INTERNAL_ERROR");
@@ -324,13 +593,23 @@ class SocketDocumentManager {
 
       // Get all sockets in the room for debugging
       const socketsInRoom = await this.io.in(activeRoom).allSockets();
-      console.log(`[Socket.io] Broadcasting doc-change from ${this.userId} to ${socketsInRoom.size - 1} other users in room ${activeRoom}`);
+      console.log(
+        `[Socket.io] Broadcasting doc-change from ${this.userId} to ${
+          socketsInRoom.size - 1
+        } other users in room ${activeRoom}`
+      );
 
       // Broadcast to all other users in the active document room (exclude sender)
       this.socket.to(activeRoom).emit("doc-change", data);
-      console.log(`[Socket.io] Doc change broadcasted for document ${documentId} with ${data.steps.length} steps`);
+      console.log(
+        `[Socket.io] Doc change broadcasted for document ${documentId} with ${data.steps.length} steps`
+      );
     } catch (error) {
-      this.emitError("doc-change", "Failed to broadcast change", "INTERNAL_ERROR");
+      this.emitError(
+        "doc-change",
+        "Failed to broadcast change",
+        "INTERNAL_ERROR"
+      );
       console.error("[Socket.io] Doc change error:", error);
     }
   };
@@ -348,25 +627,37 @@ class SocketDocumentManager {
   }) => {
     try {
       const { documentId } = data;
-      
+
       if (!documentId) {
-        this.emitError("cursor-update", "Invalid parameters", "INVALID_PARAMETERS");
+        this.emitError(
+          "cursor-update",
+          "Invalid parameters",
+          "INVALID_PARAMETERS"
+        );
         return console.warn("[Socket.io] Invalid documentId in cursor-update");
       }
 
       const activeRoom = `room:active:document:${documentId}`;
-      
+
       // Ensure user is in the active room
       if (!this.socket.rooms.has(activeRoom)) {
-        console.warn(`[Socket.io] User ${this.userId} not in active room for cursor update`);
+        console.warn(
+          `[Socket.io] User ${this.userId} not in active room for cursor update`
+        );
         return;
       }
 
       // Broadcast cursor update to all other users in the active document room
       this.socket.to(activeRoom).emit("cursor-update", data);
-      console.log(`[Socket.io] Cursor update broadcasted for user ${data.userId} in document ${documentId}`);
+      console.log(
+        `[Socket.io] Cursor update broadcasted for user ${data.userId} in document ${documentId}`
+      );
     } catch (error) {
-      this.emitError("cursor-update", "Failed to broadcast cursor update", "INTERNAL_ERROR");
+      this.emitError(
+        "cursor-update",
+        "Failed to broadcast cursor update",
+        "INTERNAL_ERROR"
+      );
       console.error("[Socket.io] Cursor update error:", error);
     }
   };
@@ -377,7 +668,9 @@ class SocketDocumentManager {
       if (this.activeRoom) {
         const activeRoom = `room:active:document:${this.activeRoom}`;
         this.socket.to(activeRoom).emit("collaborator-disconnect", data);
-        console.log(`[Socket.io] Collaborator disconnect broadcasted for user ${data.userId}`);
+        console.log(
+          `[Socket.io] Collaborator disconnect broadcasted for user ${data.userId}`
+        );
       }
     } catch (error) {
       console.error("[Socket.io] Collaborator disconnect error:", error);
@@ -400,9 +693,18 @@ class SocketDocumentManager {
       this.socket.off("leave-active-document", this.leaveActiveRoom);
 
       this.socket.off("document:update:title", this.handleTitleUpdate);
+      this.socket.off("document:update:content", this.handleContentUpdate);
       this.socket.off("doc-change", this.handleDocChange);
       this.socket.off("cursor-update", this.handleCursorUpdate);
-      this.socket.off("collaborator-disconnect", this.handleCollaboratorDisconnect);
+      this.socket.off(
+        "collaborator-disconnect",
+        this.handleCollaboratorDisconnect
+      );
+
+      // Clean up DocumentSaveManager state if user was in an active document
+      if (this.activeRoom) {
+        DocumentSaveManager.cleanup(this.activeRoom);
+      }
 
       // Clean up rooms
       this.socket.leave(`user:${this.userId}`);
@@ -422,6 +724,9 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIo) => {
       path: path,
       addTrailingSlash: false,
     });
+
+    // Set the io instance for DocumentSaveManager
+    DocumentSaveManager.setIoInstance(io);
 
     io.on("connection", async (socket) => {
       try {

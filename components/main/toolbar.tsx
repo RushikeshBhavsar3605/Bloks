@@ -4,10 +4,10 @@ import { DocumentWithMeta } from "@/types/shared";
 import { IconPicker } from "./icon-picker";
 import { Button } from "../ui/button";
 import { Smile, X } from "lucide-react";
-import { ElementRef, useMemo, useRef, useState } from "react";
+import { ElementRef, useRef, useState } from "react";
 import TextAreaAutosize from "react-textarea-autosize";
 import { useSocket } from "../providers/socket-provider";
-import debounce from "lodash.debounce";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 interface ToolbarProps {
   initialData: DocumentWithMeta;
@@ -19,27 +19,7 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [value, setValue] = useState<string>(initialData.title);
   const { socket } = useSocket();
-
-  const saveToDB = useMemo(
-    () =>
-      debounce(async ({ title, icon }: { title?: string; icon?: string }) => {
-        const payload: { title?: string; icon?: string } = {};
-        if (title !== undefined)
-          payload.title = title !== "" ? title : "Untitled";
-        if (icon !== undefined) payload.icon = icon;
-
-        if (Object.keys(payload).length === 0) return;
-
-        await fetch(`/api/socket/documents/${initialData.id}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-      }, 2000),
-    [initialData.id]
-  );
+  const user = useCurrentUser();
 
   const enableInput = () => {
     if (preview) return;
@@ -59,15 +39,15 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
   const disableInput = () => setIsEditing(false);
 
   const onInput = (value: string) => {
-    if (!socket) return;
+    if (!socket || !user?.id) return;
 
     setValue(value);
 
     socket.emit("document:update:title", {
       documentId: initialData.id,
       title: value,
+      userId: user.id,
     });
-    saveToDB({ title: value });
   };
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -78,25 +58,25 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
   };
 
   const onIconSelect = (icon: string) => {
-    if (!socket) return;
+    if (!socket || !user?.id) return;
 
     setValue(value);
 
     socket.emit("document:update:title", {
       documentId: initialData.id,
       icon: icon,
+      userId: user.id,
     });
-    saveToDB({ icon: icon });
   };
 
   const onRemoveIcon = () => {
-    if (!socket) return;
+    if (!socket || !user?.id) return;
 
     socket.emit("document:update:title", {
       documentId: initialData.id,
       icon: "",
+      userId: user.id,
     });
-    saveToDB({ icon: "" });
   };
 
   return (

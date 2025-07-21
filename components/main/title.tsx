@@ -1,14 +1,13 @@
 "use client";
 
 import { CollaboratorRole } from "@prisma/client";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import debounce from "lodash.debounce";
 import { useSocket } from "../providers/socket-provider";
-import { useSaveStatus } from "@/hooks/use-save-status";
 import { DocumentWithMeta } from "@/types/shared";
 import { Skeleton } from "../ui/skeleton";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 interface TitleProps {
   initialData: DocumentWithMeta;
@@ -16,7 +15,7 @@ interface TitleProps {
 
 export const Title = ({ initialData }: TitleProps) => {
   const { socket } = useSocket();
-  const { setSaving, setSaved } = useSaveStatus();
+  const user = useCurrentUser();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState(initialData.title || "Untitled");
@@ -40,35 +39,16 @@ export const Title = ({ initialData }: TitleProps) => {
     initialData.title = title;
   };
 
-  const saveToDB = useMemo(
-    () =>
-      debounce(async (title: string) => {
-        await fetch(`/api/socket/documents/${initialData.id}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            title: title || "Untitled",
-          }),
-        });
-
-        setSaved();
-      }, 2000),
-    [initialData.id, setSaved]
-  );
-
   const onChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!socket) return;
+    if (!socket || !user?.id) return;
 
-    setSaving();
     setTitle(event.target.value);
 
     socket.emit("document:update:title", {
       documentId: initialData.id,
       title: event.target.value,
+      userId: user.id,
     });
-    saveToDB(event.target.value);
   };
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
