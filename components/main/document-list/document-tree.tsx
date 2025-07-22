@@ -154,26 +154,6 @@ export const DocumentTree = ({
     fetchDocuments();
   }, [fetchDocuments]);
 
-  const handleUpdate = (data: DocumentWithMeta) => {
-    setDocuments((prevDocs) => {
-      if (Array.isArray(prevDocs))
-        return prevDocs.map((doc) => (doc.id === data.id ? data : doc));
-
-      if (prevDocs && !Array.isArray(prevDocs)) {
-        return {
-          ...prevDocs,
-          ownedDocuments: prevDocs.ownedDocuments.map((doc) =>
-            doc.id === data.id ? data : doc
-          ),
-          sharedDocuments: prevDocs.sharedDocuments.map((doc) =>
-            doc.id === data.id ? data : doc
-          ),
-        };
-      }
-
-      return prevDocs;
-    });
-  };
 
   const handleArchived = useCallback((id: string) => {
     setDocuments((prevDocs) => {
@@ -363,7 +343,6 @@ export const DocumentTree = ({
           expanded={expanded}
           onExpand={onExpand}
           onRedirect={onRedirect}
-          handleUpdate={handleUpdate}
           handleArchived={handleArchived}
           handleUpdateTitle={handleUpdateTitle}
           handleCollaboratorRemove={handleCollaboratorRemove}
@@ -380,7 +359,6 @@ export const DocumentTree = ({
           expanded={expanded}
           onExpand={onExpand}
           onRedirect={onRedirect}
-          handleUpdate={handleUpdate}
           handleArchived={handleArchived}
           handleUpdateTitle={handleUpdateTitle}
           handleCollaboratorRemove={handleCollaboratorRemove}
@@ -396,7 +374,6 @@ export const DocumentTree = ({
           expanded={expanded}
           onExpand={onExpand}
           onRedirect={onRedirect}
-          handleUpdate={handleUpdate}
           handleArchived={handleArchived}
           handleUpdateTitle={handleUpdateTitle}
           handleCollaboratorRemove={handleCollaboratorRemove}

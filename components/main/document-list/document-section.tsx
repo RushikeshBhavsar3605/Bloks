@@ -9,7 +9,6 @@ interface DocumentSectionProps {
   expanded: Record<string, boolean>;
   onExpand: (documentId: string) => void;
   onRedirect: (documentId: string) => void;
-  handleUpdate: (data: DocumentWithMeta) => void;
   handleArchived: (id: string) => void;
   handleUpdateTitle: ({
     documentId,
@@ -63,7 +62,6 @@ export const DocumentSection = ({
   expanded,
   onExpand,
   onRedirect,
-  handleUpdate,
   handleArchived,
   handleUpdateTitle,
   handleCollaboratorRemove,
@@ -87,7 +85,6 @@ export const DocumentSection = ({
           onExpand={onExpand}
           onRedirect={onRedirect}
           role={document.role}
-          handleUpdate={handleUpdate}
           handleArchived={handleArchived}
           handleUpdateTitle={handleUpdateTitle}
           handleCollaboratorRemove={handleCollaboratorRemove}

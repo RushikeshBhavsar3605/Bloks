@@ -63,12 +63,11 @@ const DocumentSaveManager = (() => {
           );
 
           if (ioInstance) {
-            const room = `room:document:${documentId}`;
-            ioInstance.to(room).emit("save:status", {
+            // Only emit save status to the user who made the changes
+            ioInstance.to(`user:${data.lastAuthorizedUserId}`).emit("save:status", {
               status: "saved",
               documentId: documentId,
             });
-            ioInstance.emit(`document:update:${documentId}`, { documentId });
           }
         } else {
           console.error(
@@ -76,8 +75,8 @@ const DocumentSaveManager = (() => {
           );
 
           if (ioInstance) {
-            const room = `room:document:${documentId}`;
-            ioInstance.to(room).emit("save:status", {
+            // Only emit save status to the user who made the changes
+            ioInstance.to(`user:${data.lastAuthorizedUserId}`).emit("save:status", {
               status: "error",
               error: response.error,
               documentId: documentId,
@@ -91,8 +90,8 @@ const DocumentSaveManager = (() => {
         );
 
         if (ioInstance) {
-          const room = `room:document:${documentId}`;
-          ioInstance.to(room).emit("save:status", {
+          // Only emit save status to the user who made the changes
+          ioInstance.to(`user:${data.lastAuthorizedUserId}`).emit("save:status", {
             status: "error",
             error: "Failed to save document",
             documentId: documentId,
