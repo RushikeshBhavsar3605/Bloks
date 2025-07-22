@@ -26,8 +26,6 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
 
     setIsEditing(true);
     setTimeout(() => {
-      setValue(initialData.title);
-
       if (inputRef.current) {
         inputRef.current.focus();
         inputRef.current.selectionStart = inputRef.current.value.length; // Position cursor at the end
@@ -36,16 +34,18 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
     }, 0);
   };
 
-  const disableInput = () => setIsEditing(false);
+  const disableInput = () => {
+    setIsEditing(false);
+  };
 
-  const onInput = (value: string) => {
+  const onInput = (newValue: string) => {
     if (!socket || !user?.id) return;
 
-    setValue(value);
+    setValue(newValue);
 
     socket.emit("document:update:title", {
       documentId: initialData.id,
-      title: value,
+      title: newValue,
       userId: user.id,
     });
   };
@@ -59,8 +59,6 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
 
   const onIconSelect = (icon: string) => {
     if (!socket || !user?.id) return;
-
-    setValue(value);
 
     socket.emit("document:update:title", {
       documentId: initialData.id,
