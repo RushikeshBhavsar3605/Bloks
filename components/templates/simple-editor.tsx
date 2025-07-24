@@ -187,6 +187,13 @@ export function SimpleEditor({
     }
   }, [content, editor]);
 
+  // Update editor's editable state when the prop changes
+  React.useEffect(() => {
+    if (editor) {
+      editor.setEditable(editable);
+    }
+  }, [editor, editable]);
+
   if (!editor) {
     return null;
   }

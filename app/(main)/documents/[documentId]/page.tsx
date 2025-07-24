@@ -65,16 +65,43 @@ const DocumentIdPage = () => {
       });
     };
 
+    const handleCollaboratorRoleChange = ({
+      documentId: eventDocumentId,
+      updatedUser,
+      newRole,
+    }: {
+      documentId: string;
+      updatedUser: { id: string; name: string };
+      newRole: string;
+    }) => {
+      // Only update if this event is for the current document and current user
+      if (eventDocumentId === documentId && updatedUser.id === userId) {
+        setDocument((doc) => {
+          if (!doc) return doc;
+          return {
+            ...doc,
+            role: newRole as any,
+            isOwner: newRole === "OWNER" ? true : doc.isOwner,
+          };
+        });
+        
+        // Show toast notification about role change
+        toast.success(`Your access level has been changed to ${newRole.toLowerCase()}`);
+      }
+    };
+
     const titleChangeEvent = `document:receive:title:${documentId}`;
 
     console.log(`[PAGE] Joining active document: ${documentId} for user: ${userId}`);
     joinActiveDocument(documentId, userId);
     socket.on(titleChangeEvent, handleUpdateTitle);
+    socket.on("collaborator:settings:role", handleCollaboratorRoleChange);
 
     return () => {
       console.log(`[PAGE] Leaving active document: ${documentId} for user: ${userId}`);
       leaveActiveDocument(documentId, userId);
       socket.off(titleChangeEvent, handleUpdateTitle);
+      socket.off("collaborator:settings:role", handleCollaboratorRoleChange);
     };
   }, [socket, documentId, user?.id, joinActiveDocument, leaveActiveDocument]);
 
@@ -101,15 +128,19 @@ const DocumentIdPage = () => {
     return <div>Not found</div>;
   }
 
+  // Determine if user can edit based on role
+  const canEdit = document.isOwner || document.role === "EDITOR";
+
   return (
     <div className="pb-40">
       <div className="h-[10vh]" />
       <div className="mx-auto">
-        <Toolbar initialData={document} />
+        <Toolbar initialData={document} preview={!canEdit} />
         <Editor
           onChange={() => {}}
           initialContent={document.content ?? undefined}
           documentId={documentId}
+          editable={canEdit}
         />
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { CollaboratorRole } from "@prisma/client";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useSocket } from "../providers/socket-provider";
@@ -20,9 +20,40 @@ export const Title = ({ initialData }: TitleProps) => {
 
   const [title, setTitle] = useState(initialData.title || "Untitled");
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [currentRole, setCurrentRole] = useState<CollaboratorRole | "OWNER" | null>(initialData.role);
+  const [isOwner, setIsOwner] = useState<boolean>(initialData.isOwner);
+
+  // Listen for role changes
+  useEffect(() => {
+    if (!socket || !user?.id) return;
+
+    const handleCollaboratorRoleChange = ({
+      documentId: eventDocumentId,
+      updatedUser,
+      newRole,
+    }: {
+      documentId: string;
+      updatedUser: { id: string; name: string };
+      newRole: string;
+    }) => {
+      // Only update if this event is for the current document and current user
+      if (eventDocumentId === initialData.id && updatedUser.id === user.id) {
+        setCurrentRole(newRole as CollaboratorRole | "OWNER");
+        setIsOwner(newRole === "OWNER");
+      }
+    };
+
+    socket.on("collaborator:settings:role", handleCollaboratorRoleChange);
+
+    return () => {
+      socket.off("collaborator:settings:role", handleCollaboratorRoleChange);
+    };
+  }, [socket, user?.id, initialData.id]);
 
   const enableInput = () => {
-    if (!initialData.isOwner && initialData.role !== CollaboratorRole.EDITOR) {
+    // Check current role dynamically
+    const canEdit = isOwner || currentRole === CollaboratorRole.EDITOR;
+    if (!canEdit) {
       return;
     }
 

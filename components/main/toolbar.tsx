@@ -58,7 +58,7 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
   };
 
   const onIconSelect = (icon: string) => {
-    if (!socket || !user?.id) return;
+    if (!socket || !user?.id || preview) return;
 
     socket.emit("document:update:title", {
       documentId: initialData.id,
@@ -68,7 +68,7 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
   };
 
   const onRemoveIcon = () => {
-    if (!socket || !user?.id) return;
+    if (!socket || !user?.id || preview) return;
 
     socket.emit("document:update:title", {
       documentId: initialData.id,
