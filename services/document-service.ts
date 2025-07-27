@@ -496,6 +496,118 @@ export const getAllAccessibleDocuments = async (
 };
 
 /**
+ * Gets all documents for a user (both owned and collaborated) - for dashboard
+ * Similar to getRootDocuments but includes ALL documents, not just root level
+ */
+export const getUserDocuments = async (
+  userId: string
+): Promise<
+  ServiceResponse<{
+    ownedDocuments: DocumentWithMeta[];
+    sharedDocuments: DocumentWithMeta[];
+  }>
+> => {
+  try {
+    // Fetch ALL documents owned by the user (including children)
+    const ownedDocuments = await db.document.findMany({
+      where: {
+        userId,
+        isArchived: false,
+      },
+      include: {
+        collaborators: true,
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    // Fetch ALL documents where user is a collaborator (including children)
+    const collaboratedDocuments = await db.document.findMany({
+      where: {
+        collaborators: {
+          some: {
+            userId,
+            isVerified: { not: null }, // Only include verified collaborations
+          },
+        },
+        isArchived: false,
+      },
+      include: {
+        collaborators: {
+          where: {
+            userId,
+          },
+        },
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    // Transform owned documents
+    const enhancedOwnedDocuments = ownedDocuments.map((doc) => {
+      return {
+        ...doc,
+        isOwner: true,
+        role: "OWNER" as const,
+      };
+    });
+
+    // Transform shared documents
+    const enhancedSharedDocuments = collaboratedDocuments.map((doc) => {
+      const { collaborators, ...docWithoutCollaborators } = doc;
+      const isOwner = doc.userId === userId;
+      const role: CollaboratorRole | "OWNER" | null = isOwner
+        ? "OWNER"
+        : collaborators.length > 0
+        ? collaborators[0].role
+        : null;
+
+      return {
+        ...docWithoutCollaborators,
+        isOwner,
+        role,
+        collaborators, // Keep collaborators for dashboard analytics
+      };
+    });
+
+    return {
+      success: true,
+      data: {
+        ownedDocuments: enhancedOwnedDocuments,
+        sharedDocuments: enhancedSharedDocuments,
+      },
+      status: 200,
+    };
+  } catch (error) {
+    console.error("[GET_USER_DOCUMENTS]", error);
+    return {
+      success: false,
+      data: { ownedDocuments: [], sharedDocuments: [] },
+      error: "Failed to get user documents",
+      status: 500,
+    };
+  }
+};
+
+/**
  * Gets all archived documents accessible to the user
  */
 export const getArchivedDocuments = async (

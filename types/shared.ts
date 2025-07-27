@@ -4,9 +4,12 @@ export type DocumentWithMeta = Document & {
   isOwner: boolean;
   role: CollaboratorRole | "OWNER" | null;
   owner: {
+    id?: string;
     name: string | null;
+    email?: string | null;
     image: string | null;
   };
+  collaborators?: Collaborator[];
 };
 
 export type CollaboratorWithMeta = Collaborator & {

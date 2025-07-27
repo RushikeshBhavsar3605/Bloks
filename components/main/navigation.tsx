@@ -9,6 +9,7 @@ import {
   Search,
   Settings,
   Trash,
+  BarChart3,
 } from "lucide-react";
 import { useParams, usePathname } from "next/navigation";
 import { ElementRef, useCallback, useEffect, useRef, useState } from "react";
@@ -17,6 +18,7 @@ import UserItem from "./user-item";
 import { Item } from "./item";
 import { toast } from "sonner";
 import { DocumentTree } from "./document-list/document-tree";
+import { useRouter } from "next/navigation";
 import {
   Popover,
   PopoverTrigger,
@@ -32,6 +34,7 @@ export const Navigation = () => {
   const settings = useSettings();
   const params = useParams();
   const pathname = usePathname();
+  const router = useRouter();
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   const isResizingRef = useRef(false);
@@ -162,6 +165,7 @@ export const Navigation = () => {
 
         <div>
           <UserItem />
+          <Item label="Dashboard" icon={BarChart3} onClick={() => router.push('/dashboard')} />
           <Item label="Search" icon={Search} isSearch onClick={search.onOpen} />
           <Item label="Settings" icon={Settings} onClick={settings.onOpen} />
           <Item label="New page" icon={PlusCircle} onClick={onCreate} />
