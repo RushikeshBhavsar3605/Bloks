@@ -1,6 +1,6 @@
 import { DocumentWithMeta } from "@/types/shared";
 import { Item } from "../item";
-import { FileIcon } from "lucide-react";
+import { FileIcon, FileText } from "lucide-react";
 import { CollaboratorRole } from "@prisma/client";
 import { DocumentTree } from "./document-tree";
 import { useSocket } from "@/components/providers/socket-provider";
@@ -126,7 +126,7 @@ export const DocumentItem = ({
         id={document.id}
         onClick={() => onRedirect(document.id)}
         label={document.title}
-        icon={FileIcon}
+        icon={FileText}
         documentIcon={document.icon || undefined}
         active={activeDocumentId === document.id}
         level={level}

@@ -69,9 +69,9 @@ export const DocumentSection = ({
   activeDocumentId,
 }: DocumentSectionProps) => {
   return (
-    <div>
+    <div className="space-y-1">
       {title && (
-        <div className="text-gray-700 dark:text-gray-400 text-sm font-medium px-3 py-2 mt-4 tracking-wide">
+        <div className="text-xs font-medium text-gray-500 mb-3 px-2 mt-8">
           {title}
         </div>
       )}

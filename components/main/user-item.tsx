@@ -10,8 +10,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { ChevronsLeftRight } from "lucide-react";
+import { ChevronDown, ChevronsLeftRight } from "lucide-react";
 import { signOut } from "next-auth/react";
+import { use } from "react";
 
 const UserItem = () => {
   const user = useCurrentUser();
@@ -23,25 +24,31 @@ const UserItem = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div
-          role="button"
-          className="flex items-center text-sm p-3 w-full hover:bg-primary/5"
-        >
-          <div className="gap-x-2 flex items-center max-w-[150px]">
-            <Avatar className="h-5 w-5">
+        {/* Header */}
+        <div className="px-6 py-5 cursor-pointer hover:bg-[#1E1E20] transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 bg-white rounded-md flex items-center justify-center">
               {user?.image ? (
-                <AvatarImage src={user?.image} />
+                <Avatar className="h-7 w-7">
+                  <AvatarImage src={user.image} />
+                  <AvatarFallback className="bg-white text-black text-sm font-bold">
+                    {user?.name?.charAt(0) || "J"}
+                  </AvatarFallback>
+                </Avatar>
               ) : (
-                <AvatarFallback>{user?.name?.charAt(0)}</AvatarFallback>
+                <span className="text-black font-bold text-sm">
+                  {user?.name?.charAt(0) || "J"}
+                </span>
               )}
-            </Avatar>
-
-            <span className="text-start font-medium line-clamp-1">
-              {user?.name}&apos;s Jotion
-            </span>
+            </div>
+            <div className="flex-1">
+              <h2 className="font-medium text-white text-sm">Jotion</h2>
+            </div>
+            <ChevronDown className="w-4 h-4 text-gray-400" />
           </div>
-
-          <ChevronsLeftRight className="rotate-90 ml-2 text-muted-foreground h-4 w-4" />
+          <p className="text-xs text-gray-400 mt-1 ml-10">
+            {user?.name?.split(" ")[0]}'s Workspace
+          </p>
         </div>
       </DropdownMenuTrigger>
 
