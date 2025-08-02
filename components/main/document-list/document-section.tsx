@@ -71,7 +71,7 @@ export const DocumentSection = ({
   return (
     <div className="space-y-1">
       {title && (
-        <div className="text-xs font-medium text-gray-500 mb-3 px-2 mt-8">
+        <div className="text-xs font-medium text-gray-500 dark:text-gray-500 text-gray-600 mb-3 px-2 mt-8">
           {title}
         </div>
       )}

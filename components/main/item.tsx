@@ -113,17 +113,17 @@ export const Item = ({
       role="button"
       style={{ paddingLeft: level ? `${level * 12 + 12}px` : "12px" }}
       className={cn(
-        "group min-h-[32px] text-sm py-2 pr-3 w-full hover:bg-[#1E1E20] hover:text-white flex items-center text-gray-400 transition-all",
-        active && "bg-[#2A2A2E] text-white"
+        "group min-h-[32px] text-sm py-2 pr-3 w-full hover:bg-[#1E1E20] dark:hover:bg-[#1E1E20] hover:bg-gray-50 hover:text-white dark:hover:text-white hover:text-gray-900 flex items-center text-gray-400 dark:text-gray-400 text-gray-600 transition-all",
+        active && "bg-[#2A2A2E] dark:bg-[#2A2A2E] bg-gray-100 text-white dark:text-white text-gray-900"
       )}
     >
       {!!id && (
         <div
           role="button"
-          className="h-full rounded-sm hover:bg-[#2A2A2E] mr-1"
+          className="h-full rounded-sm hover:bg-[#2A2A2E] dark:hover:bg-[#2A2A2E] hover:bg-gray-100 mr-1"
           onClick={handleExpand}
         >
-          <ChevronIcon className="h-4 w-4 shrink-0 text-gray-400" />
+          <ChevronIcon className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-400 text-gray-500" />
         </div>
       )}
 
@@ -136,7 +136,7 @@ export const Item = ({
       <span className="truncate">{label}</span>
 
       {isSearch && (
-        <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-[#2A2A2E] px-1.5 font-mono text-[10px] font-medium text-gray-400 opacity-100">
+        <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-[#2A2A2E] dark:bg-[#2A2A2E] bg-gray-100 border-gray-600 dark:border-gray-600 border-gray-300 px-1.5 font-mono text-[10px] font-medium text-gray-400 dark:text-gray-400 text-gray-600 opacity-100">
           <span className="text-xs">⌘</span>K
         </kbd>
       )}
@@ -148,9 +148,9 @@ export const Item = ({
               <DropdownMenuTrigger onClick={(e) => e.stopPropagation()} asChild>
                 <div
                   role="button"
-                  className="opacity-0 group-hover:opacity-100 h-full ml-auto rounded-sm hover:bg-[#2A2A2E]"
+                  className="opacity-0 group-hover:opacity-100 h-full ml-auto rounded-sm hover:bg-[#2A2A2E] dark:hover:bg-[#2A2A2E] hover:bg-gray-100"
                 >
-                  <MoreHorizontal className="h-4 w-4 text-gray-400" />
+                  <MoreHorizontal className="h-4 w-4 text-gray-400 dark:text-gray-400 text-gray-500" />
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -174,9 +174,9 @@ export const Item = ({
             <div
               role="button"
               onClick={onCreate}
-              className="opacity-0 group-hover:opacity-100 h-full ml-auto rounded-sm hover:bg-[#2A2A2E]"
+              className="opacity-0 group-hover:opacity-100 h-full ml-auto rounded-sm hover:bg-[#2A2A2E] dark:hover:bg-[#2A2A2E] hover:bg-gray-100"
             >
-              <Plus className="h-4 w-4 text-gray-400" />
+              <Plus className="h-4 w-4 text-gray-400 dark:text-gray-400 text-gray-500" />
             </div>
           )}
         </div>
