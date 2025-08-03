@@ -224,7 +224,7 @@ export const Navigation = () => {
       <aside
         ref={sidebarRef}
         className={cn(
-          "group/sidebar h-full bg-[#161618] dark:bg-[#161618] bg-white overflow-y-auto relative flex w-[280px] flex-col z-[99999] border-r border-gray-200 dark:border-gray-800",
+          "group/sidebar h-full bg-white dark:bg-[#161618] overflow-y-auto relative flex w-[280px] flex-col z-[99999] border-r border-gray-200 dark:border-gray-800",
           isResetting && "transition-all ease-in-out duration-300",
           isMobile && "w-0"
         )}
@@ -233,7 +233,7 @@ export const Navigation = () => {
           onClick={collapse}
           role="button"
           className={cn(
-            "h-6 w-6 text-gray-400 dark:text-gray-400 text-gray-600 rounded-sm hover:bg-[#1E1E20] dark:hover:bg-[#1E1E20] hover:bg-gray-100 absolute top-3 right-2 opacity-0 group-hover/sidebar:opacity-100 transition",
+            "h-6 w-6 text-gray-600 dark:text-gray-400 rounded-sm hover:bg-gray-100 dark:hover:bg-[#1E1E20] absolute top-3 right-2 opacity-0 group-hover/sidebar:opacity-100 transition",
             isMobile && "opacity-100"
           )}
         >
@@ -246,7 +246,7 @@ export const Navigation = () => {
         {/* Menu */}
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           <div className="px-4">
-            <div className="text-xs font-medium text-gray-500 dark:text-gray-500 text-gray-600 mb-3 px-2">
+            <div className="text-xs font-medium text-gray-600 dark:text-gray-500 mb-3 px-2">
               Menu
             </div>
             <nav className="space-y-1">
@@ -259,8 +259,8 @@ export const Navigation = () => {
                     className={cn(
                       "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all",
                       isActive
-                        ? "bg-[#2A2A2E] dark:bg-[#2A2A2E] bg-gray-100 text-white dark:text-white text-gray-900"
-                        : "text-gray-400 dark:text-gray-400 text-gray-600 hover:text-white dark:hover:text-white hover:text-gray-900 hover:bg-[#1E1E20] dark:hover:bg-[#1E1E20] hover:bg-gray-50"
+                        ? "bg-gray-100 dark:bg-[#2A2A2E] text-gray-900 dark:text-white"
+                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-[#1E1E20]"
                     )}
                     onClick={item.onClick}
                   >
@@ -282,7 +282,7 @@ export const Navigation = () => {
               {/* Trash */}
               <Popover>
                 <PopoverTrigger className="w-full">
-                  <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 dark:text-gray-400 text-gray-600 hover:text-white dark:hover:text-white hover:text-gray-900 hover:bg-[#1E1E20] dark:hover:bg-[#1E1E20] hover:bg-gray-50 transition-all">
+                  <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-[#1E1E20] transition-all">
                     <Trash className="w-4 h-4 flex-shrink-0" />
                     <span className="truncate">Trash</span>
                   </button>
@@ -340,14 +340,14 @@ export const Navigation = () => {
 
         {/* Upgrade Section */}
         <div className="p-4 mt-auto">
-          <div className="bg-[#1A1A1C] dark:bg-[#1A1A1C] bg-gray-50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-medium text-white dark:text-white text-gray-900 mb-1">
+          <div className="bg-gray-50 dark:bg-[#1A1A1C] rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
               Upgrade to Pro
             </h4>
-            <p className="text-xs text-gray-400 dark:text-gray-400 text-gray-600 leading-relaxed mb-4">
+            <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
               Unlock AI features like transcription, AI summary, and more.
             </p>
-            <button className="w-full bg-white dark:bg-white bg-gray-900 text-black dark:text-black text-white text-sm font-medium py-2.5 px-4 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-100 hover:bg-gray-800 transition-colors">
+            <button className="w-full bg-gray-900 dark:bg-white text-white dark:text-black text-sm font-medium py-2.5 px-4 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors">
               Upgrade
             </button>
           </div>

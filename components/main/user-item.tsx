@@ -25,28 +25,28 @@ const UserItem = () => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {/* Header */}
-        <div className="px-6 py-5 cursor-pointer hover:bg-[#1E1E20] transition-colors">
+        <div className="px-6 py-5 cursor-pointer hover:bg-gray-50 dark:hover:bg-[#1E1E20] transition-colors">
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 bg-white rounded-md flex items-center justify-center">
+            <div className="w-7 h-7 bg-gray-900 dark:bg-white rounded-md flex items-center justify-center">
               {user?.image ? (
                 <Avatar className="h-7 w-7">
                   <AvatarImage src={user.image} />
-                  <AvatarFallback className="bg-white text-black text-sm font-bold">
+                  <AvatarFallback className="bg-gray-900 dark:bg-white text-white dark:text-black text-sm font-bold">
                     {user?.name?.charAt(0) || "J"}
                   </AvatarFallback>
                 </Avatar>
               ) : (
-                <span className="text-black font-bold text-sm">
+                <span className="text-white dark:text-black font-bold text-sm">
                   {user?.name?.charAt(0) || "J"}
                 </span>
               )}
             </div>
             <div className="flex-1">
-              <h2 className="font-medium text-white text-sm">Jotion</h2>
+              <h2 className="font-medium text-gray-900 dark:text-white text-sm">Jotion</h2>
             </div>
-            <ChevronDown className="w-4 h-4 text-gray-400" />
+            <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           </div>
-          <p className="text-xs text-gray-400 mt-1 ml-10">
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 ml-10">
             {user?.name?.split(" ")[0]}'s Workspace
           </p>
         </div>
