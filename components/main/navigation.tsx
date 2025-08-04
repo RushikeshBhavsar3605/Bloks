@@ -57,8 +57,8 @@ export const Navigation = () => {
       id: "home",
       label: "Home",
       icon: Home,
-      path: "/home",
-      onClick: () => router.push("/home"),
+      path: "/documents",
+      onClick: () => router.push("/documents"),
     },
     {
       id: "library",
@@ -112,13 +112,9 @@ export const Navigation = () => {
   ];
 
   const isActiveRoute = (path: string) => {
-    // Special case for home - should be active on /home or /documents routes
-    if (path === "/home") {
-      return (
-        pathname === "/home" ||
-        pathname === "/documents" ||
-        pathname?.startsWith("/documents")
-      );
+    // Special case for home - should be active only on /documents page
+    if (path === "/documents") {
+      return pathname === "/documents";
     }
     return pathname === path;
   };
