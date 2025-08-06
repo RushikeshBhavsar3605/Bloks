@@ -220,7 +220,7 @@ export const Navigation = () => {
       <aside
         ref={sidebarRef}
         className={cn(
-          "group/sidebar h-full bg-white dark:bg-[#161618] overflow-y-auto relative flex w-[280px] flex-col z-[99999] border-r border-gray-200 dark:border-gray-800",
+          "group/sidebar h-full bg-white dark:bg-[#161618] overflow-y-auto relative flex w-[280px] flex-col z-[99999] border-r border-gray-200 dark:border-[#161618]",
           isResetting && "transition-all ease-in-out duration-300",
           isMobile && "w-0"
         )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { MenuIcon } from "lucide-react";
+import { MenuIcon, Share2, ArrowLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Title } from "./title";
@@ -8,9 +8,9 @@ import { SocketIndicator } from "../socket-indicator";
 import { useSocket } from "../providers/socket-provider";
 import { SaveIndicator } from "../save-indicator";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { Button } from "../ui/button";
+import { Skeleton } from "../ui/skeleton";
 import { CollaboratorsSetting } from "./collaborators/collaborators-setting";
-import { DocumentWithMeta } from "@/types/shared";
+import { CollaboratorWithMeta, DocumentWithMeta } from "@/types/shared";
 import { toast } from "sonner";
 import { Banner } from "./banner";
 import { Collaborator, Document } from "@prisma/client";
@@ -25,7 +25,9 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
   const router = useRouter();
   const { socket } = useSocket();
   const params = useParams();
-  const [document, setDocument] = useState<DocumentWithMeta>();
+  const [document, setDocument] = useState<
+    DocumentWithMeta & { collaborators: CollaboratorWithMeta[] }
+  >();
 
   const fetchDocuments = useCallback(async () => {
     try {
@@ -41,7 +43,9 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = (await response.json()) as DocumentWithMeta;
+      const data = (await response.json()) as DocumentWithMeta & {
+        collaborators: CollaboratorWithMeta[];
+      };
 
       setDocument(data);
     } catch (error) {
@@ -121,12 +125,18 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
 
   if (document === undefined) {
     return (
-      <nav className="bg-background dark:bg-[#1F1F1F] px-3 py-2 w-full flex items-center justify-between">
-        <Title.Skeleton />
-        <div className="flex items-center gap-x-2">
+      <header className="h-[72px] flex items-center justify-between px-8 border-b border-gray-200 dark:border-[#1E1E20] bg-background dark:bg-[#0B0B0F]">
+        <div className="flex items-center gap-4">
+          {isCollapsed && (
+            <Skeleton className="h-9 w-9" />
+          )}
+          <Skeleton className="h-9 w-9" />
+          <Title.Skeleton />
+        </div>
+        <div className="flex items-center gap-3">
           <Menu.Skeleton />
         </div>
-      </nav>
+      </header>
     );
   }
 
@@ -136,42 +146,68 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
 
   return (
     <>
-      <nav className="bg-background dark:bg-[#1F1F1F] px-3 py-2 w-full flex items-center gap-x-4">
-        {isCollapsed && (
-          <MenuIcon
-            role="button"
-            onClick={onResetWidth}
-            className="h-6 w-6 text-muted-foreground"
-          />
-        )}
-
-        <div className="flex items-center justify-between w-full">
-          <Title initialData={document} />
-          <div className="flex items-center gap-x-2">
-            <Menu documentId={document.id} />
+      <header className="h-[72px] flex items-center justify-between px-8 border-b border-gray-200 dark:border-[#1E1E20] bg-background dark:bg-[#0B0B0F]">
+        <div className="flex items-center gap-4">
+          {isCollapsed && (
+            <button
+              onClick={onResetWidth}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded-lg transition-colors text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            >
+              <MenuIcon className="w-5 h-5" />
+            </button>
+          )}
+          <button
+            onClick={() => router.push("/documents")}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded-lg transition-colors text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{document.icon || "📄"}</span>
+            <Title initialData={document} />
           </div>
         </div>
-
-        <div className="ml-auto flex items-center space-x-2">
-          <Popover>
-            <PopoverTrigger>
-              <Button
-                variant="secondary"
-                size="xs"
-                className="bg-primary/5 hover:bg-neutral-300 dark:hover:bg-neutral-600"
+        
+        <div className="flex items-center gap-3">
+          {/* Collaborators */}
+          <div className="flex items-center -space-x-2">
+            {document.collaborators?.slice(0, 3).map((collaborator, index) => (
+              <div
+                key={collaborator.id}
+                className="w-7 h-7 bg-blue-600 rounded-full border-2 border-background dark:border-[#0B0B0F] flex items-center justify-center text-xs font-medium text-white"
+                title={collaborator.user.name || "Collaborator"}
               >
+                {collaborator.user.name
+                  ?.split(" ")
+                  .map((n) => n[0])
+                  .join("") || "U"}
+              </div>
+            ))}
+          </div>
+          
+          {/* Share Button */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-[#2A2A2E] hover:bg-gray-200 dark:hover:bg-[#323236] text-gray-900 dark:text-white text-sm rounded-lg transition-colors">
+                <Share2 className="w-4 h-4" />
                 Share
-              </Button>
+              </button>
             </PopoverTrigger>
-
             <PopoverContent className="w-[500px]">
               <CollaboratorsSetting documentId={document.id} />
             </PopoverContent>
           </Popover>
-          <SaveIndicator />
-          <SocketIndicator />
+          
+          {/* Save and Socket Indicators */}
+          <div className="flex items-center gap-1">
+            <SaveIndicator />
+            <SocketIndicator />
+          </div>
+          
+          {/* Menu */}
+          <Menu documentId={document.id} />
         </div>
-      </nav>
+      </header>
 
       {document.isArchived && (
         <Banner

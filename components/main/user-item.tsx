@@ -42,12 +42,14 @@ const UserItem = () => {
               )}
             </div>
             <div className="flex-1">
-              <h2 className="font-medium text-gray-900 dark:text-white text-sm">Jotion</h2>
+              <h2 className="font-medium text-gray-900 dark:text-white text-sm">
+                Jotion
+              </h2>
             </div>
             <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           </div>
           <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 ml-10">
-            {user?.name?.split(" ")[0]}'s Workspace
+            {user?.name?.split(" ")[0]}&apos;s Workspace
           </p>
         </div>
       </DropdownMenuTrigger>

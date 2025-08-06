@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { DocumentWithMeta } from "@/types/shared";
+import { CollaboratorWithMeta, DocumentWithMeta } from "@/types/shared";
 import { Collaborator, CollaboratorRole, Document } from "@prisma/client";
 
 type ServiceResponse<T> = {
@@ -1011,15 +1011,26 @@ export const updateDocument = async ({
 export const getDocumentById = async ({
   userId,
   documentId,
-}: DocumentActionProps): Promise<ServiceResponse<DocumentWithMeta>> => {
+}: DocumentActionProps): Promise<
+  ServiceResponse<DocumentWithMeta & { collaborators: CollaboratorWithMeta[] }>
+> => {
   try {
     const document = await db.document.findUnique({
       where: { id: documentId },
       include: {
         collaborators: {
           where: {
-            userId,
             isVerified: { not: null },
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+              },
+            },
           },
         },
         owner: {
@@ -1047,6 +1058,7 @@ export const getDocumentById = async ({
         success: true,
         data: {
           ...docWithoutCollaborators,
+          collaborators,
           isOwner: true,
           role: "OWNER",
         },
@@ -1057,13 +1069,25 @@ export const getDocumentById = async ({
     // Direct collaborator
     if (document.collaborators.length > 0) {
       const { collaborators, ...docWithoutCollaborators } = document;
+      const verifiedCollaborators = collaborators.find(
+        (collab) => collab.userId === userId
+      );
+
+      if (!verifiedCollaborators) {
+        return {
+          success: false,
+          error: "You don't have access to this document",
+          status: 403,
+        };
+      }
 
       return {
         success: true,
         data: {
           ...docWithoutCollaborators,
+          collaborators,
           isOwner: false,
-          role: collaborators[0].role,
+          role: verifiedCollaborators.role,
         },
         status: 200,
       };
@@ -1077,6 +1101,7 @@ export const getDocumentById = async ({
         success: true,
         data: {
           ...docWithoutCollaborators,
+          collaborators,
           isOwner: false,
           role: null,
         },

@@ -17,7 +17,7 @@ const NotificationsPage = () => {
       message: "Your workspace has been set up successfully.",
       time: "2 hours ago",
       icon: Info,
-      color: "text-blue-500"
+      color: "text-blue-500",
     },
     {
       id: 2,
@@ -26,7 +26,7 @@ const NotificationsPage = () => {
       message: "Your document 'Project Notes' has been shared with the team.",
       time: "1 day ago",
       icon: CheckCircle,
-      color: "text-green-500"
+      color: "text-green-500",
     },
     {
       id: 3,
@@ -35,8 +35,8 @@ const NotificationsPage = () => {
       message: "You're using 85% of your storage space. Consider upgrading.",
       time: "3 days ago",
       icon: AlertTriangle,
-      color: "text-yellow-500"
-    }
+      color: "text-yellow-500",
+    },
   ];
 
   return (
@@ -50,12 +50,19 @@ const NotificationsPage = () => {
         {mockNotifications.map((notification) => {
           const Icon = notification.icon;
           return (
-            <div key={notification.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+            <div
+              key={notification.id}
+              className="flex items-start gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+            >
               <Icon className={`h-5 w-5 mt-1 ${notification.color}`} />
               <div className="flex-1">
                 <h3 className="font-medium">{notification.title}</h3>
-                <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
-                <span className="text-xs text-muted-foreground mt-2 block">{notification.time}</span>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {notification.message}
+                </p>
+                <span className="text-xs text-muted-foreground mt-2 block">
+                  {notification.time}
+                </span>
               </div>
               <Button variant="ghost" size="sm">
                 Mark as read
@@ -69,7 +76,7 @@ const NotificationsPage = () => {
         <div className="text-center py-12">
           <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium mb-2">No notifications</h3>
-          <p className="text-muted-foreground">You're all caught up!</p>
+          <p className="text-muted-foreground">You&apos;re all caught up!</p>
         </div>
       )}
 
