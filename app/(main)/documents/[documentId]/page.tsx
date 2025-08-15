@@ -84,21 +84,27 @@ const DocumentIdPage = () => {
             isOwner: newRole === "OWNER" ? true : doc.isOwner,
           };
         });
-        
+
         // Show toast notification about role change
-        toast.success(`Your access level has been changed to ${newRole.toLowerCase()}`);
+        toast.success(
+          `Your access level has been changed to ${newRole.toLowerCase()}`
+        );
       }
     };
 
     const titleChangeEvent = `document:receive:title:${documentId}`;
 
-    console.log(`[PAGE] Joining active document: ${documentId} for user: ${userId}`);
+    console.log(
+      `[PAGE] Joining active document: ${documentId} for user: ${userId}`
+    );
     joinActiveDocument(documentId, userId);
     socket.on(titleChangeEvent, handleUpdateTitle);
     socket.on("collaborator:settings:role", handleCollaboratorRoleChange);
 
     return () => {
-      console.log(`[PAGE] Leaving active document: ${documentId} for user: ${userId}`);
+      console.log(
+        `[PAGE] Leaving active document: ${documentId} for user: ${userId}`
+      );
       leaveActiveDocument(documentId, userId);
       socket.off(titleChangeEvent, handleUpdateTitle);
       socket.off("collaborator:settings:role", handleCollaboratorRoleChange);
@@ -132,7 +138,7 @@ const DocumentIdPage = () => {
   const canEdit = document.isOwner || document.role === "EDITOR";
 
   return (
-    <div className="pb-40">
+    <div className="pb-40 dark:bg-[#0B0B0F]">
       <div className="h-[10vh]" />
       <div className="mx-auto">
         <Toolbar initialData={document} preview={!canEdit} />

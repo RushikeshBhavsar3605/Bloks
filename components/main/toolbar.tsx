@@ -3,7 +3,7 @@
 import { DocumentWithMeta } from "@/types/shared";
 import { IconPicker } from "./icon-picker";
 import { Button } from "../ui/button";
-import { Smile, X } from "lucide-react";
+import { Smile, X, User, Calendar } from "lucide-react";
 import { ElementRef, useRef, useState } from "react";
 import TextAreaAutosize from "react-textarea-autosize";
 import { useSocket } from "../providers/socket-provider";
@@ -78,61 +78,83 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
   };
 
   return (
-    <div className="pl-[54px] group relative">
-      {!!initialData.icon && !preview && (
-        <div className="flex items-center gap-x-2 group/icon pt-6">
-          <IconPicker onChange={onIconSelect}>
-            <p className="text-6xl hover:opacity-75 transition">
-              {initialData.icon}
-            </p>
-          </IconPicker>
-          <Button
-            onClick={onRemoveIcon}
-            className="rounded-full opacity-0 group-hover/icon:opacity-100 transition text-muted-foreground text-xs"
-            variant="outline"
-            size="icon"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+    <div className="max-w-4xl mx-auto px-8 py-12">
+      {/* Document Header */}
+      <div className="mb-12">
+        <div className="flex items-center gap-4 mb-6">
+          {/* Icon */}
+          {!!initialData.icon && !preview && (
+            <div className="group/icon">
+              <IconPicker onChange={onIconSelect}>
+                <span className="text-6xl hover:opacity-75 transition cursor-pointer">
+                  {initialData.icon}
+                </span>
+              </IconPicker>
+              <Button
+                onClick={onRemoveIcon}
+                className="rounded-full opacity-0 group-hover/icon:opacity-100 transition text-muted-foreground text-xs ml-2 absolute"
+                variant="outline"
+                size="icon"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
+          {!!initialData.icon && preview && (
+            <span className="text-6xl">{initialData.icon}</span>
+          )}
+
+          {!initialData.icon && !preview && (
+            <div className="opacity-0 group-hover:opacity-100">
+              <IconPicker asChild onChange={onIconSelect}>
+                <Button
+                  className="text-muted-foreground text-xs"
+                  variant="outline"
+                  size="sm"
+                >
+                  <Smile className="h-4 w-4 mr-2" />
+                  Add icon
+                </Button>
+              </IconPicker>
+            </div>
+          )}
+
+          {/* Title and Meta */}
+          <div className="flex-1">
+            {isEditing && !preview ? (
+              <TextAreaAutosize
+                ref={inputRef}
+                onBlur={disableInput}
+                onKeyDown={onKeyDown}
+                value={value}
+                onChange={(e) => onInput(e.target.value)}
+                className="text-5xl bg-transparent font-bold break-words outline-none text-gray-900 dark:text-white resize-none w-full mb-2"
+              />
+            ) : (
+              <h1
+                onClick={enableInput}
+                className="text-5xl font-bold text-gray-900 dark:text-white mb-2 cursor-text"
+              >
+                {initialData.title}
+              </h1>
+            )}
+
+            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                <span>{initialData.owner?.name || "Unknown Author"}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>
+                  Created {new Date(initialData.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
-      )}
-
-      {!!initialData.icon && preview && (
-        <p className="text-6xl pt-6">{initialData.icon}</p>
-      )}
-
-      <div className="opacity-0 group-hover:opacity-100 flex items-center gap-x-1 py-4">
-        {!initialData.icon && !preview && (
-          <IconPicker asChild onChange={onIconSelect}>
-            <Button
-              className="text-muted-foreground text-xs"
-              variant="outline"
-              size="sm"
-            >
-              <Smile className="h-4 w-4 mr-2" />
-              Add icon
-            </Button>
-          </IconPicker>
-        )}
       </div>
-
-      {isEditing && !preview ? (
-        <TextAreaAutosize
-          ref={inputRef}
-          onBlur={disableInput}
-          onKeyDown={onKeyDown}
-          value={value}
-          onChange={(e) => onInput(e.target.value)}
-          className="text-5xl bg-transparent font-bold break-words outline-none text-[#3F3F3F] dark:text-[#CFCFCF] resize-none"
-        />
-      ) : (
-        <div
-          onClick={enableInput}
-          className="pb-[11.5px] text-5xl font-bold break-words outline-none text-[#3F3F3F] dark:text-[#CFCFCF]"
-        >
-          {initialData.title}
-        </div>
-      )}
     </div>
   );
 };
