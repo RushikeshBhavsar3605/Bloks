@@ -2,6 +2,7 @@
 
 import { Editor } from "@/components/main/editor";
 import { Toolbar } from "@/components/main/toolbar";
+import { FormattingToolbar } from "@/components/main/formatting-toolbar";
 import { useSocket } from "@/components/providers/socket-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -10,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const DocumentIdPage = () => {
   const user = useCurrentUser();
@@ -18,6 +20,7 @@ const DocumentIdPage = () => {
   const router = useRouter();
   const documentId = params?.documentId as string;
   const [document, setDocument] = useState<DocumentWithMeta>();
+  const [editor, setEditor] = useState<any>(null);
 
   const fetchDocuments = useCallback(async () => {
     try {
@@ -138,18 +141,25 @@ const DocumentIdPage = () => {
   const canEdit = document.isOwner || document.role === "EDITOR";
 
   return (
-    <div className="pb-40 dark:bg-[#0B0B0F]">
-      <div className="h-[10vh]" />
-      <div className="mx-auto">
-        <Toolbar initialData={document} preview={!canEdit} />
-        <Editor
-          onChange={() => {}}
-          initialContent={document.content ?? undefined}
-          documentId={documentId}
-          editable={canEdit}
-        />
+    <TooltipProvider>
+      <div className="pb-40 dark:bg-[#0B0B0F]">
+        <div className="h-[10vh]" />
+        
+        {/* New Structure: Formatting Toolbar -> Document Toolbar -> Editor */}
+        {editor && <FormattingToolbar editor={editor} editable={canEdit} />}
+        
+        <div className="mx-auto">
+          <Toolbar initialData={document} preview={!canEdit} />
+          <Editor
+            onChange={() => {}}
+            initialContent={document.content ?? undefined}
+            documentId={documentId}
+            editable={canEdit}
+            onEditorReady={setEditor}
+          />
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };
 
