@@ -19,6 +19,7 @@ import {
   Quote,
   Eye,
   MessageCircle,
+  AlertCircle,
 } from "lucide-react";
 import { MarkButton } from "@/components/ui/tiptap/mark-button";
 import { HeadingDropdown } from "@/components/ui/tiptap/heading-dropdown";
@@ -209,6 +210,20 @@ export const FormattingToolbar = ({
             )}
           >
             <Quote className="w-4 h-4" />
+          </button>
+
+          {/* Callout */}
+          <button
+            onClick={() => editor.chain().focus().toggleCallout().run()}
+            className={cn(
+              "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
+              editor.isActive("callout")
+                ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            )}
+            title="Callout"
+          >
+            <AlertCircle className="w-4 h-4" />
           </button>
         </div>
 

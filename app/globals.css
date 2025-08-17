@@ -457,3 +457,44 @@ body,
 .tiptap code {
   @apply text-inherit bg-muted text-sm font-mono p-1 rounded-lg;
 }
+
+/* Callout styles */
+.ProseMirror .callout-wrapper {
+  margin: 1rem 0;
+}
+
+.ProseMirror .callout-container {
+  border-radius: 0.75rem;
+  border-width: 1px;
+  padding: 1.5rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.ProseMirror .callout-container:hover {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.ProseMirror .callout-content {
+  outline: none;
+}
+
+.ProseMirror .callout-content p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.ProseMirror .callout-content p:not(:last-child) {
+  margin-bottom: 0.75rem;
+}
+
+/* Ensure proper focus styles */
+.ProseMirror .callout-wrapper.ProseMirror-selectednode {
+  outline: 2px solid rgb(59, 130, 246);
+  outline-offset: 2px;
+  border-radius: 0.75rem;
+}
+
+/* Dark mode adjustments */
+.dark .ProseMirror .callout-container:hover {
+  box-shadow: 0 1px 3px 0 rgba(255, 255, 255, 0.1), 0 1px 2px 0 rgba(255, 255, 255, 0.06);
+}

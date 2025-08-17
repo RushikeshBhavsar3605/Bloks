@@ -2,6 +2,9 @@ import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
+// Export the callout extension
+export { CalloutExtension } from "./callout-extension";
+
 // Selection Extension - Highlights the selected text
 export const SelectionExtension = Extension.create({
   name: "selection",

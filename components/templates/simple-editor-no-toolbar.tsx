@@ -17,6 +17,7 @@ import {
   CustomCodeBlock,
   SelectionExtension,
   TrailingNodeExtension,
+  CalloutExtension,
 } from "@/extensions/tiptap-extensions";
 import { CollaborationExtension } from "@/extensions/collaboration-extension";
 import { LiveCollaborationExtension } from "@/extensions/live-collaboration-extension";
@@ -92,6 +93,7 @@ export function SimpleEditorNoToolbar({
         SelectionExtension,
         TrailingNodeExtension,
         CustomCodeBlock,
+        CalloutExtension,
         Underline,
         // Only include collaboration extension when all dependencies are available
         ...(socket && documentId && user?.id
@@ -118,8 +120,8 @@ export function SimpleEditorNoToolbar({
 
         // Only emit for user actions (not collaborative updates)
         // This prevents infinite loops when receiving real-time changes from other users
-        const isUserAction = !transaction.getMeta('isReceiving');
-        
+        const isUserAction = !transaction.getMeta("isReceiving");
+
         if (isUserAction && socket && documentId && user?.id) {
           console.log(`[USER ID FROM FRONTEND CONTENT UPDATE]: ${user.id}`);
           socket.emit("document:update:content", {
@@ -131,9 +133,7 @@ export function SimpleEditorNoToolbar({
       },
       editorProps: {
         attributes: {
-          class: cn(
-            "mx-auto focus:outline-none min-h-[200px] p-4"
-          ),
+          class: cn("mx-auto focus:outline-none min-h-[200px] p-4"),
         },
       },
     },
@@ -174,17 +174,15 @@ export function SimpleEditorNoToolbar({
   }
 
   return (
-    <div
-      className={cn(
-        "w-full px-[54px] mx-auto rounded-lg bg-background",
-        className
-      )}
-    >
+    <div className={cn("w-full px-[54px] mx-auto rounded-lg", className)}>
       {/* Editor Content */}
-      <div className="relative">
+      <div className="relative flex justify-center">
         <EditorContent
           editor={editor}
-          className={cn("min-h-[400px]", !editable && "cursor-default")}
+          className={cn(
+            "min-h-[400px] w-[835px]",
+            !editable && "cursor-default"
+          )}
         />
       </div>
     </div>

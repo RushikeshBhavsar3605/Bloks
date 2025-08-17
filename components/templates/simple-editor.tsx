@@ -31,6 +31,7 @@ import {
   CustomCodeBlock,
   SelectionExtension,
   TrailingNodeExtension,
+  CalloutExtension,
 } from "@/extensions/tiptap-extensions";
 import { CollaborationExtension } from "@/extensions/collaboration-extension";
 import { LiveCollaborationExtension } from "@/extensions/live-collaboration-extension";
@@ -52,6 +53,7 @@ import {
   Moon,
   CodeXml,
   SquareTerminal,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -123,6 +125,7 @@ export function SimpleEditor({
         SelectionExtension,
         TrailingNodeExtension,
         CustomCodeBlock,
+        CalloutExtension,
         Underline,
         // Only include collaboration extension when all dependencies are available
         ...(socket && documentId && user?.id
@@ -323,6 +326,16 @@ export function SimpleEditor({
               command={() => editor.chain().focus().toggleBlockquote().run()}
             >
               <Quote className="h-4 w-4" />
+            </NodeButton>
+
+            <NodeButton
+              editor={editor}
+              node="callout"
+              tooltip="Callout"
+              shortcut="⌘⇧C"
+              command={() => editor.chain().focus().toggleCallout().run()}
+            >
+              <AlertCircle className="h-4 w-4" />
             </NodeButton>
 
             <ImageUploadButton editor={editor} />
