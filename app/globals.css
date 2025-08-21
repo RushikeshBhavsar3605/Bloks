@@ -496,5 +496,26 @@ body,
 
 /* Dark mode adjustments */
 .dark .ProseMirror .callout-container:hover {
-  box-shadow: 0 1px 3px 0 rgba(255, 255, 255, 0.1), 0 1px 2px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: 0 1px 3px 0 rgba(255, 255, 255, 0.1),
+    0 1px 2px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Fix spacing for first and last elements in callouts */
+.callout-content *:first-child {
+  margin-top: 0 !important;
+}
+
+.callout-content *:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Additional specific targeting for headings in callouts */
+.callout-content h1:first-child,
+.callout-content h2:first-child,
+.callout-content h3:first-child,
+.callout-content h4:first-child,
+.callout-content h5:first-child,
+.callout-content h6:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
 }

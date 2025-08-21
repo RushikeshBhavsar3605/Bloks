@@ -36,7 +36,7 @@ export const CalloutExtension = Node.create<CalloutOptions>({
 
   group: 'block',
 
-  content: 'paragraph+',
+  content: 'block+',
 
   defining: true,
 

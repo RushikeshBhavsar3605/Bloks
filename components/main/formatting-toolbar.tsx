@@ -6,7 +6,7 @@ import {
   Bold,
   Italic,
   Underline,
-  Code,
+  Code2,
   Link,
   List,
   ImageIcon,
@@ -127,17 +127,18 @@ export const FormattingToolbar = ({
             <Underline className="w-4 h-4" />
           </button>
 
-          {/* Code */}
+          {/* Code Block */}
           <button
-            onClick={() => editor.chain().focus().toggleCode().run()}
+            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
             className={cn(
               "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
-              editor.isActive("code")
+              editor.isActive("codeBlock")
                 ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             )}
+            title="Code Block"
           >
-            <Code className="w-4 h-4" />
+            <Code2 className="w-4 h-4" />
           </button>
 
           <div className="w-px h-6 bg-gray-200 dark:bg-[#1E1E20] mx-2" />
