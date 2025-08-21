@@ -80,8 +80,8 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
   return (
     <div className="max-w-4xl mx-auto px-8 py-12">
       {/* Document Header */}
-      <div className="mb-12">
-        <div className="flex items-center gap-4 mb-6">
+      <div>
+        <div className="flex items-center gap-4">
           {/* Icon */}
           {!!initialData.icon && !preview && (
             <div className="group/icon">

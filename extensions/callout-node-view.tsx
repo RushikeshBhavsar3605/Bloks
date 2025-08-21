@@ -11,7 +11,7 @@ interface CalloutNodeViewProps {
 export const CalloutNodeView: React.FC<CalloutNodeViewProps> = () => {
   return (
     <NodeViewWrapper className="mb-4">
-      <div className="rounded-lg bg-muted dark:bg-gray-900 p-4 transition-all duration-200">
+      <div className="rounded-lg bg-muted dark:bg-[#1A1A1C] p-4 transition-all duration-200">
         <div className="leading-relaxed min-h-[1.5rem] dark:text-muted-foreground callout-content">
           <NodeViewContent />
         </div>
