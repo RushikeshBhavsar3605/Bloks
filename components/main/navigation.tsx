@@ -33,6 +33,9 @@ import { useSettings } from "@/hooks/use-settings";
 import { Navbar } from "./navbar";
 import { useCurrentUser } from "@/hooks/use-current-user";
 
+// Create a ref that can be shared
+export const sharedNavbarRef = { current: null as ElementRef<"div"> | null };
+
 export const Navigation = () => {
   const search = useSearch();
   const settings = useSettings();
@@ -50,6 +53,11 @@ export const Navigation = () => {
 
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
+
+  // Sync navbarRef with sharedNavbarRef
+  useEffect(() => {
+    sharedNavbarRef.current = navbarRef.current;
+  }, []);
 
   // Menu items with route-based activation
   const menuItems = [

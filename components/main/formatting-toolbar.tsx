@@ -30,7 +30,8 @@ import { HighlightPopover } from "@/components/ui/tiptap/highlight-popover";
 import { LinkPopover } from "@/components/ui/tiptap/link-popover";
 import { NodeButton } from "@/components/ui/tiptap/node-button";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { sharedNavbarRef } from "./navigation";
 
 interface FormattingToolbarProps {
   editor: Editor | null;
@@ -42,13 +43,49 @@ export const FormattingToolbar = ({
   editable = true,
 }: FormattingToolbarProps) => {
   const [isEditing, setIsEditing] = useState(editable);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const updatePosition = () => {
+      if (toolbarRef.current && sharedNavbarRef.current) {
+        const navbarRect = sharedNavbarRef.current.getBoundingClientRect();
+        const navbarHeight = navbarRect.height;
+        const navbarTop = navbarRect.top;
+        
+        toolbarRef.current.style.top = `${navbarTop + navbarHeight}px`;
+        toolbarRef.current.style.left = `${navbarRect.left}px`;
+        toolbarRef.current.style.width = `${navbarRect.width}px`;
+      }
+    };
+
+    // Use requestAnimationFrame for smooth updates
+    const animationFrame = () => {
+      updatePosition();
+      requestAnimationFrame(animationFrame);
+    };
+
+    const frameId = requestAnimationFrame(animationFrame);
+
+    // Also listen to specific events
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition);
+    };
+  }, []);
 
   if (!editor) {
     return null;
   }
 
   return (
-    <div className="border-b border-gray-200 dark:border-[#1E1E20] px-8 py-3 bg-background dark:bg-[#0B0B0F]">
+    <div 
+      ref={toolbarRef}
+      className="fixed z-40 border-b border-gray-200 dark:border-[#1E1E20] px-8 py-3 bg-background dark:bg-[#0B0B0F]"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
           {/* Undo/Redo */}
