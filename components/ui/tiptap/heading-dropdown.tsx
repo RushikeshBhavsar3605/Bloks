@@ -46,6 +46,25 @@ const headingItems = [
 ];
 
 export function HeadingDropdown({ editor, className }: HeadingDropdownProps) {
+  const [, forceUpdate] = React.useState({});
+  
+  // Listen to editor state changes to update active state
+  React.useEffect(() => {
+    if (!editor) return;
+
+    const updateActiveState = () => {
+      forceUpdate({});
+    };
+
+    editor.on('selectionUpdate', updateActiveState);
+    editor.on('transaction', updateActiveState);
+
+    return () => {
+      editor.off('selectionUpdate', updateActiveState);
+      editor.off('transaction', updateActiveState);
+    };
+  }, [editor]);
+
   const activeItem = headingItems.find((item) => item.isActive(editor));
 
   return (

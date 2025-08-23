@@ -25,6 +25,25 @@ export function MarkButton({
   className,
   shortcut,
 }: MarkButtonProps) {
+  const [, forceUpdate] = React.useState({});
+  
+  // Listen to editor state changes to update active state
+  React.useEffect(() => {
+    if (!editor) return;
+
+    const updateActiveState = () => {
+      forceUpdate({});
+    };
+
+    editor.on('selectionUpdate', updateActiveState);
+    editor.on('transaction', updateActiveState);
+
+    return () => {
+      editor.off('selectionUpdate', updateActiveState);
+      editor.off('transaction', updateActiveState);
+    };
+  }, [editor]);
+
   const isActive = editor.isActive(mark);
 
   const handleClick = () => {

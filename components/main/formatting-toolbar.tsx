@@ -43,7 +43,26 @@ export const FormattingToolbar = ({
   editable = true,
 }: FormattingToolbarProps) => {
   const [isEditing, setIsEditing] = useState(editable);
+  const [, forceUpdate] = useState({});
   const toolbarRef = useRef<HTMLDivElement>(null);
+
+  // Listen to editor state changes to update active states
+  useEffect(() => {
+    if (!editor) return;
+
+    const updateActiveStates = () => {
+      forceUpdate({});
+    };
+
+    // Listen to selection changes and content updates
+    editor.on('selectionUpdate', updateActiveStates);
+    editor.on('transaction', updateActiveStates);
+
+    return () => {
+      editor.off('selectionUpdate', updateActiveStates);
+      editor.off('transaction', updateActiveStates);
+    };
+  }, [editor]);
 
   useEffect(() => {
     const updatePosition = () => {
@@ -106,24 +125,16 @@ export const FormattingToolbar = ({
 
           <div className="w-px h-6 bg-gray-200 dark:bg-[#1E1E20] mx-2" />
 
-          {/* Heading */}
-          <button
-            onClick={() => {
-              if (editor.isActive("heading", { level: 1 })) {
-                editor.chain().focus().setParagraph().run();
-              } else {
-                editor.chain().focus().toggleHeading({ level: 1 }).run();
-              }
-            }}
+          {/* Heading Dropdown */}
+          <HeadingDropdown 
+            editor={editor} 
             className={cn(
-              "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
+              "hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
               editor.isActive("heading")
                 ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             )}
-          >
-            <Hash className="w-4 h-4" />
-          </button>
+          />
 
           {/* Bold */}
           <button
