@@ -6,6 +6,7 @@ export type DocumentWithMeta = Document & {
   owner: {
     name: string | null;
     image: string | null;
+    email?: string | null;
   };
 };
 

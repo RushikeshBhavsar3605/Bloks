@@ -1037,6 +1037,7 @@ export const getDocumentById = async ({
           select: {
             name: true,
             image: true,
+            email: true,
           },
         },
       },

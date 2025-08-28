@@ -1,29 +1,41 @@
 import { CollaboratorWithMeta } from "@/types/shared";
 import { CollaboratorRole } from "@prisma/client";
-import { CollaboratorsList } from "./collaborators-list";
 import { useCollaborators } from "@/hooks/use-collaborators";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import EmailSelector, {
-  EmailOption,
-  EmailSelectorRef,
-} from "@/components/ui/multi-selector";
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Spinner } from "@/components/spinner";
 import { useSocket } from "@/components/providers/socket-provider";
 import { getCollaborator } from "@/actions/collaborators/get-collaborator";
+import { Mail, Settings, UserPlus } from "lucide-react";
+import { CollaboratorItem } from "./collaborator-item";
+import { DocumentDeleteSection } from "./document-delete-section";
 
 export const CollaboratorsSetting = ({
   documentId,
+  documentOwnerId,
+  documentTitle,
+  documentIcon,
+  documentCreatedAt,
 }: {
   documentId: string;
+  documentOwnerId: string;
+  documentTitle?: string;
+  documentIcon?: string | null;
+  documentCreatedAt: Date;
 }) => {
-  const emailSelectorRef = useRef<EmailSelectorRef>(null);
+  const [emailInput, setEmailInput] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
   const user = useCurrentUser();
   const { owner, isLoading, error, collaborators, setCollaborators } =
     useCollaborators(documentId);
   const isOwner = user?.id === owner?.id;
   const { socket } = useSocket();
+
+  // Hydration guard
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!socket) return;
@@ -39,6 +51,9 @@ export const CollaboratorsSetting = ({
         addedBy: { name: string; id: string };
       };
     }) => {
+      console.log(
+        `Invite by ${data.newCollaborator.addedBy.name} user: ${data.newCollaborator.userName}`
+      );
       if (!data.invited) return;
 
       const newCollaborator: CollaboratorWithMeta | null =
@@ -102,6 +117,8 @@ export const CollaboratorsSetting = ({
       );
     };
 
+    // console.log("🎧 Attaching socket listeners for user:", user?.name);
+
     socket.on("collaborator:settings:invite", handleCollaboratorInvite);
     socket.on("collaborator:settings:verified", handleCollaboratorVerified);
     socket.on("collaborator:settings:remove", handleCollaboratorRemove);
@@ -115,87 +132,54 @@ export const CollaboratorsSetting = ({
     };
   }, [socket, user?.id, setCollaborators, collaborators]);
 
-  // Function to handle invite collaborators
-  const handleInvite = async (emails: EmailOption[]) => {
+  // Function to handle invite collaborator
+  const handleInviteByEmail = async () => {
+    if (!emailInput.trim()) return;
+
     // Initial loading toast
-    const loadingToastId = toast.loading(
-      emails.length > 1
-        ? `Inviting ${emails.length} collaborators...`
-        : `Inviting ${emails[0]?.value || "collaborator"}`
-    );
+    const loadingToastId = toast.loading(`Inviting ${emailInput}...`);
 
-    let successCount = 0;
-    const failedInvites: { email: string; error: string }[] = [];
-    const successfulInvites: { email: string }[] = [];
+    try {
+      // Send invite request
+      const response = await fetch("/api/socket/collaborators/invite", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: emailInput,
+          documentId,
+        }),
+      });
 
-    // Process each email one by one
-    for (let index = 0; index < emails.length; index++) {
-      const email = emails[index];
+      // Parse response
+      const data: {
+        invited: boolean;
+        newCollaborator: CollaboratorWithMeta;
+      } = await response.json();
 
-      try {
-        // Update toast progress
-        toast.loading(
-          `Processing ${index + 1}/${emails.length}: ${email.value}`,
-          { id: loadingToastId }
-        );
+      if (!response.ok) throw new Error("Invite failed");
 
-        // Send invite request
-        const response = await fetch("/api/socket/collaborators/invite", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: email.value,
-            documentId,
-          }),
-        });
+      // Dismiss loading toast
+      toast.dismiss(loadingToastId);
 
-        // Parse response
-        const data: {
-          invited: boolean;
-          newCollaborator: CollaboratorWithMeta;
-        } = await response.json();
-        if (!response.ok) throw new Error("Invite failed");
-
-        // If added as collaborator, update state
-        if (data.newCollaborator) {
-          successfulInvites.push({ email: email.value });
-          successCount++;
-        } else {
-          toast.success(`${email.value} invited to join Jotion & collaborate`);
-        }
-      } catch (error: any) {
-        failedInvites.push({
-          email: email.value,
-          error: error.message || "Failed to send invitation",
-        });
-        console.error(error);
+      // If added as collaborator, show success
+      if (data.newCollaborator) {
+        toast.success(`${emailInput} invited successfully`);
+      } else {
+        toast.success(`${emailInput} invited to join Jotion & collaborate`);
       }
-    }
 
-    // Dismiss loading toast
-    toast.dismiss(loadingToastId);
+      // Clear input
+      setEmailInput("");
+    } catch (error: any) {
+      // Dismiss loading toast
+      toast.dismiss(loadingToastId);
 
-    // Final success/failure summary toast
-    if (successCount > 0 || failedInvites.length > 0) {
-      if (failedInvites.length === 0)
-        toast.success(
-          successfulInvites.length > 1
-            ? `${successCount} collaborators invited successfully!`
-            : `${successfulInvites[0]?.email} invited successfully`
-        );
-      else
-        toast[successCount > 0 ? "warning" : "error"](
-          `${successCount} succeeded, ${failedInvites.length} failed`,
-          {
-            description:
-              failedInvites.length > 0
-                ? `Failed: ${failedInvites.map((f) => f.email).join(", ")}`
-                : undefined,
-            duration: 5000,
-          }
-        );
+      toast.error(`Failed to invite ${emailInput}`, {
+        description: error.message || "Failed to send invitation",
+      });
+      console.error(error);
     }
   };
 
@@ -258,6 +242,15 @@ export const CollaboratorsSetting = ({
     });
   };
 
+  // Prevent hydration mismatch
+  if (!isMounted) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
   if (isLoading)
     return (
       <div className="h-full flex items-center justify-center">
@@ -268,31 +261,120 @@ export const CollaboratorsSetting = ({
   if (error) return <div>Error: {error}</div>;
   if (!owner) return <div>No owner data available.</div>;
 
-  return (
-    <div className="">
-      <div className="flex items-center space-x-2 mb-4">
-        <div className="w-full">
-          <EmailSelector
-            ref={emailSelectorRef}
-            onInvite={handleInvite}
-            placeholder="Enter email addresses..."
-            className="mb-4"
-          />
+  // Combine owner and collaborators for display
+  const ownerAsCollaborator: CollaboratorWithMeta = {
+    id: `owner-${owner.id}`,
+    role: "EDITOR" as CollaboratorRole,
+    documentId: documentId,
+    userId: owner.id,
+    createdAt: documentCreatedAt,
+    isVerified: documentCreatedAt,
+    user: {
+      id: owner.id,
+      name: owner.name,
+      email: owner.email || "",
+      image: owner.image,
+    },
+  };
 
-          <p className="text-sm text-muted-foreground mt-2">
-            Type an email address and press Enter to add it to the list.
-          </p>
+  const allCollaborators = [ownerAsCollaborator, ...collaborators];
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3 pb-4 border-b border-gray-200 dark:border-[#1E1E20]">
+        <div className="w-9 h-9 bg-gray-100 dark:bg-[#2A2A2E] rounded-lg flex items-center justify-center">
+          <Settings className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Document Settings
+          </h2>
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <span>{documentIcon || "📄"}</span>
+            <span>{documentTitle || "Untitled"}</span>
+          </div>
         </div>
       </div>
 
-      <CollaboratorsList
-        collaborators={collaborators}
-        owner={owner}
-        isOwner={isOwner}
-        handleRoleChange={handleRoleChange}
-        handleRemoveCollaborator={handleRemoveCollaborator}
-        currentUserId={user?.id}
-      />
+      <div className="space-y-6 max-h-[calc(90vh-200px)] overflow-y-auto">
+        {/* Invite People Section */}
+        {isOwner ? (
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+              Invite people
+            </h3>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
+                <input
+                  type="email"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && handleInviteByEmail()}
+                  placeholder="Enter email address"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#1A1A1C] border border-gray-300 dark:border-[#2A2A2E] rounded-lg text-gray-900 dark:text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <button
+                onClick={handleInviteByEmail}
+                disabled={!emailInput.trim()}
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors text-sm"
+              >
+                <UserPlus className="w-4 h-4" />
+                Invite
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-[#1A1A1C] border border-gray-200 dark:border-[#2A2A2E] rounded-lg">
+            <div className="w-8 h-8 bg-gray-100 dark:bg-[#2A2A2E] rounded-lg flex items-center justify-center">
+              <Settings className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                Owner permissions required
+              </p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Only the document owner can invite new collaborators
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Collaborators List */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+              People with access
+            </h3>
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {allCollaborators.length} people
+            </span>
+          </div>
+
+          <CollaboratorItem
+            collaborators={allCollaborators}
+            currentUserId={user?.id}
+            isOwner={documentOwnerId === user?.id}
+            handleRoleChange={handleRoleChange}
+            handleRemoveCollaborator={handleRemoveCollaborator}
+          />
+        </div>
+
+        {/* Advanced Settings */}
+        <div className="pt-4 border-t border-gray-200 dark:border-[#1E1E20] space-y-4">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+            Advanced settings
+          </h3>
+
+          <DocumentDeleteSection
+            documentId={documentId}
+            documentTitle={documentTitle}
+            isOwner={isOwner}
+          />
+        </div>
+      </div>
     </div>
   );
 };

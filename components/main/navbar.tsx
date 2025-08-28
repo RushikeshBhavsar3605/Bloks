@@ -1,13 +1,13 @@
 "use client";
 
-import { MenuIcon, Share2, ArrowLeft } from "lucide-react";
+import { MenuIcon, Settings, ArrowLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Title } from "./title";
 import { SocketIndicator } from "../socket-indicator";
 import { useSocket } from "../providers/socket-provider";
 import { SaveIndicator } from "../save-indicator";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
 import { Skeleton } from "../ui/skeleton";
 import { CollaboratorsSetting } from "./collaborators/collaborators-setting";
 import { CollaboratorWithMeta, DocumentWithMeta } from "@/types/shared";
@@ -15,19 +15,46 @@ import { toast } from "sonner";
 import { Banner } from "./banner";
 import { Collaborator, Document } from "@prisma/client";
 import { Menu } from "./menu";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 interface NavbarProps {
   isCollapsed: boolean;
   onResetWidth: () => void;
 }
 
+const getAvatarInitials = (name: string) => {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase();
+};
+
+const getAvatarColor = (id: string) => {
+  const colors = [
+    "bg-blue-600",
+    "bg-green-600",
+    "bg-purple-600",
+    "bg-red-600",
+    "bg-yellow-600",
+    "bg-indigo-600",
+    "bg-pink-600",
+    "bg-gray-600",
+  ];
+  const index =
+    id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) %
+    colors.length;
+  return colors[index];
+};
+
 export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
   const router = useRouter();
-  const { socket } = useSocket();
+  const { socket, joinDocument } = useSocket();
   const params = useParams();
   const [document, setDocument] = useState<
     DocumentWithMeta & { collaborators: CollaboratorWithMeta[] }
   >();
+  const user = useCurrentUser();
 
   const fetchDocuments = useCallback(async () => {
     try {
@@ -47,6 +74,24 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
         collaborators: CollaboratorWithMeta[];
       };
 
+      const owner: CollaboratorWithMeta & { isOwner: boolean } = {
+        id: `owner-${data.userId}`,
+        userId: data.userId,
+        documentId: data.id,
+        role: "EDITOR",
+        createdAt: data.createdAt,
+        isVerified: data.createdAt,
+        isOwner: true,
+        user: {
+          id: data.userId,
+          name: data.owner.name,
+          email: data.owner.email as string,
+          image: data.owner.image,
+        },
+      };
+
+      data.collaborators.push(owner);
+
       setDocument(data);
     } catch (error) {
       console.error("Failed to fetch document:", error);
@@ -58,6 +103,14 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
   useEffect(() => {
     fetchDocuments();
   }, [fetchDocuments]);
+
+  // Join document socket room
+  useEffect(() => {
+    if (socket && document?.id && user?.id) {
+      console.log("Joining document room from navbar:", document.id, user.name);
+      joinDocument(document.id, user.id);
+    }
+  }, [socket, document?.id, user?.id, joinDocument]);
 
   useEffect(() => {
     if (!socket || !document?.id) return;
@@ -104,6 +157,52 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
       }
     };
 
+    const handleCollaboratorVerified = (payload: {
+      data: CollaboratorWithMeta;
+    }) => {
+      const verifiedCollaborator = payload.data;
+
+      setDocument((prevState) =>
+        prevState
+          ? {
+              ...prevState,
+              collaborators: [
+                ...prevState.collaborators.filter(
+                  (c) => c.id !== verifiedCollaborator.id
+                ),
+                verifiedCollaborator,
+              ],
+            }
+          : prevState
+      );
+    };
+
+    const handleCollaboratorRemove = (data: {
+      addedBy: {
+        name: string;
+        id: string;
+      };
+      documentId: string;
+      documentTitle: string;
+      removedUser: {
+        name: string;
+        id: string;
+      };
+    }) => {
+      setDocument((prevState) =>
+        prevState
+          ? {
+              ...prevState,
+              collaborators: [
+                ...prevState?.collaborators.filter(
+                  (c) => c.userId !== data.removedUser.id
+                ),
+              ],
+            }
+          : prevState
+      );
+    };
+
     const titleChangeEvent = `document:receive:title:${document.id}`;
 
     socket.on(titleChangeEvent, handleUpdateTitle);
@@ -112,6 +211,8 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
       `document:restore:${document.parentDocumentId || "root"}`,
       handleRestore
     );
+    socket.on("collaborator:settings:verified", handleCollaboratorVerified);
+    socket.on("collaborator:settings:remove", handleCollaboratorRemove);
 
     return () => {
       socket.off(titleChangeEvent, handleUpdateTitle);
@@ -120,6 +221,8 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
         `document:restore:${document.parentDocumentId || "root"}`,
         handleRestore
       );
+      socket.off("collaborator:settings:verified", handleCollaboratorVerified);
+      socket.off("collaborator:settings:remove", handleCollaboratorRemove);
     };
   }, [socket, document]);
 
@@ -127,9 +230,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
     return (
       <header className="h-[72px] flex items-center justify-between px-8 border-b border-gray-200 dark:border-[#1E1E20] bg-background dark:bg-[#0B0B0F]">
         <div className="flex items-center gap-4">
-          {isCollapsed && (
-            <Skeleton className="h-9 w-9" />
-          )}
+          {isCollapsed && <Skeleton className="h-9 w-9" />}
           <Skeleton className="h-9 w-9" />
           <Title.Skeleton />
         </div>
@@ -167,43 +268,63 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
             <Title initialData={document} />
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3">
           {/* Collaborators */}
           <div className="flex items-center -space-x-2">
-            {document.collaborators?.slice(0, 3).map((collaborator, index) => (
-              <div
-                key={collaborator.id}
-                className="w-7 h-7 bg-blue-600 rounded-full border-2 border-background dark:border-[#0B0B0F] flex items-center justify-center text-xs font-medium text-white"
-                title={collaborator.user.name || "Collaborator"}
-              >
-                {collaborator.user.name
-                  ?.split(" ")
-                  .map((n) => n[0])
-                  .join("") || "U"}
-              </div>
-            ))}
+            {document.collaborators
+              ?.slice(0, 3)
+              .filter((c) => c.userId !== user?.id)
+              .map((collaborator, index) => {
+                return (
+                  <>
+                    {collaborator.user.image ? (
+                      <img
+                        src={collaborator.user.image}
+                        alt={collaborator.user.name || "User"}
+                        className="w-7 h-7 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        key={collaborator.id}
+                        className={`w-7 h-7 ${getAvatarColor(
+                          collaborator.id
+                        )} rounded-full flex items-center justify-center text-xs font-medium text-white`}
+                        title={collaborator.user.name || "Collaborator"}
+                      >
+                        {getAvatarInitials(collaborator.user.name || "User")}
+                      </div>
+                    )}
+                  </>
+                );
+              })}
           </div>
-          
-          {/* Share Button */}
-          <Popover>
-            <PopoverTrigger asChild>
+
+          {/* Document Settings Button */}
+          <Dialog>
+            <DialogTrigger asChild>
               <button className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-[#2A2A2E] hover:bg-gray-200 dark:hover:bg-[#323236] text-gray-900 dark:text-white text-sm rounded-lg transition-colors">
-                <Share2 className="w-4 h-4" />
-                Share
+                <Settings className="w-4 h-4" />
+                Settings
               </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[500px]">
-              <CollaboratorsSetting documentId={document.id} />
-            </PopoverContent>
-          </Popover>
-          
+            </DialogTrigger>
+            <DialogContent className="w-full max-w-3xl bg-background dark:bg-[#161618] border border-gray-200 dark:border-[#1E1E20] text-gray-900 dark:text-white">
+              <CollaboratorsSetting
+                documentId={document.id}
+                documentOwnerId={document.userId}
+                documentTitle={document.title}
+                documentIcon={document.icon}
+                documentCreatedAt={document.createdAt}
+              />
+            </DialogContent>
+          </Dialog>
+
           {/* Save and Socket Indicators */}
           <div className="flex items-center gap-1">
             <SaveIndicator />
             <SocketIndicator />
           </div>
-          
+
           {/* Menu */}
           <Menu documentId={document.id} />
         </div>
