@@ -17,12 +17,14 @@ export const CollaboratorsSetting = ({
   documentTitle,
   documentIcon,
   documentCreatedAt,
+  documentIsArchived,
 }: {
   documentId: string;
   documentOwnerId: string;
   documentTitle?: string;
   documentIcon?: string | null;
   documentCreatedAt: Date;
+  documentIsArchived: boolean;
 }) => {
   const [emailInput, setEmailInput] = useState("");
   const [isMounted, setIsMounted] = useState(false);
@@ -297,7 +299,7 @@ export const CollaboratorsSetting = ({
         </div>
       </div>
 
-      <div className="space-y-6 max-h-[calc(90vh-200px)] overflow-y-auto">
+      <div className="space-y-6 max-h-[calc(90vh-200px)] overflow-y-auto custom-scrollbar">
         {/* Invite People Section */}
         {isOwner ? (
           <div className="space-y-4">
@@ -372,6 +374,7 @@ export const CollaboratorsSetting = ({
             documentId={documentId}
             documentTitle={documentTitle}
             isOwner={isOwner}
+            documentIsArchived={documentIsArchived}
           />
         </div>
       </div>

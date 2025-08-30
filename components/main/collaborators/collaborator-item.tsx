@@ -1,3 +1,4 @@
+import { ConfirmModal } from "@/components/modals/confirm-modal";
 import { CollaboratorWithMeta } from "@/types/shared";
 import { CollaboratorRole } from "@prisma/client";
 import { ChevronDown, Trash2, Crown, Eye, Edit } from "lucide-react";
@@ -180,12 +181,32 @@ export const CollaboratorItem = ({
               )}
 
               {!isOwnerUser && !isCurrentUser && isOwner && (
-                <button
-                  onClick={() => handleRemoveCollaborator(collaborator.id)}
-                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#2A2A2E] rounded text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                <ConfirmModal
+                  onConfirm={() => handleRemoveCollaborator(collaborator.id)}
+                  title="Remove Collaborator Access?"
+                  description={
+                    <>
+                      This action will immediately revoke access for:
+                      <br />
+                      <span className="text-orange-600 dark:text-orange-400 font-medium">
+                        {collaborator.user.name || "User"} (
+                        {collaborator.user.email})
+                      </span>
+                      <ul className="list-disc pl-6 mt-2 space-y-1 text-sm">
+                        <li>All document permissions will be removed</li>
+                        <li className="text-orange-600 dark:text-orange-400">
+                          Immediate loss of editing/viewing capabilities
+                        </li>
+                        <li>Will disappear from all shared instances</li>
+                        <li>Can be re-invited later if needed</li>
+                      </ul>
+                    </>
+                  }
                 >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                  <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#2A2A2E] rounded text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </ConfirmModal>
               )}
             </div>
           </div>

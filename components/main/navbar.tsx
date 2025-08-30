@@ -315,6 +315,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
                 documentTitle={document.title}
                 documentIcon={document.icon}
                 documentCreatedAt={document.createdAt}
+                documentIsArchived={document.isArchived}
               />
             </DialogContent>
           </Dialog>
