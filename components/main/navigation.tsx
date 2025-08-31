@@ -15,7 +15,7 @@ import {
   Trash,
   ChevronDown,
 } from "lucide-react";
-import { useParams, usePathname, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ElementRef, useCallback, useEffect, useRef, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 import UserItem from "./user-item";
@@ -41,6 +41,7 @@ export const Navigation = () => {
   const settings = useSettings();
   const params = useParams();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const user = useCurrentUser();
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -93,8 +94,8 @@ export const Navigation = () => {
       id: "settings",
       label: "Settings",
       icon: Settings,
-      path: "/settings",
-      onClick: () => router.push("/settings"),
+      path: "?modal=settings",
+      onClick: () => router.push("?modal=settings"),
     },
     {
       id: "search",
@@ -123,6 +124,11 @@ export const Navigation = () => {
     // Special case for home - should be active only on /documents page
     if (path === "/documents") {
       return pathname === "/documents";
+    }
+    // Special case for modal-based routes
+    if (path.startsWith("?")) {
+      const modalParam = path.replace("?modal=", "");
+      return searchParams?.get("modal") === modalParam;
     }
     return pathname === path;
   };
