@@ -29,11 +29,13 @@ export const updateUser = async ({
       id,
     },
     data: {
-      ...(image && { image }),
-      ...(name && { name }),
-      ...(isTwoFactorEnabled && { isTwoFactorEnabled }),
+      ...(image !== undefined && { image }),
+      ...(name !== undefined && { name }),
+      ...(isTwoFactorEnabled !== undefined && { isTwoFactorEnabled }),
     },
   });
+
+  if (!updateUser) return null;
 
   return updatedUser;
 };
