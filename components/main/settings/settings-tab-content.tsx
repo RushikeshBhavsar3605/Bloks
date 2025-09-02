@@ -4,12 +4,19 @@ import { ProfileTab } from "./tabs/profile-tab";
 import { AccountTab } from "./tabs/account-tab";
 import { AppearanceTab } from "./tabs/appearance-tab";
 import { PrivacyTab } from "./tabs/privacy-tab";
+import { ArrowLeft } from "lucide-react";
 
 interface SettingsTabContentProps {
   activeTab: string;
+  isCollapsed: boolean;
+  onResetWidth: () => void;
 }
 
-export const SettingsTabContent = ({ activeTab }: SettingsTabContentProps) => {
+export const SettingsTabContent = ({
+  activeTab,
+  isCollapsed,
+  onResetWidth,
+}: SettingsTabContentProps) => {
   const renderTabContent = () => {
     switch (activeTab) {
       case "profile":
@@ -70,18 +77,24 @@ export const SettingsTabContent = ({ activeTab }: SettingsTabContentProps) => {
   const tabInfo = getTabInfo();
 
   return (
-    <div className="p-8">
-      <div className="max-w-4xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            {tabInfo.title}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {tabInfo.description}
-          </p>
-        </div>
-        {renderTabContent()}
+    <div className="max-w-4xl">
+      <div className="mb-8">
+        {isCollapsed && (
+          <button
+            onClick={onResetWidth}
+            className="mb-2 p-1 bg-gray-100 dark:bg-[#1E1E20] rounded-lg transition-colors text-gray-900 dark:text-white"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+        )}
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          {tabInfo.title}
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          {tabInfo.description}
+        </p>
       </div>
+      {renderTabContent()}
     </div>
   );
 };

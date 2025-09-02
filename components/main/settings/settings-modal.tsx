@@ -16,10 +16,7 @@ export const SettingsModal = () => {
   }, [searchParams]);
 
   const handleClose = () => {
-    const params = new URLSearchParams(searchParams?.toString());
-    params.delete("modal");
-    const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
-    router.push(newUrl);
+    router.back();
   };
 
   return (
