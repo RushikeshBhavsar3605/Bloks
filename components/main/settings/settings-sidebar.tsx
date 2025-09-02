@@ -1,6 +1,6 @@
 "use client";
 
-import { User, Bell, Shield, Palette, Key, Link, Settings } from "lucide-react";
+import { User, Shield, Palette, Lock } from "lucide-react";
 
 interface SettingsSidebarProps {
   activeTab: string;
@@ -15,10 +15,7 @@ export const SettingsSidebar = ({
     { id: "profile", label: "Profile", icon: User },
     { id: "account", label: "Account", icon: Shield },
     { id: "appearance", label: "Appearance", icon: Palette },
-    { id: "notifications", label: "Notifications", icon: Bell },
-    { id: "privacy", label: "Privacy & Security", icon: Key },
-    { id: "integrations", label: "Integrations", icon: Link },
-    { id: "advanced", label: "Advanced", icon: Settings },
+    { id: "privacy", label: "Privacy & Security", icon: Lock },
   ];
 
   return (

@@ -3,10 +3,7 @@
 import { ProfileTab } from "./tabs/profile-tab";
 import { AccountTab } from "./tabs/account-tab";
 import { AppearanceTab } from "./tabs/appearance-tab";
-import { NotificationsTab } from "./tabs/notifications-tab";
 import { PrivacyTab } from "./tabs/privacy-tab";
-import { IntegrationsTab } from "./tabs/integrations-tab";
-import { AdvancedTab } from "./tabs/advanced-tab";
 
 interface SettingsTabContentProps {
   activeTab: string;
@@ -21,14 +18,8 @@ export const SettingsTabContent = ({ activeTab }: SettingsTabContentProps) => {
         return <AccountTab />;
       case "appearance":
         return <AppearanceTab />;
-      case "notifications":
-        return <NotificationsTab />;
       case "privacy":
         return <PrivacyTab />;
-      case "integrations":
-        return <IntegrationsTab />;
-      case "advanced":
-        return <AdvancedTab />;
       default:
         return <ProfileTab />;
     }

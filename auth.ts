@@ -63,14 +63,25 @@ export const {
 
       return session;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.user = {
           id: user.id,
           name: user.name,
           email: user.email,
           image: user.image,
+          isTwoFactorEnabled: (user as any).isTwoFactorEnabled,
         };
+      }
+
+      // Handle session updates
+      if (trigger === "update" && session) {
+        if (session.name && token.user) {
+          (token.user as any).name = session.name;
+        }
+        if ("isTwoFactorEnabled" in session && token.user) {
+          (token.user as any).isTwoFactorEnabled = session.isTwoFactorEnabled;
+        }
       }
 
       return token;
