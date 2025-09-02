@@ -247,7 +247,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
 
   return (
     <>
-      <header className="h-16 flex items-center justify-between px-8 border-b border-gray-200 dark:border-[#1E1E20] bg-background dark:bg-[#0B0B0F]">
+      <header className="h-[66px] flex items-center justify-between px-8 border-b border-gray-200 dark:border-[#1E1E20] bg-background dark:bg-[#0B0B0F]">
         <div className="flex items-center gap-4">
           {isCollapsed && (
             <button

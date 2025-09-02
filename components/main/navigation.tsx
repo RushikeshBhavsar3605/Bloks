@@ -7,13 +7,10 @@ import {
   CreditCard,
   Home,
   Library,
-  MenuIcon,
-  Plus,
   PlusCircle,
   Search,
   Settings,
   Trash,
-  ChevronDown,
 } from "lucide-react";
 import {
   useParams,
@@ -24,7 +21,6 @@ import {
 import { ElementRef, useCallback, useEffect, useRef, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 import UserItem from "./user-item";
-import { Item } from "./item";
 import { toast } from "sonner";
 import { DocumentTree } from "./document-list/document-tree";
 import {
@@ -34,7 +30,6 @@ import {
 } from "@/components/ui/popover";
 import { TrashBox } from "./trash-box/trash-box";
 import { useSearch } from "@/hooks/use-search";
-import { useSettings } from "@/hooks/use-settings";
 import { Navbar } from "./navbar";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { PageHeader } from "./page-header";
@@ -44,7 +39,6 @@ export const sharedNavbarRef = { current: null as ElementRef<"div"> | null };
 
 export const Navigation = () => {
   const search = useSearch();
-  const settings = useSettings();
   const params = useParams();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -83,6 +77,13 @@ export const Navigation = () => {
       onClick: () => router.push("/library"),
     },
     {
+      id: "search",
+      label: "Search",
+      icon: Search,
+      path: "/search",
+      onClick: search.onOpen,
+    },
+    {
       id: "notifications",
       label: "Notifications",
       icon: Bell,
@@ -104,25 +105,11 @@ export const Navigation = () => {
       onClick: () => router.push("?modal=settings"),
     },
     {
-      id: "search",
-      label: "Search",
-      icon: Search,
-      path: "/search",
-      onClick: search.onOpen,
-    },
-    {
       id: "new-page",
       label: "New page",
       icon: PlusCircle,
       path: "/new-page",
       onClick: () => onCreate(),
-    },
-    {
-      id: "original-settings",
-      label: "Original Settings",
-      icon: Settings,
-      path: "/original-settings",
-      onClick: () => settings.onOpen(),
     },
   ];
 
@@ -260,7 +247,7 @@ export const Navigation = () => {
         <UserItem />
 
         {/* Menu */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 pt-3 overflow-y-auto custom-scrollbar">
           <div className="px-4">
             <div className="text-xs font-medium text-gray-600 dark:text-gray-500 mb-3 px-2">
               Menu

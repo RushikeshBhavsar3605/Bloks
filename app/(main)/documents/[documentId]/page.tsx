@@ -143,7 +143,7 @@ const DocumentIdPage = () => {
   return (
     <TooltipProvider>
       <div className="pb-40 dark:bg-[#0B0B0F]">
-        <div className="h-[72px]" />
+        <div className="h-[66px]" />
 
         {/* New Structure: Formatting Toolbar -> Document Toolbar -> Editor */}
         {editor && <FormattingToolbar editor={editor} editable={canEdit} />}

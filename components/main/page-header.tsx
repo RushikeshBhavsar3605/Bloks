@@ -25,7 +25,7 @@ export const PageHeader = ({
   const user = useCurrentUser();
 
   return (
-    <header className="h-[72px] flex items-center justify-between px-8 border-b border-gray-200 dark:border-[#1E1E20]">
+    <header className="h-[66px] flex items-center justify-between px-8 border-b border-gray-200 dark:border-[#1E1E20] bg-background dark:bg-[#0B0B0F]">
       <div className="flex items-center gap-4 flex-1 max-w-md">
         {isCollapsed && (
           <nav className="bg-transparent">
