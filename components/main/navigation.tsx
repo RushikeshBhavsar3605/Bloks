@@ -15,7 +15,12 @@ import {
   Trash,
   ChevronDown,
 } from "lucide-react";
-import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import { ElementRef, useCallback, useEffect, useRef, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 import UserItem from "./user-item";
@@ -32,6 +37,7 @@ import { useSearch } from "@/hooks/use-search";
 import { useSettings } from "@/hooks/use-settings";
 import { Navbar } from "./navbar";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { PageHeader } from "./page-header";
 
 // Create a ref that can be shared
 export const sharedNavbarRef = { current: null as ElementRef<"div"> | null };
@@ -381,15 +387,12 @@ export const Navigation = () => {
         {!!params?.documentId ? (
           <Navbar isCollapsed={isCollapsed} onResetWidth={resetWidth} />
         ) : (
-          <nav className="bg-transparent px-3 py-2 w-full">
-            {isCollapsed && (
-              <MenuIcon
-                role="button"
-                onClick={resetWidth}
-                className="h-6 w-6 text-muted-foreground"
-              />
-            )}
-          </nav>
+          <PageHeader
+            searchPlaceholder="Search pages, projects, and more..."
+            onNewPageClick={onCreate}
+            isCollapsed={isCollapsed}
+            onResetWidth={resetWidth}
+          />
         )}
       </div>
     </>

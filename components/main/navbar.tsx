@@ -230,8 +230,8 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
     return (
       <header className="h-[72px] flex items-center justify-between px-8 border-b border-gray-200 dark:border-[#1E1E20] bg-background dark:bg-[#0B0B0F]">
         <div className="flex items-center gap-4">
-          {isCollapsed && <Skeleton className="h-9 w-9" />}
-          <Skeleton className="h-9 w-9" />
+          {isCollapsed && <Skeleton className="h-7 w-7" />}
+          <Skeleton className="h-7 w-7" />
           <Title.Skeleton />
         </div>
         <div className="flex items-center gap-3">
@@ -247,7 +247,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
 
   return (
     <>
-      <header className="h-[72px] flex items-center justify-between px-8 border-b border-gray-200 dark:border-[#1E1E20] bg-background dark:bg-[#0B0B0F]">
+      <header className="h-16 flex items-center justify-between px-8 border-b border-gray-200 dark:border-[#1E1E20] bg-background dark:bg-[#0B0B0F]">
         <div className="flex items-center gap-4">
           {isCollapsed && (
             <button

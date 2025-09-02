@@ -255,11 +255,7 @@ const DocumentsPage = () => {
 
   return (
     <div className="flex-1 flex flex-col bg-white dark:bg-[#0B0B0F]">
-      {/* Header */}
-      <PageHeader
-        searchPlaceholder="Search pages, projects, and more..."
-        onNewPageClick={onCreate}
-      />
+      <div className="h-[72px]" />
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto custom-scrollbar">
