@@ -1,0 +1,154 @@
+// Enhanced for Scale, Resilience, and Performance
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum CollaboratorRole {
+  VIEWER
+  EDITOR
+  // OWNER // Consider if ownership is a role or a separate concept (as currently modeled)
+}
+
+model User {
+  id                    String                 @id @default(cuid()) @map("_id")
+  name                  String?
+  email                 String?                @unique
+  emailVerified         DateTime?
+  image                 String?
+  hashedPassword        String? // Renamed for security clarity
+  accounts              Account[]
+  isTwoFactorEnabled    Boolean                @default(false)
+  twoFactorConfirmation TwoFactorConfirmation?
+
+  // Owned Documents
+  documents             Document[]             @relation("DocumentOwner")
+  // Document Collaborations
+  collaborations        Collaborator[]
+}
+
+model Account {
+  id                String  @id @default(cuid()) @map("_id")
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model VerificationToken {
+  id         String   @id @default(cuid()) @map("_id")
+  identifier String   // Generalized from 'email' for potential future extensibility (e.g., phone)
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@index([expires]) // For running cron jobs to purge expired tokens
+}
+
+model PasswordResetToken {
+  id         String   @id @default(cuid()) @map("_id")
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@index([expires])
+}
+
+model TwoFactorToken {
+  id         String   @id @default(cuid()) @map("_id")
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@index([expires])
+}
+
+model TwoFactorConfirmation {
+  id     String @id @default(cuid()) @map("_id")
+  userId String @unique // Enforce one-to-one relationship at the DB level
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id               String     @id @default(cuid()) @map("_id")
+  title            String
+  userId           String // The owner's ID
+  owner            User       @relation("DocumentOwner", fields: [userId], references: [id], onDelete: Cascade)
+
+  // SOFT DELETE PATTERN: Replaces 'isArchived'
+  deletedAt        DateTime?  // null = not deleted
+
+  // HIERARCHY - Application managed
+  parentDocumentId String?
+  parentDocument   Document?  @relation("DocumentParent", fields: [parentDocumentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  childDocuments   Document[] @relation("DocumentParent")
+
+  content          String?
+  coverImage       String?
+  icon             String?
+  isPublished      Boolean    @default(false)
+
+  // TIMESTAMPS
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt // Critical for sync and conflict resolution
+
+  collaborators    Collaborator[]
+  invitations      CollaboratorInvitation[] @relation("DocumentInvitations")
+
+  // Sharding Key Candidate: `userId`. All a user's documents live on the same shard.
+  @@index([userId])
+  // Optimized compound index for the most common query: "get non-deleted children for a user"
+  @@index([userId, parentDocumentId, deletedAt])
+  // Index for getting a user's recently updated documents
+  @@index([userId, updatedAt])
+}
+
+model Collaborator {
+  id           String             @id @default(cuid()) @map("_id")
+  userId       String
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documentId   String
+  document     Document           @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  role         CollaboratorRole   @default(VIEWER)
+  invitedAt    DateTime           @default(now()) // Renamed for clarity
+  invitedBy    String? // UserID of the inviter
+  verifiedAt   DateTime?          // Renamed from 'isVerified'
+
+  @@unique([userId, documentId])
+  @@index([documentId])
+  @@index([userId])
+}
+
+model CollaboratorInvitation {
+  id           String   @id @default(cuid()) @map("_id")
+  email        String   // The invited email
+  token        String   @unique
+  documentId   String
+  document     Document @relation(fields: [documentId], references: [id], onDelete: Cascade, name: "DocumentInvitations")
+  role         CollaboratorRole
+  invitedBy    String   // UserID of the inviter
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+
+  @@unique([email, token, documentId])
+  @@index([documentId])
+  @@index([expiresAt])
+}

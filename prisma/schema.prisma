@@ -30,8 +30,9 @@ model User {
   twoFactorConfirmation TwoFactorConfirmation?
 
   documents             Document[]             @relation("DocumentOwner")
-
+  editedDocuments       Document[]             @relation("LastEditor")   // optional backref
   collaborations        Collaborator[]
+  stars                 Star[]                 // user's stars
 }
 
 model Account {
@@ -89,6 +90,20 @@ model TwoFactorConfirmation {
   @@unique([userId])
 }
 
+model Star {
+  id         String   @id @default(cuid()) @map("_id")
+  userId     String
+  documentId String
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, documentId])          // prevent duplicate stars
+  @@index([userId, createdAt])            // fetch starred docs for a user (recent first)
+  @@index([documentId])                   // count / lookup by document
+}
+
 model Document {
   id               String     @id @default(cuid()) @map("_id")
   title            String
@@ -97,6 +112,11 @@ model Document {
   owner            User       @relation("DocumentOwner", fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  lastEditedAt     DateTime?
+  lastEditedById   String?
+  lastEditedBy     User?      @relation("LastEditor", fields: [lastEditedById], references: [id], onDelete: SetNull)
+
   isArchived       Boolean
 
   parentDocumentId String?
@@ -109,6 +129,7 @@ model Document {
   isPublished      Boolean
 
   collaborators    Collaborator[]
+  stars            Star[]    // stars on this document
 
   @@index([userId])
   @@index([userId, parentDocumentId])

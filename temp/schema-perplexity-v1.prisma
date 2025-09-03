@@ -1,0 +1,550 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// ===== ENUMS =====
+enum CollaboratorRole {
+  OWNER
+  ADMIN
+  EDITOR
+  COMMENTER
+  VIEWER
+}
+
+enum DocumentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  DELETED
+}
+
+enum ContentType {
+  MARKDOWN
+  RICH_TEXT
+  PLAIN_TEXT
+  JSON
+}
+
+enum AuditAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  SHARE
+  PUBLISH
+  ARCHIVE
+  RESTORE
+}
+
+enum NotificationChannel {
+  EMAIL
+  IN_APP
+  SLACK
+  WEBHOOK
+}
+
+// ===== BASE MODELS =====
+model Organization {
+  id          String   @id @default(cuid()) @map("_id")
+  name        String
+  slug        String   @unique
+  domain      String?  @unique
+  
+  // Subscription & Limits
+  planType    String   @default("free")
+  userLimit   Int      @default(5)
+  storageLimit BigInt  @default(1073741824) // 1GB in bytes
+  
+  // Operational
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isActive    Boolean  @default(true)
+  deletedAt   DateTime?
+  
+  // Relations
+  users       User[]
+  documents   Document[]
+  auditLogs   AuditLog[]
+  
+  @@index([slug])
+  @@index([domain])
+  @@index([createdAt])
+  @@index([isActive, deletedAt])
+}
+
+model User {
+  id                    String                 @id @default(cuid()) @map("_id")
+  
+  // Basic Info
+  name                  String?
+  email                 String                 @unique
+  emailVerified         DateTime?
+  image                 String?
+  username              String?                @unique
+  bio                   String?
+  
+  // Security
+  passwordHash          String?
+  passwordSalt          String?
+  isTwoFactorEnabled    Boolean                @default(false)
+  twoFactorSecret       String?
+  backupCodes           String[]               @default([])
+  
+  // Organization
+  organizationId        String?
+  organization          Organization?          @relation(fields: [organizationId], references: [id])
+  
+  // Preferences
+  timezone              String                 @default("UTC")
+  language              String                 @default("en")
+  theme                 String                 @default("light")
+  notificationSettings  Json                   @default("{}")
+  
+  // Operational & Security
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  lastLoginAt           DateTime?
+  isActive              Boolean                @default(true)
+  isVerified            Boolean                @default(false)
+  deletedAt             DateTime?
+  
+  // Rate Limiting & Abuse Prevention
+  loginAttempts         Int                    @default(0)
+  lockedUntil           DateTime?
+  lastPasswordChange    DateTime?
+  
+  // Relations
+  accounts              Account[]
+  sessions              Session[]
+  documents             Document[]             @relation("DocumentOwner")
+  collaborations        Collaborator[]
+  auditLogs             AuditLog[]
+  notifications         Notification[]
+  documentViews         DocumentView[]
+  twoFactorConfirmation TwoFactorConfirmation?
+  
+  @@index([email])
+  @@index([username])
+  @@index([organizationId])
+  @@index([isActive, deletedAt])
+  @@index([createdAt])
+  @@index([lastLoginAt])
+}
+
+model Account {
+  id                String  @id @default(cuid()) @map("_id")
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid()) @map("_id")
+  userId       String
+  sessionToken String   @unique
+  expires      DateTime
+  
+  // Session tracking
+  ipAddress    String?
+  userAgent    String?
+  country      String?
+  city         String?
+  createdAt    DateTime @default(now())
+  lastActivity DateTime @default(now())
+  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([expires])
+  @@index([lastActivity])
+}
+
+// ===== SECURITY TOKENS =====
+model VerificationToken {
+  id        String   @id @default(cuid()) @map("_id")
+  email     String
+  token     String   @unique
+  expires   DateTime
+  type      String   @default("email_verification")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  @@unique([email, token])
+  @@index([expires])
+  @@index([type])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid()) @map("_id")
+  email     String
+  token     String   @unique
+  expires   DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  @@unique([email, token])
+  @@index([expires])
+}
+
+model TwoFactorToken {
+  id        String   @id @default(cuid()) @map("_id")
+  email     String
+  token     String   @unique
+  expires   DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  @@unique([email, token])
+  @@index([expires])
+}
+
+model TwoFactorConfirmation {
+  id     String @id @default(cuid()) @map("_id")
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ===== DOCUMENT SYSTEM =====
+model Document {
+  id                    String          @id @default(cuid()) @map("_id")
+  
+  // Basic Info
+  title                 String
+  slug                  String?
+  description           String?
+  
+  // Ownership & Organization
+  userId                String
+  owner                 User            @relation("DocumentOwner", fields: [userId], references: [id], onDelete: Cascade)
+  organizationId        String?
+  organization          Organization?   @relation(fields: [organizationId], references: [id])
+  
+  // Hierarchy
+  parentDocumentId      String?
+  parentDocument        Document?       @relation("DocumentHierarchy", fields: [parentDocumentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  childDocuments        Document[]      @relation("DocumentHierarchy")
+  
+  // Materialized Path for efficient tree queries
+  documentPath          String          @default("")
+  depth                 Int             @default(0)
+  
+  // Status & Visibility
+  status                DocumentStatus  @default(DRAFT)
+  isPublished           Boolean         @default(false)
+  publishedAt           DateTime?
+  
+  // Content Metadata
+  contentType           ContentType     @default(MARKDOWN)
+  wordCount             Int             @default(0)
+  readingTime           Int             @default(0) // in minutes
+  
+  // Visual
+  coverImage            String?
+  icon                  String?
+  
+  // SEO & Sharing
+  metaTitle             String?
+  metaDescription       String?
+  socialImage           String?
+  
+  // Operational
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  // publishedAt           DateTime?
+  deletedAt             DateTime?
+  
+  // Performance & Analytics
+  viewCount             BigInt          @default(0)
+  lastViewedAt          DateTime?
+  
+  // Version Control
+  version               Int             @default(1)
+  lastEditedBy          String?
+  lastEditedAt          DateTime?
+  
+  // Relations
+  content               DocumentContent?
+  versions              DocumentVersion[]
+  collaborators         Collaborator[]
+  comments              Comment[]
+  views                 DocumentView[]
+  auditLogs             AuditLog[]
+  
+  @@index([userId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([isPublished])
+  @@index([parentDocumentId])
+  @@index([documentPath])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([publishedAt])
+  @@index([deletedAt])
+  @@index([userId, parentDocumentId])
+  @@index([userId, status])
+  @@index([organizationId, status])
+  @@index([viewCount])
+  @@index([lastViewedAt])
+}
+
+// Separate content storage for performance
+model DocumentContent {
+  id           String   @id @default(cuid()) @map("_id")
+  documentId   String   @unique
+  document     Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  
+  content      String   // Consider GridFS for very large content
+  contentHash  String   // For deduplication and change detection
+  compressed   Boolean  @default(false)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@index([documentId])
+  @@index([contentHash])
+}
+
+// Version control system
+model DocumentVersion {
+  id             String   @id @default(cuid()) @map("_id")
+  documentId     String
+  document       Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  
+  version        Int
+  title          String
+  content        String
+  contentHash    String
+  
+  createdBy      String
+  createdAt      DateTime @default(now())
+  changeLog      String?
+  
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@index([createdAt])
+}
+
+// ===== COLLABORATION SYSTEM =====
+model Collaborator {
+  id            String           @id @default(cuid()) @map("_id")
+  
+  userId        String
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  documentId    String
+  document      Document         @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  
+  role          CollaboratorRole @default(VIEWER)
+  permissions   Json             @default("{}")
+  
+  // Invitation & Verification
+  invitedBy     String?
+  invitedAt     DateTime         @default(now())
+  acceptedAt    DateTime?
+  isVerified    Boolean          @default(false)
+  
+  // Activity
+  lastActiveAt  DateTime?
+  accessCount   Int              @default(0)
+  
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  
+  @@unique([userId, documentId])
+  @@index([documentId])
+  @@index([userId])
+  @@index([role])
+  @@index([isVerified])
+  @@index([lastActiveAt])
+}
+
+model CollaboratorVerificationToken {
+  id         String   @id @default(cuid()) @map("_id")
+  email      String
+  token      String   @unique
+  documentId String
+  role       CollaboratorRole @default(VIEWER)
+  invitedBy  String
+  
+  createdAt  DateTime @default(now())
+  expires    DateTime
+  used       Boolean  @default(false)
+  
+  @@index([email, token])
+  @@index([expires])
+}
+
+// ===== COMMENTS SYSTEM =====
+model Comment {
+  id           String    @id @default(cuid()) @map("_id")
+  
+  documentId   String
+  document     Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  content      String
+  resolved     Boolean   @default(false)
+  resolvedBy   String?
+  resolvedAt   DateTime?
+  
+  // Threading
+  parentId     String?
+  parent       Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies      Comment[] @relation("CommentThread")
+  
+  // Position in document (for inline comments)
+  position     Json?
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  
+  @@index([documentId])
+  @@index([userId])
+  @@index([parentId])
+  @@index([resolved])
+  @@index([createdAt])
+}
+
+// ===== ANALYTICS & MONITORING =====
+model DocumentView {
+  id           String   @id @default(cuid()) @map("_id")
+  
+  documentId   String
+  document     Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
+  
+  // Analytics data
+  ipAddress    String?
+  userAgent    String?
+  referrer     String?
+  country      String?
+  city         String?
+  
+  // Session info
+  sessionId    String?
+  duration     Int?     // seconds spent on document
+  
+  viewedAt     DateTime @default(now())
+  
+  @@index([documentId])
+  @@index([userId])
+  @@index([viewedAt])
+  @@index([documentId, viewedAt])
+}
+
+model AuditLog {
+  id             String      @id @default(cuid()) @map("_id")
+  
+  // Who & Where
+  userId         String?
+  user           User?       @relation(fields: [userId], references: [id])
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  
+  // What happened
+  action         AuditAction
+  resourceType   String      // "document", "user", "organization"
+  resourceId     String?
+  
+  // Context
+  documentId     String?
+  document       Document?   @relation(fields: [documentId], references: [id])
+  
+  // Details
+  metadata       Json        @default("{}")
+  ipAddress      String?
+  userAgent      String?
+  
+  createdAt      DateTime    @default(now())
+  
+  @@index([userId])
+  @@index([documentId])
+  @@index([organizationId])
+  @@index([action])
+  @@index([resourceType, resourceId])
+  @@index([createdAt])
+}
+
+// ===== NOTIFICATIONS =====
+model Notification {
+  id          String              @id @default(cuid()) @map("_id")
+  
+  userId      String
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type        String              // "document_shared", "comment_added", etc.
+  title       String
+  message     String
+  
+  // Linking
+  documentId  String?
+  
+  // Delivery
+  channels    NotificationChannel[]
+  read        Boolean             @default(false)
+  readAt      DateTime?
+  
+  // Metadata
+  metadata    Json                @default("{}")
+  
+  createdAt   DateTime            @default(now())
+  expiresAt   DateTime?
+  
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@index([userId, read])
+}
+
+// ===== SYSTEM CONFIGURATION =====
+model SystemConfig {
+  id          String   @id @default(cuid()) @map("_id")
+  key         String   @unique
+  value       Json
+  description String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([key])
+}
+
+// ===== RATE LIMITING =====
+model RateLimit {
+  id          String   @id @default(cuid()) @map("_id")
+  identifier  String   // user_id, ip_address, etc.
+  type        String   // "api", "document_create", "login_attempt"
+  count       Int      @default(1)
+  windowStart DateTime @default(now())
+  
+  @@unique([identifier, type, windowStart])
+  @@index([identifier, type])
+  @@index([windowStart])
+}

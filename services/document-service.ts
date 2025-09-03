@@ -971,6 +971,8 @@ export const updateDocument = async ({
     if (coverImage !== undefined) updateData.coverImage = coverImage;
     if (icon !== undefined) updateData.icon = icon;
     if (isPublished !== undefined) updateData.isPublished = isPublished;
+    updateData.lastEditedAt = new Date();
+    updateData.lastEditedById = userId;
 
     // Update the document
     const updatedDocument = await db.document.update({
