@@ -146,7 +146,14 @@ const DocumentIdPage = () => {
         <div className="h-[66px]" />
 
         {/* New Structure: Formatting Toolbar -> Document Toolbar -> Editor */}
-        {editor && <FormattingToolbar editor={editor} editable={canEdit} />}
+        {editor && (
+          <FormattingToolbar
+            editor={editor}
+            editable={canEdit}
+            userId={user?.id as string}
+            documentId={documentId}
+          />
+        )}
 
         <div className="mx-auto">
           <Toolbar initialData={document} preview={!canEdit} />

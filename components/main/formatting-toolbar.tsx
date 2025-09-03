@@ -1,7 +1,6 @@
 "use client";
 
 import { Editor } from "@tiptap/react";
-import { Button } from "@/components/ui/button";
 import {
   Bold,
   Italic,
@@ -10,41 +9,60 @@ import {
   Link,
   List,
   ImageIcon,
-  Table,
-  MoreHorizontal,
   RotateCcw,
   RotateCw,
-  Hash,
   CheckSquare,
   Quote,
-  Eye,
-  MessageCircle,
   AlertCircle,
+  Star,
 } from "lucide-react";
-import { MarkButton } from "@/components/ui/tiptap/mark-button";
 import { HeadingDropdown } from "@/components/ui/tiptap/heading-dropdown";
-import { ListDropdown } from "@/components/ui/tiptap/list-dropdown";
-import { UndoRedoButton } from "@/components/ui/tiptap/undo-redo-button";
-import { ImageUploadButton } from "@/components/ui/tiptap/image-upload-button";
-import { HighlightPopover } from "@/components/ui/tiptap/highlight-popover";
-import { LinkPopover } from "@/components/ui/tiptap/link-popover";
-import { NodeButton } from "@/components/ui/tiptap/node-button";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useRef } from "react";
 import { sharedNavbarRef } from "./navigation";
+import { getStarred } from "@/actions/documents/get-starred";
+import { toggleStar } from "@/actions/documents/toggle-star";
 
 interface FormattingToolbarProps {
   editor: Editor | null;
   editable?: boolean;
+  userId: string;
+  documentId: string;
 }
 
 export const FormattingToolbar = ({
   editor,
   editable = true,
+  userId,
+  documentId,
 }: FormattingToolbarProps) => {
-  const [isEditing, setIsEditing] = useState(editable);
+  const [starred, setStarred] = useState<boolean>(false);
+  const [isToggling, setIsToggling] = useState(false);
   const [, forceUpdate] = useState({});
   const toolbarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchStarred = async () => {
+      const result = await getStarred({ userId, documentId });
+      setStarred(!!result);
+    };
+    fetchStarred();
+  }, [userId, documentId]);
+
+  const toggle = async () => {
+    if (isToggling) return; // Prevent multiple simultaneous requests
+
+    setIsToggling(true);
+    try {
+      const result = await toggleStar({ userId, documentId });
+      setStarred(result.starred);
+    } catch (error) {
+      console.error("Failed to toggle star:", error);
+      // Optionally show a toast notification here
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
   // Listen to editor state changes to update active states
   useEffect(() => {
@@ -55,12 +73,12 @@ export const FormattingToolbar = ({
     };
 
     // Listen to selection changes and content updates
-    editor.on('selectionUpdate', updateActiveStates);
-    editor.on('transaction', updateActiveStates);
+    editor.on("selectionUpdate", updateActiveStates);
+    editor.on("transaction", updateActiveStates);
 
     return () => {
-      editor.off('selectionUpdate', updateActiveStates);
-      editor.off('transaction', updateActiveStates);
+      editor.off("selectionUpdate", updateActiveStates);
+      editor.off("transaction", updateActiveStates);
     };
   }, [editor]);
 
@@ -70,7 +88,7 @@ export const FormattingToolbar = ({
         const navbarRect = sharedNavbarRef.current.getBoundingClientRect();
         const navbarHeight = navbarRect.height;
         const navbarTop = navbarRect.top;
-        
+
         toolbarRef.current.style.top = `${navbarTop + navbarHeight}px`;
         toolbarRef.current.style.left = `${navbarRect.left}px`;
         toolbarRef.current.style.width = `${navbarRect.width}px`;
@@ -86,13 +104,13 @@ export const FormattingToolbar = ({
     const frameId = requestAnimationFrame(animationFrame);
 
     // Also listen to specific events
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition);
 
     return () => {
       cancelAnimationFrame(frameId);
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition);
     };
   }, []);
 
@@ -101,9 +119,9 @@ export const FormattingToolbar = ({
   }
 
   return (
-    <div 
+    <div
       ref={toolbarRef}
-      className="fixed z-40 border-b border-gray-200 dark:border-[#1E1E20] px-8 py-3 bg-background dark:bg-[#0B0B0F]"
+      className="fixed z-40 border-b border-gray-200 dark:border-[#1E1E20] px-8 py-2 bg-background dark:bg-[#0B0B0F]"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
@@ -126,8 +144,8 @@ export const FormattingToolbar = ({
           <div className="w-px h-6 bg-gray-200 dark:bg-[#1E1E20] mx-2" />
 
           {/* Heading Dropdown */}
-          <HeadingDropdown 
-            editor={editor} 
+          <HeadingDropdown
+            editor={editor}
             className={cn(
               "hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
               editor.isActive("heading")
@@ -278,21 +296,31 @@ export const FormattingToolbar = ({
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsEditing(!isEditing)}
+            onClick={toggle}
+            disabled={isToggling}
             className={cn(
-              "px-3 py-1.5 text-sm rounded-lg transition-colors",
-              isEditing
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 dark:bg-[#2A2A2E] hover:bg-gray-200 dark:hover:bg-[#323236] text-gray-900 dark:text-gray-300"
+              "p-1.5 rounded transition-colors relative",
+              isToggling && "cursor-not-allowed opacity-70",
+              starred
+                ? "text-yellow-500 hover:text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#1E1E20]",
+              !isToggling && "hover:scale-105"
             )}
+            title={
+              isToggling
+                ? "Updating..."
+                : starred
+                ? "Remove from favorites"
+                : "Add to favorites"
+            }
           >
-            {isEditing ? "Done" : "Edit"}
-          </button>
-          <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-            <Eye className="w-4 h-4" />
-          </button>
-          <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-            <MessageCircle className="w-4 h-4" />
+            <Star
+              className={cn(
+                "w-4 h-4 transition-all duration-200",
+                starred && "fill-current",
+                isToggling && "animate-pulse"
+              )}
+            />
           </button>
         </div>
       </div>
