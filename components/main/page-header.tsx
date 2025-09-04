@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Search, Plus, Upload, MenuIcon } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 interface PageHeaderProps {
   searchPlaceholder?: string;
@@ -23,6 +24,9 @@ export const PageHeader = ({
   onResetWidth,
 }: PageHeaderProps) => {
   const user = useCurrentUser();
+  const pathname = usePathname();
+
+  if (pathname?.includes("/starred")) return null;
 
   return (
     <header className="h-[66px] flex items-center justify-between px-8 border-b border-gray-200 dark:border-[#1E1E20] bg-background dark:bg-[#0B0B0F]">
