@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { toast } from "sonner";
@@ -27,12 +27,120 @@ import {
   Globe,
   History,
 } from "lucide-react";
+import { getDocumentsCount } from "@/actions/documents/get-documents-count";
+import { useSocket } from "@/components/providers/socket-provider";
+import { DocumentWithMeta } from "@/types/shared";
+import { getCoeditors } from "@/actions/collaborators/get-co-editors";
+import { getSharedDocuments } from "@/actions/collaborators/get-shared-documents";
+import { getLasteditedDocument } from "@/actions/documents/get-lastedited-document";
+import { Document } from "@prisma/client";
+
+function getRelativeTimeMessage(
+  createdDate: Date | null,
+  isEdited?: boolean
+): string {
+  if (!createdDate) return "No documents";
+
+  const currDate = new Date();
+  const diffMs = currDate.getTime() - createdDate.getTime();
+  const diffHr = Math.floor(diffMs / 1000 / 60 / 60);
+  const diffDay = Math.floor(diffHr / 24);
+
+  if (diffHr < 1)
+    return isEdited ? "Few minutes ago" : "Created a few minutes ago";
+  if (diffHr < 24)
+    return isEdited ? `${diffHr}h ago` : `Last created ${diffHr}h ago`;
+  return isEdited ? `${diffDay}d ago` : `Last created ${diffDay}d ago`;
+}
 
 const DocumentsPage = () => {
   const user = useCurrentUser();
   const router = useRouter();
+  const { socket } = useSocket();
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
+
+  const [created, setCreated] = useState<{ count: number; date: Date | null }>({
+    count: 0,
+    date: null,
+  });
+  const [coeditors, setCoeditors] = useState<{
+    count: number;
+    documents: number;
+  }>({ count: 0, documents: 0 });
+  const [collaborated, setCollaborated] = useState<{
+    owned: number;
+    coauthored: number;
+  }>({
+    owned: 0,
+    coauthored: 0,
+  });
+  const [edited, setEdited] = useState<{ name: string; date: Date | null }>({
+    name: "",
+    date: null,
+  });
+
+  useEffect(() => {
+    const fetchCreated = async () => {
+      const documents = await getDocumentsCount(user?.id as string);
+      setCreated({ count: documents.count, date: documents.date });
+    };
+
+    fetchCreated();
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleCreated = (data: DocumentWithMeta) => {
+      const count = created.count + 1;
+      setCreated({ count: count, date: data.createdAt });
+    };
+
+    const createEvent = "document:created:root";
+
+    socket.on(createEvent, handleCreated);
+
+    return () => {
+      socket.off(createEvent, handleCreated);
+    };
+  }, [socket, user?.id]);
+
+  useEffect(() => {
+    const fetchCoeditors = async () => {
+      const response = await getCoeditors(user?.id as string);
+      setCoeditors({
+        count: response.totalUniqueCollaborators,
+        documents: response.count,
+      });
+    };
+
+    fetchCoeditors();
+  }, [user?.id]);
+
+  useEffect(() => {
+    const fetchShared = async () => {
+      const response = await getSharedDocuments(user?.id as string);
+      setCollaborated({
+        owned: response.owned,
+        coauthored: response.coauthored,
+      });
+    };
+
+    fetchShared();
+  }, [user?.id]);
+
+  useEffect(() => {
+    const fetchLastEdited = async () => {
+      const response = await getLasteditedDocument(user?.id as string);
+      setEdited({
+        name: user?.id === response.id ? "you" : response.name,
+        date: response.date,
+      });
+    };
+
+    fetchLastEdited();
+  }, [user?.id]);
 
   const [greeting] = useState(() => {
     const hour = new Date().getHours();
@@ -52,7 +160,11 @@ const DocumentsPage = () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ title: "Untitled" }),
-    });
+    })
+      .then((res) => res.json())
+      .then((document: Document) => {
+        router.push(`/documents/${document.id}`);
+      });
 
     toast.promise(promise, {
       loading: "Creating a new note...",
@@ -76,29 +188,29 @@ const DocumentsPage = () => {
   const stats = [
     {
       label: "Pages Created",
-      value: "47",
-      change: "Last created 2h ago",
+      value: `${created.count}`,
+      change: getRelativeTimeMessage(created.date),
       icon: FileText,
       color: "text-blue-400",
     },
     {
       label: "Co-editors",
-      value: "8",
-      change: "Across 12 docs",
+      value: `${coeditors.count}`,
+      change: `Across ${coeditors.documents} docs`,
       icon: Users,
       color: "text-green-400",
     },
     {
-      label: "Shared Documents",
-      value: "15",
-      change: "5 owned, 10 invited",
+      label: "Collaborated Documents",
+      value: `${collaborated.owned + collaborated.coauthored}`,
+      change: `${collaborated.owned} owned · ${collaborated.coauthored} co-authored`,
       icon: Share2,
       color: "text-purple-400",
     },
     {
       label: "Last Edited",
-      value: "2h ago",
-      change: "By John Doe",
+      value: getRelativeTimeMessage(edited.date, true),
+      change: `By ${edited.name}`,
       icon: Pencil,
       color: "text-orange-400",
     },
@@ -158,7 +270,7 @@ const DocumentsPage = () => {
       description: "Continue where you left off",
       icon: History,
       color: "bg-orange-600",
-      action: () => onNavigate("recent"),
+      action: () => onNavigate("library"),
     },
     {
       id: "starred-pages",
