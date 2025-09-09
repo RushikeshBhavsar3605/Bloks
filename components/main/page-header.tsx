@@ -1,10 +1,10 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { Search, Plus, Upload, MenuIcon } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { Plus, Upload, MenuIcon } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { SearchInput } from "@/components/search/search-input";
 
 interface PageHeaderProps {
   searchPlaceholder?: string;
@@ -25,6 +25,19 @@ export const PageHeader = ({
 }: PageHeaderProps) => {
   const user = useCurrentUser();
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleDocumentSelect = (docId: string) => {
+    if (docId === "new") {
+      onNewPageClick();
+    } else {
+      router.push(`/documents/${docId}`);
+    }
+  };
+
+  const handleNavigate = (page: string) => {
+    router.push(`/${page}`);
+  };
 
   if (pathname?.includes("/starred")) return null;
 
@@ -40,10 +53,11 @@ export const PageHeader = ({
             />
           </nav>
         )}
-        <Search className="w-5 h-5 text-gray-500" />
-        <Input
+        <SearchInput
           placeholder={searchPlaceholder}
-          className="bg-transparent border-none text-gray-900 dark:text-white placeholder-gray-500 text-sm focus-visible:ring-0 p-0"
+          onDocumentSelect={handleDocumentSelect}
+          onNavigate={handleNavigate}
+          className="flex-1"
         />
       </div>
       <div className="flex items-center gap-3">

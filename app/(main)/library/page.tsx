@@ -48,7 +48,11 @@ const LibraryPage = () => {
   const onDocumentSelect = (docId: string) => {
     if (docId === "new" || docId === "blank-page") {
       onCreate();
-    } else if (docId === "new-project" || docId === "meeting-notes" || docId === "task-list") {
+    } else if (
+      docId === "new-project" ||
+      docId === "meeting-notes" ||
+      docId === "task-list"
+    ) {
       // For template-based creation, we can still use the basic create function
       // In a real app, you might want to create with specific templates
       onCreate();
@@ -183,7 +187,7 @@ const LibraryPage = () => {
   return (
     <div className="flex-1 flex flex-col bg-white dark:bg-[#0B0B0F]">
       {/* Header */}
-      <PageHeader 
+      {/* <PageHeader 
         searchPlaceholder="Search for pages, projects, tasks & folders"
         showImportButton={true}
         onNewPageClick={onCreate}
@@ -193,7 +197,7 @@ const LibraryPage = () => {
             Import
           </button>
         }
-      />
+      /> */}
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto custom-scrollbar">
@@ -254,8 +258,8 @@ const LibraryPage = () => {
 
           {/* Folders Section */}
           <section className="mb-12">
-            <SectionHeader 
-              icon={Folder} 
+            <SectionHeader
+              icon={Folder}
               title="Folders"
               actionButton={
                 <button className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
@@ -283,8 +287,8 @@ const LibraryPage = () => {
 
           {/* Recent Pages Section */}
           <section>
-            <SectionHeader 
-              icon={Clock} 
+            <SectionHeader
+              icon={Clock}
               title="Recent Pages"
               actionButton={
                 <button

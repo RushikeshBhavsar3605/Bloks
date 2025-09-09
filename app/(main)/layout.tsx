@@ -1,7 +1,7 @@
 "use client";
 
 import { Navigation } from "@/components/main/navigation";
-import { SearchCommand } from "@/components/search-command";
+// Removed SearchCommand - now using integrated search in PageHeader
 import { Spinner } from "@/components/spinner";
 import { CollaboratorInviteToast } from "@/lib/toasts/collaborator-invite-toast";
 import { CollaboratorRemoveToast } from "@/lib/toasts/collaborator-remove-toast";
@@ -24,7 +24,7 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
     <div className="h-full flex dark:bg-[#0B0B0F]">
       <Navigation />
       <main className="flex-1 h-full overflow-y-auto">
-        <SearchCommand />
+        {/* Search functionality now integrated in PageHeader */}
         <CollaboratorInviteToast />
         <CollaboratorRemoveToast />
         <CollaboratorUpdateToast />

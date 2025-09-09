@@ -9,11 +9,13 @@ import { toast } from "sonner";
 export const PrivacyTab = () => {
   const user = useCurrentUser();
   const { update } = useSession();
-  if (!user) return null;
+
   const [twoFactorEnabled, setTwoFactorEnabled] = useState<boolean>(
-    user.isTwoFactorEnabled
+    user?.isTwoFactorEnabled ?? false
   );
   const [isLoading, setIsLoading] = useState(false);
+
+  if (!user) return null;
 
   const handleTwoFactor = async () => {
     if (!user?.id) return;
