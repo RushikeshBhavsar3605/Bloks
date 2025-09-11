@@ -80,13 +80,13 @@ const getRoleIcon = (role: CollaboratorRole | "OWNER") => {
 const getRoleColor = (role: CollaboratorRole | "OWNER") => {
   switch (role) {
     case "OWNER":
-      return "text-yellow-400";
+      return "text-yellow-600 dark:text-yellow-400";
     case "EDITOR":
-      return "text-blue-400";
+      return "text-blue-600 dark:text-blue-400";
     case "VIEWER":
-      return "text-gray-400";
+      return "text-gray-600 dark:text-gray-400";
     default:
-      return "text-gray-400";
+      return "text-gray-600 dark:text-gray-400";
   }
 };
 
@@ -146,13 +146,15 @@ export function UserProfileModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-      <div className="bg-[#161618] border border-[#1E1E20] rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden shadow-2xl">
+      <div className="bg-white dark:bg-[#161618] border border-gray-200 dark:border-[#1E1E20] rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-[#1E1E20]">
-          <h2 className="text-lg font-semibold text-white">User Profile</h2>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-[#1E1E20]">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            User Profile
+          </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-[#2A2A2E] rounded-lg transition-colors text-gray-400 hover:text-white"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-[#2A2A2E] rounded-lg transition-colors text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-white"
           >
             <X className="w-4 h-4" />
           </button>
@@ -176,10 +178,10 @@ export function UserProfileModal({
                   {getAvatarInitials(profileUser.name)}
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold text-white mb-2">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                     {profileUser.name || "Unknown User"}
                   </h3>
-                  <div className="flex items-center gap-2 text-gray-300">
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                     <Mail className="w-4 h-4" />
                     <span>{profileUser.email || "No email"}</span>
                   </div>
@@ -188,7 +190,7 @@ export function UserProfileModal({
 
               {/* Connected Documents */}
               <div>
-                <h4 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <FileText className="w-4 h-4" />
                   Connected Documents ({profileUser.connectedDocuments.length})
                 </h4>
@@ -198,16 +200,16 @@ export function UserProfileModal({
                       <div
                         key={doc.id}
                         onClick={() => handleDocumentClick(doc.id)}
-                        className="flex items-center gap-3 p-3 bg-[#1A1A1C] border border-[#2A2A2E] rounded-lg hover:bg-[#1E1E20] transition-colors cursor-pointer group"
+                        className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-[#1A1A1C] border border-gray-200 dark:border-[#2A2A2E] rounded-lg hover:bg-gray-100 dark:hover:bg-[#1E1E20] transition-colors cursor-pointer group"
                       >
                         <span className="text-lg">{doc.icon || "📄"}</span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <h5 className="font-medium text-white group-hover:text-blue-400 transition-colors truncate">
+                            <h5 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors truncate">
                               {doc.title}
                             </h5>
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-gray-500">
+                          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-500">
                             <div className="flex items-center gap-1">
                               <span className={getRoleColor(doc.role)}>
                                 {getRoleIcon(doc.role)}
@@ -225,12 +227,12 @@ export function UserProfileModal({
                             </div>
                           </div>
                         </div>
-                        <ExternalLink className="w-4 h-4 text-gray-500 group-hover:text-gray-300 transition-colors" />
+                        <ExternalLink className="w-4 h-4 text-gray-500 dark:text-gray-500 group-hover:text-gray-400 dark:group-hover:text-gray-300 transition-colors" />
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-400">
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
                     <p>No connected documents</p>
                   </div>
@@ -238,7 +240,7 @@ export function UserProfileModal({
               </div>
             </>
           ) : (
-            <div className="text-center py-8 text-gray-400">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <p>User not found</p>
             </div>
           )}

@@ -149,9 +149,7 @@ export function SearchModal({
       setUserModalUserId(result.id);
       setIsUserModalOpen(true);
     } else {
-      // For other results, close modal first then navigate
-      onClose();
-
+      // For other results, navigate first then close modal
       if (result.type === "document") {
         if (onDocumentSelect) {
           onDocumentSelect(result.id);
@@ -214,7 +212,7 @@ export function SearchModal({
       regex.test(part) ? (
         <mark
           key={index}
-          className="bg-blue-600/30 text-blue-300 rounded px-0.5"
+          className="bg-blue-100 dark:bg-blue-600/30 text-blue-700 dark:text-blue-300 rounded px-0.5"
         >
           {part}
         </mark>
@@ -234,25 +232,25 @@ export function SearchModal({
   return (
     <>
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center pt-[10vh]">
-        <div className="bg-[#161618] border border-[#1E1E20] rounded-2xl w-full max-w-2xl max-h-[70vh] overflow-hidden shadow-2xl">
+        <div className="bg-white dark:bg-[#161618] border border-gray-200 dark:border-[#1E1E20] rounded-2xl w-full max-w-2xl max-h-[70vh] overflow-hidden shadow-2xl">
           {/* Header */}
-          <div className="flex items-center gap-3 p-4 border-b border-[#1E1E20]">
-            <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
+          <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-[#1E1E20]">
+            <Search className="w-5 h-5 text-gray-400 dark:text-gray-400 flex-shrink-0" />
             <input
               ref={inputRef}
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search documents, folders, people..."
-              className="flex-1 bg-transparent text-white placeholder-gray-500 text-lg focus:outline-none"
+              className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 text-lg focus:outline-none"
             />
             <div className="flex items-center gap-2">
-              <kbd className="px-2 py-1 bg-[#2A2A2E] text-gray-400 text-xs rounded border border-[#323236]">
+              <kbd className="px-2 py-1 bg-gray-100 dark:bg-[#2A2A2E] text-gray-600 dark:text-gray-400 text-xs rounded border border-gray-200 dark:border-[#323236]">
                 <Command className="w-3 h-3 inline mr-1" />K
               </kbd>
               <button
                 onClick={onClose}
-                className="p-1.5 hover:bg-[#2A2A2E] rounded-lg transition-colors text-gray-400 hover:text-white"
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#2A2A2E] rounded-lg transition-colors text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -267,13 +265,13 @@ export function SearchModal({
                 {recentSearches.length > 0 && (
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
                         <Clock className="w-4 h-4" />
                         Recent Searches
                       </h3>
                       <button
                         onClick={clearRecentSearches}
-                        className="text-xs text-gray-500 hover:text-gray-300 transition-colors flex items-center gap-1"
+                        className="text-xs text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors flex items-center gap-1"
                       >
                         <Trash2 className="w-3 h-3" />
                         Clear
@@ -284,11 +282,13 @@ export function SearchModal({
                         <button
                           key={index}
                           onClick={() => handleRecentSearchClick(recentQuery)}
-                          className="w-full flex items-center gap-3 p-3 hover:bg-[#1A1A1C] rounded-lg transition-colors text-left"
+                          className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-[#1A1A1C] rounded-lg transition-colors text-left"
                         >
-                          <Clock className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                          <span className="text-gray-300">{recentQuery}</span>
-                          <ArrowRight className="w-4 h-4 text-gray-500 ml-auto" />
+                          <Clock className="w-4 h-4 text-gray-500 dark:text-gray-500 flex-shrink-0" />
+                          <span className="text-gray-700 dark:text-gray-300">
+                            {recentQuery}
+                          </span>
+                          <ArrowRight className="w-4 h-4 text-gray-500 dark:text-gray-500 ml-auto" />
                         </button>
                       ))}
                     </div>
@@ -297,38 +297,40 @@ export function SearchModal({
 
                 {/* Quick Actions */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                     <Hash className="w-4 h-4" />
                     Quick Actions
                   </h3>
                   <div className="space-y-1">
                     <button
                       onClick={() => handleQuickAction("starred")}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-[#1A1A1C] rounded-lg transition-colors text-left"
+                      className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-[#1A1A1C] rounded-lg transition-colors text-left"
                     >
-                      <Star className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-                      <span className="text-gray-300">
+                      <Star className="w-4 h-4 text-yellow-500 dark:text-yellow-400 flex-shrink-0" />
+                      <span className="text-gray-700 dark:text-gray-300">
                         View Starred Documents
                       </span>
-                      <ArrowRight className="w-4 h-4 text-gray-500 ml-auto" />
+                      <ArrowRight className="w-4 h-4 text-gray-500 dark:text-gray-500 ml-auto" />
                     </button>
                     <button
                       onClick={() => handleQuickAction("new")}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-[#1A1A1C] rounded-lg transition-colors text-left"
+                      className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-[#1A1A1C] rounded-lg transition-colors text-left"
                     >
-                      <FileText className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                      <span className="text-gray-300">Create New Document</span>
-                      <ArrowRight className="w-4 h-4 text-gray-500 ml-auto" />
+                      <FileText className="w-4 h-4 text-blue-500 dark:text-blue-400 flex-shrink-0" />
+                      <span className="text-gray-700 dark:text-gray-300">
+                        Create New Document
+                      </span>
+                      <ArrowRight className="w-4 h-4 text-gray-500 dark:text-gray-500 ml-auto" />
                     </button>
                     <button
                       onClick={() => handleQuickAction("library")}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-[#1A1A1C] rounded-lg transition-colors text-left"
+                      className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-[#1A1A1C] rounded-lg transition-colors text-left"
                     >
-                      <Folder className="w-4 h-4 text-green-400 flex-shrink-0" />
-                      <span className="text-gray-300">
+                      <Folder className="w-4 h-4 text-green-500 dark:text-green-400 flex-shrink-0" />
+                      <span className="text-gray-700 dark:text-gray-300">
                         Browse All Documents
                       </span>
-                      <ArrowRight className="w-4 h-4 text-gray-500 ml-auto" />
+                      <ArrowRight className="w-4 h-4 text-gray-500 dark:text-gray-500 ml-auto" />
                     </button>
                   </div>
                 </div>
@@ -336,13 +338,13 @@ export function SearchModal({
             ) : searchResults.length === 0 && !isSearching ? (
               /* No Results */
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-16 h-16 bg-[#2A2A2E] rounded-full flex items-center justify-center mb-4">
-                  <Search className="w-8 h-8 text-gray-400" />
+                <div className="w-16 h-16 bg-gray-100 dark:bg-[#2A2A2E] rounded-full flex items-center justify-center mb-4">
+                  <Search className="w-8 h-8 text-gray-400 dark:text-gray-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   No results found
                 </h3>
-                <p className="text-gray-400 max-w-md">
+                <p className="text-gray-600 dark:text-gray-400 max-w-md">
                   We couldn&apos;t find anything matching &quot;{query}&quot;.
                   Try different keywords or check your spelling.
                 </p>
@@ -356,10 +358,10 @@ export function SearchModal({
 
                   return (
                     <div key={type} className="mb-6 last:mb-0">
-                      <h3 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                         <Icon className="w-4 h-4" />
                         {label}
-                        <span className="text-gray-500">
+                        <span className="text-gray-500 dark:text-gray-500">
                           ({results.length})
                         </span>
                       </h3>
@@ -374,8 +376,8 @@ export function SearchModal({
                               onClick={() => handleResultClick(result)}
                               className={`w-full flex items-start gap-3 p-3 rounded-lg transition-colors text-left ${
                                 isSelected
-                                  ? "bg-blue-600/20 border border-blue-500/30"
-                                  : "hover:bg-[#1A1A1C]"
+                                  ? "bg-blue-100 dark:bg-blue-600/20 border border-blue-300 dark:border-blue-500/30"
+                                  : "hover:bg-gray-50 dark:hover:bg-[#1A1A1C]"
                               }`}
                             >
                               <div className="flex-shrink-0 mt-0.5">
@@ -391,17 +393,17 @@ export function SearchModal({
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="font-medium text-white truncate">
+                                  <h4 className="font-medium text-gray-900 dark:text-white truncate">
                                     {highlightMatch(result.title, query)}
                                   </h4>
                                   {result.category && (
-                                    <span className="text-xs px-2 py-0.5 bg-[#2A2A2E] text-gray-400 rounded flex-shrink-0">
+                                    <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-[#2A2A2E] text-gray-600 dark:text-gray-400 rounded flex-shrink-0">
                                       {result.category}
                                     </span>
                                   )}
                                 </div>
                                 {result.preview && (
-                                  <p className="text-sm text-gray-400 line-clamp-2 leading-relaxed">
+                                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
                                     {highlightMatch(
                                       result.preview
                                         .replace(/[#*`\n]/g, " ")
@@ -410,7 +412,7 @@ export function SearchModal({
                                     )}
                                   </p>
                                 )}
-                                <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                                <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 dark:text-gray-500">
                                   {result.author && (
                                     <span className="flex items-center gap-1">
                                       <User className="w-3 h-3" />
@@ -431,7 +433,7 @@ export function SearchModal({
                                   )}
                                 </div>
                               </div>
-                              <ArrowRight className="w-4 h-4 text-gray-500 flex-shrink-0 mt-1" />
+                              <ArrowRight className="w-4 h-4 text-gray-500 dark:text-gray-500 flex-shrink-0 mt-1" />
                             </button>
                           );
                         })}
@@ -445,7 +447,7 @@ export function SearchModal({
 
           {/* Footer */}
           {query.trim() && (
-            <div className="flex items-center justify-between p-3 border-t border-[#1E1E20] bg-[#1A1A1C] text-xs text-gray-500">
+            <div className="flex items-center justify-between p-3 border-t border-gray-200 dark:border-[#1E1E20] bg-gray-50 dark:bg-[#1A1A1C] text-xs text-gray-500 dark:text-gray-500">
               <div className="flex items-center gap-4">
                 <span>↑↓ to navigate</span>
                 <span>↵ to select</span>
