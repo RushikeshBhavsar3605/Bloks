@@ -23,16 +23,10 @@ import { useMediaQuery } from "usehooks-ts";
 import UserItem from "./user-item";
 import { toast } from "sonner";
 import { DocumentTree } from "./document-list/document-tree";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
-import { TrashBox } from "./trash-box/trash-box";
 import { useSearch } from "@/hooks/use-search";
 import { Navbar } from "./navbar";
-import { useCurrentUser } from "@/hooks/use-current-user";
 import { PageHeader } from "./page-header";
+import { TrashModal } from "../modals/trash-modal";
 
 // Create a ref that can be shared
 export const sharedNavbarRef = { current: null as ElementRef<"div"> | null };
@@ -43,7 +37,6 @@ export const Navigation = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const user = useCurrentUser();
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   const isResizingRef = useRef(false);
@@ -52,8 +45,18 @@ export const Navigation = () => {
   const [isResetting, setIsResetting] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(isMobile);
 
-  const [error, setError] = useState<string | undefined>("");
-  const [success, setSuccess] = useState<string | undefined>("");
+  const isModalOpen = searchParams?.get("modal") === "trash";
+
+  const openModal = () => {
+    if (!searchParams) return;
+    const params = new URLSearchParams(searchParams);
+    params.set("modal", "trash");
+    router.push(`?${params.toString()}`);
+  };
+
+  const closeModal = () => {
+    router.back();
+  };
 
   // Sync navbarRef with sharedNavbarRef
   useEffect(() => {
@@ -127,9 +130,6 @@ export const Navigation = () => {
   };
 
   const onCreate = () => {
-    setError("");
-    setSuccess("");
-
     const promise = fetch("/api/socket/documents", {
       method: "POST",
       credentials: "include",
@@ -283,62 +283,17 @@ export const Navigation = () => {
           <div className="px-4 mt-8">
             <div className="space-y-1">
               {/* Trash */}
-              <Popover>
-                <PopoverTrigger className="w-full">
-                  <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-[#1E1E20] transition-all">
-                    <Trash className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">Trash</span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="p-0 w-[300px] max-h-[80vh] overflow-hidden rounded-xl bg-white dark:bg-neutral-900 shadow-xl flex flex-col"
-                  side={isMobile ? "bottom" : "right"}
-                >
-                  <TrashBox />
-                </PopoverContent>
-              </Popover>
+              <button
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-[#1E1E20] transition-all"
+                onClick={openModal}
+              >
+                <Trash className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">Trash</span>
+              </button>
+
+              <TrashModal isOpen={isModalOpen} onClose={closeModal} />
             </div>
           </div>
-
-          {/* Workspaces
-          <div className="px-4 mt-8">
-            <div className="text-xs font-medium text-gray-500 mb-3 px-2">
-              Workspaces
-            </div>
-            <div className="space-y-1">
-              <button
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-[#1E1E20] transition-all"
-                onClick={() => router.push("/documents")}
-              >
-                <div className="w-5 h-5 bg-blue-500 rounded flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-xs font-medium">
-                    {user?.name?.charAt(0) || "P"}
-                  </span>
-                </div>
-                <span className="truncate">Personal Notes</span>
-              </button>
-
-              <button
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-[#1E1E20] transition-all"
-                onClick={() => router.push("/library")}
-              >
-                <div className="w-5 h-5 bg-green-500 rounded flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-xs font-medium">S</span>
-                </div>
-                <span className="truncate">SAAS Prodiges</span>
-              </button>
-
-              <button
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-[#1E1E20] transition-all"
-                onClick={() => router.push("/library")}
-              >
-                <div className="w-5 h-5 bg-purple-500 rounded flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-xs font-medium">F</span>
-                </div>
-                <span className="truncate">Fitness Prodiges</span>
-              </button>
-            </div>
-          </div> */}
         </div>
 
         {/* Upgrade Section */}
