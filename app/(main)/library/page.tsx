@@ -1,20 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { toast } from "sonner";
-import { PageHeader } from "@/components/main/page-header";
 import { SectionHeader } from "@/components/main/section-header";
 import { DocumentCard } from "@/components/main/document-card";
 import { ActionCard } from "@/components/main/action-card";
-import { StatsCard } from "@/components/main/stats-card";
 import { PageTitle } from "@/components/main/page-title";
 import {
-  Upload,
-  ArrowRight,
   FileText,
-  Folder,
   Clock,
   BookOpen,
   Target,
@@ -22,11 +17,31 @@ import {
   Calendar,
   Plus,
 } from "lucide-react";
+import { getAllDocuments } from "@/actions/documents/get-all-documents";
+import { Document, User } from "@prisma/client";
+
+type customDocumentWithMeta = Document & {
+  lastEditedBy: User | null;
+  owner: {
+    name: string | null;
+    email: string | null;
+  };
+};
 
 const LibraryPage = () => {
   const user = useCurrentUser();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("pages");
+  const [documents, setDocuments] = useState<customDocumentWithMeta[]>([]);
+
+  useEffect(() => {
+    const fetchStarredDocuments = async () => {
+      const response = await getAllDocuments();
+
+      setDocuments(response);
+    };
+
+    fetchStarredDocuments();
+  }, [user?.id]);
 
   const onCreate = () => {
     const promise = fetch("/api/socket/documents", {
@@ -60,14 +75,6 @@ const LibraryPage = () => {
       router.push(`/documents/${docId}`);
     }
   };
-
-  const folders = [
-    { id: "projects", name: "Active Projects", count: 12, icon: "🚀" },
-    { id: "meeting-notes", name: "Meeting Notes", count: 8, icon: "📝" },
-    { id: "research", name: "Research & Ideas", count: 24, icon: "💡" },
-    { id: "personal", name: "Personal", count: 6, icon: "👤" },
-    { id: "templates", name: "Templates", count: 15, icon: "📋" },
-  ];
 
   const quickStartActions = [
     {
@@ -104,88 +111,9 @@ const LibraryPage = () => {
     },
   ];
 
-  const pages = [
-    {
-      id: "project-roadmap",
-      title: "Q1 2024 Product Roadmap",
-      preview:
-        "# Q1 2024 Product Roadmap\n\n## Key Objectives\n- Launch new user dashboard\n- Implement real-time collaboration\n- Mobile app beta release\n\n## Timeline\n**January**\n- User research and wireframes\n- Technical architecture planning",
-      author: user?.name || "User",
-      timestamp: "2h ago",
-      workspace: `${user?.name?.split(" ")[0] || "User"}'s Workspace`,
-      type: "Project Plan",
-      icon: "🎯",
-    },
-    {
-      id: "meeting-notes-jan",
-      title: "Weekly Team Sync - January 15",
-      preview:
-        "# Weekly Team Sync\n**Date:** January 15, 2024\n**Attendees:** Sarah, Mike, Alex, User\n\n## Agenda\n1. Sprint review\n2. Upcoming deadlines\n3. Blockers discussion\n\n## Action Items\n- [ ] Update API documentation",
-      author: user?.name || "User",
-      timestamp: "1d ago",
-      workspace: `${user?.name?.split(" ")[0] || "User"}'s Workspace`,
-      type: "Meeting Notes",
-      icon: "📋",
-    },
-    {
-      id: "feature-spec",
-      title: "User Authentication System Spec",
-      preview:
-        "# User Authentication System\n\n## Overview\nImplement a secure, scalable authentication system supporting multiple providers.\n\n## Requirements\n- OAuth integration (Google, GitHub)\n- JWT token management\n- Role-based access control",
-      author: user?.name || "User",
-      timestamp: "3d ago",
-      workspace: `${user?.name?.split(" ")[0] || "User"}'s Workspace`,
-      type: "Technical Spec",
-      icon: "🔐",
-    },
-    {
-      id: "design-system",
-      title: "Design System Guidelines",
-      preview:
-        "# Design System v2.0\n\n## Color Palette\n- Primary: #3B82F6\n- Secondary: #6B7280\n- Success: #10B981\n\n## Typography\n- Headings: Inter Bold\n- Body: Inter Regular\n\n## Components\nButton, Card, Modal, Form elements...",
-      author: user?.name || "User",
-      timestamp: "5d ago",
-      workspace: `${user?.name?.split(" ")[0] || "User"}'s Workspace`,
-      type: "Design Doc",
-      icon: "🎨",
-    },
-    {
-      id: "user-research",
-      title: "User Interview Insights - December",
-      preview:
-        '# User Research Summary\n\n## Key Findings\n1. Users want faster page loading\n2. Mobile experience needs improvement\n3. Search functionality is crucial\n\n## Quotes\n"I love the clean interface but wish it was faster"\n"Mobile app would be game-changing"',
-      author: user?.name || "User",
-      timestamp: "1w ago",
-      workspace: `${user?.name?.split(" ")[0] || "User"}'s Workspace`,
-      type: "Research",
-      icon: "🔍",
-    },
-    {
-      id: "api-docs",
-      title: "REST API Documentation",
-      preview:
-        "# API Documentation\n\n## Authentication\nAll API requests require authentication via Bearer token.\n\n```\nAuthorization: Bearer <your-token>\n```\n\n## Endpoints\n\n### Users\n- GET /api/users\n- POST /api/users\n- PUT /api/users/:id",
-      author: user?.name || "User",
-      timestamp: "1w ago",
-      workspace: `${user?.name?.split(" ")[0] || "User"}'s Workspace`,
-      type: "Documentation",
-      icon: "📚",
-    },
-    {
-      id: "brainstorm",
-      title: "Product Ideas Brainstorm",
-      preview:
-        "# Product Ideas 💡\n\n## New Features\n- [ ] Dark mode toggle\n- [ ] Collaborative editing\n- [ ] Template marketplace\n- [ ] Advanced search filters\n\n## Integrations\n- Slack notifications\n- GitHub sync\n- Calendar integration",
-      author: user?.name || "User",
-      timestamp: "2w ago",
-      workspace: `${user?.name?.split(" ")[0] || "User"}'s Workspace`,
-      type: "Brainstorm",
-      icon: "💭",
-    },
-  ];
-
   return (
     <div className="flex-1 flex flex-col bg-white dark:bg-[#0B0B0F]">
+      <div className="h-[72px]" />
       {/* Header */}
       {/* <PageHeader 
         searchPlaceholder="Search for pages, projects, tasks & folders"
@@ -210,31 +138,9 @@ const LibraryPage = () => {
 
           {/* Tabs */}
           <div className="flex items-center gap-8 mb-10">
-            <button
-              onClick={() => setActiveTab("pages")}
-              className={`pb-3 text-sm font-medium transition-colors relative ${
-                activeTab === "pages"
-                  ? "text-gray-900 dark:text-white"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              }`}
-            >
+            <button className="pb-3 text-sm font-medium transition-colors relative text-gray-900 dark:text-white">
               Pages
-              {activeTab === "pages" && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900 dark:bg-white rounded-full"></div>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab("templates")}
-              className={`pb-3 text-sm font-medium transition-colors relative ${
-                activeTab === "templates"
-                  ? "text-gray-900 dark:text-white"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              }`}
-            >
-              Templates
-              {activeTab === "templates" && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900 dark:bg-white rounded-full"></div>
-              )}
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900 dark:bg-white rounded-full" />
             </button>
           </div>
 
@@ -256,35 +162,6 @@ const LibraryPage = () => {
             </div>
           </section>
 
-          {/* Folders Section */}
-          <section className="mb-12">
-            <SectionHeader
-              icon={Folder}
-              title="Folders"
-              actionButton={
-                <button className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  See all <ArrowRight className="w-4 h-4" />
-                </button>
-              }
-            />
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {folders.map((folder) => (
-                <StatsCard
-                  key={folder.id}
-                  icon={Folder}
-                  iconColor=""
-                  value=""
-                  label=""
-                  emoji={folder.icon}
-                  name={folder.name}
-                  count={folder.count}
-                  variant="folder"
-                  onClick={() => {}}
-                />
-              ))}
-            </div>
-          </section>
-
           {/* Recent Pages Section */}
           <section>
             <SectionHeader
@@ -301,17 +178,17 @@ const LibraryPage = () => {
               }
             />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {pages.map((page) => (
+              {documents.map((page) => (
                 <DocumentCard
                   key={page.id}
                   id={page.id}
                   title={page.title}
-                  type={page.type}
-                  icon={page.icon}
-                  preview={page.preview}
-                  author={page.author}
-                  timestamp={page.timestamp}
-                  workspace={page.workspace}
+                  type="Document"
+                  icon={page.icon as string}
+                  preview={page.content || "Empty"}
+                  author={page.owner.name as string}
+                  timestamp={page.createdAt}
+                  lastModified={page.lastEditedAt ?? undefined}
                   onClick={onDocumentSelect}
                   showPreview={true}
                 />

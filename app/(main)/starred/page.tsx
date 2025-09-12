@@ -40,7 +40,7 @@ function getRelativeTimeMessage(lastEditedAt: Date): string {
   const diffYears = Math.floor(diffDay / 365);
 
   if (diffHr < 1) return "Few minutes ago";
-  if (diffHr < 24) return `${diffHr}hours ago`;
+  if (diffHr < 24) return `${diffHr} hours ago`;
   if (diffDay < 7) return `${diffDay} days ago`;
   if (diffWeeks < 52) return `${diffWeeks} weeks ago`;
 

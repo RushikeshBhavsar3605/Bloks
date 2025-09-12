@@ -1,16 +1,45 @@
 "use client";
 
 import { MoreHorizontal, User } from "lucide-react";
+import TurndownService from "turndown";
+
+// Initialize turndown service
+const turndownService = new TurndownService({
+  headingStyle: "atx",
+  codeBlockStyle: "fenced",
+});
+
+function htmlToMarkdown(html: string): string {
+  if (!html) return "";
+  return turndownService.turndown(html);
+}
+
+function getRelativeTimeMessage(lastEditedAt: Date): string {
+  const currDate = new Date();
+  const diffMs = currDate.getTime() - lastEditedAt.getTime();
+
+  const diffHr = Math.floor(diffMs / 1000 / 60 / 60);
+  const diffDay = Math.floor(diffHr / 24);
+  const diffWeeks = Math.floor(diffDay / 7);
+  const diffYears = Math.floor(diffDay / 365);
+
+  if (diffHr < 1) return "Few minutes ago";
+  if (diffHr < 24) return `${diffHr} hours ago`;
+  if (diffDay < 7) return `${diffDay} days ago`;
+  if (diffWeeks < 52) return `${diffWeeks} weeks ago`;
+
+  return `${diffYears} years ago`;
+}
 
 interface DocumentCardProps {
   id: string;
   title: string;
   type: string;
   icon: string;
-  lastModified?: string;
+  lastModified?: Date;
   preview?: string;
   author?: string;
-  timestamp?: string;
+  timestamp?: Date;
   workspace?: string;
   onClick: (id: string) => void;
   showPreview?: boolean;
@@ -38,7 +67,7 @@ export const DocumentCard = ({
       {showPreview && preview && (
         <div className="aspect-video bg-gray-100 dark:bg-[#0F0F11] relative overflow-hidden p-4">
           <div className="text-xs font-mono text-gray-600 dark:text-gray-300 leading-relaxed">
-            {preview.substring(0, 150)}...
+            {htmlToMarkdown(preview).substring(0, 150)} ...
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-gray-50 dark:from-[#161618] via-transparent to-transparent" />
           <div className="absolute top-3 right-3">
@@ -78,7 +107,7 @@ export const DocumentCard = ({
                 <User className="w-3 h-3" />
                 <span>{author}</span>
                 <span>•</span>
-                <span>{timestamp}</span>
+                <span>{getRelativeTimeMessage(timestamp)}</span>
               </div>
             )}
             <div className="flex items-center justify-between">
@@ -91,8 +120,10 @@ export const DocumentCard = ({
         )}
 
         {/* Last modified for simple layout */}
-        {!showPreview && lastModified && (
-          <div className="text-xs text-gray-500">Modified {lastModified}</div>
+        {lastModified && (
+          <div className="text-xs text-gray-500">
+            Modified {getRelativeTimeMessage(lastModified)}
+          </div>
         )}
       </div>
     </div>
