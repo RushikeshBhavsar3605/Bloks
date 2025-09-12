@@ -218,8 +218,8 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-[#161618] border border-[#1E1E20] rounded-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100000] flex items-center justify-center p-4">
+      <div className="bg-[#161618] border border-[#1E1E20] rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-[#1E1E20]">
           <div className="flex items-center gap-3">
@@ -243,7 +243,7 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
         </div>
 
         {/* Search and Controls */}
-        <div className="p-6 border-b border-[#1E1E20] space-y-4">
+        <div className="flex-shrink-0 p-6 border-b border-[#1E1E20] space-y-4">
           {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -310,7 +310,7 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar max-h-[calc(85vh-200px)]">
+        <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
           {totalFilteredDocuments === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="w-16 h-16 bg-[#2A2A2E] rounded-full flex items-center justify-center mb-4">
@@ -395,7 +395,7 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
 
         {/* Footer */}
         {totalFilteredDocuments > 0 && (
-          <div className="flex items-center justify-between p-4 border-t border-[#1E1E20] bg-[#1A1A1C]">
+          <div className="flex-shrink-0 flex items-center justify-between p-4 border-t border-[#1E1E20] bg-[#1A1A1C]">
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <AlertTriangle className="w-4 h-4 text-yellow-400" />
               <span>

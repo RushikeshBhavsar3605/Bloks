@@ -231,7 +231,7 @@ export function SearchModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center pt-[10vh]">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100000] flex items-start justify-center pt-[10vh]">
         <div className="bg-white dark:bg-[#161618] border border-gray-200 dark:border-[#1E1E20] rounded-2xl w-full max-w-2xl max-h-[70vh] overflow-hidden shadow-2xl">
           {/* Header */}
           <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-[#1E1E20]">

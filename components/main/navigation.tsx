@@ -26,12 +26,19 @@ import { DocumentTree } from "./document-list/document-tree";
 import { useSearch } from "@/hooks/use-search";
 import { Navbar } from "./navbar";
 import { PageHeader } from "./page-header";
-import { TrashModal } from "../modals/trash-modal";
 
 // Create a ref that can be shared
 export const sharedNavbarRef = { current: null as ElementRef<"div"> | null };
 
-export const Navigation = () => {
+interface NavigationProps {
+  openSearchModal: () => void;
+  openTrashModal: () => void;
+}
+
+export const Navigation = ({
+  openSearchModal,
+  openTrashModal,
+}: NavigationProps) => {
   const search = useSearch();
   const params = useParams();
   const pathname = usePathname();
@@ -44,19 +51,6 @@ export const Navigation = () => {
   const navbarRef = useRef<ElementRef<"div">>(null);
   const [isResetting, setIsResetting] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(isMobile);
-
-  const isModalOpen = searchParams?.get("modal") === "trash";
-
-  const openModal = () => {
-    if (!searchParams) return;
-    const params = new URLSearchParams(searchParams);
-    params.set("modal", "trash");
-    router.push(`?${params.toString()}`);
-  };
-
-  const closeModal = () => {
-    router.back();
-  };
 
   // Sync navbarRef with sharedNavbarRef
   useEffect(() => {
@@ -84,7 +78,7 @@ export const Navigation = () => {
       label: "Search",
       icon: Search,
       path: "/search",
-      onClick: search.onOpen,
+      onClick: () => openSearchModal(),
     },
     {
       id: "notifications",
@@ -285,13 +279,11 @@ export const Navigation = () => {
               {/* Trash */}
               <button
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-[#1E1E20] transition-all"
-                onClick={openModal}
+                onClick={openTrashModal}
               >
                 <Trash className="w-4 h-4 flex-shrink-0" />
                 <span className="truncate">Trash</span>
               </button>
-
-              <TrashModal isOpen={isModalOpen} onClose={closeModal} />
             </div>
           </div>
         </div>
