@@ -35,7 +35,7 @@ interface DocumentCardProps {
   id: string;
   title: string;
   type: string;
-  icon: string;
+  icon: string | null;
   lastModified?: Date;
   preview?: string;
   author?: string;
@@ -71,7 +71,7 @@ export const DocumentCard = ({
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-gray-50 dark:from-[#161618] via-transparent to-transparent" />
           <div className="absolute top-3 right-3">
-            <span className="text-xl">{icon}</span>
+            <span className="text-xl">{icon || "📄"}</span>
           </div>
         </div>
       )}
@@ -81,7 +81,7 @@ export const DocumentCard = ({
         {/* Simple layout for documents page */}
         {!showPreview && (
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-2xl">{icon}</span>
+            <span className="text-2xl">{icon || "📄"}</span>
             <div className="flex-1 min-w-0">
               <h3 className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-blue-400 transition-colors line-clamp-1">
                 {title}

@@ -99,7 +99,7 @@ export const DocumentItem = ({
 
       {/* Document Icon */}
       <div className="flex-shrink-0">
-        <span className="text-2xl">📄</span>
+        <span className="text-2xl">{doc.icon || "📄"}</span>
       </div>
 
       {/* Document Info */}

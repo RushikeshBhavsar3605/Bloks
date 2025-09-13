@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { toast } from "sonner";
-import { PageHeader } from "@/components/main/page-header";
 import { SectionHeader } from "@/components/main/section-header";
 import { DocumentCard } from "@/components/main/document-card";
 import { ActionCard } from "@/components/main/action-card";
@@ -33,7 +32,16 @@ import { DocumentWithMeta } from "@/types/shared";
 import { getCoeditors } from "@/actions/collaborators/get-co-editors";
 import { getSharedDocuments } from "@/actions/collaborators/get-shared-documents";
 import { getLasteditedDocument } from "@/actions/documents/get-lastedited-document";
-import { Document } from "@prisma/client";
+import { Document, User } from "@prisma/client";
+import { getAllDocuments } from "@/actions/documents/get-all-documents";
+
+type customDocumentWithMeta = Document & {
+  lastEditedBy: User | null;
+  owner: {
+    name: string | null;
+    email: string | null;
+  };
+};
 
 function getRelativeTimeMessage(
   createdDate: Date | null,
@@ -79,6 +87,9 @@ const DocumentsPage = () => {
     name: "",
     date: null,
   });
+  const [recentDocuments, setRecentDocuments] = useState<
+    customDocumentWithMeta[]
+  >([]);
 
   useEffect(() => {
     const fetchCreated = async () => {
@@ -140,6 +151,16 @@ const DocumentsPage = () => {
     };
 
     fetchLastEdited();
+  }, [user?.id]);
+
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      const response = await getAllDocuments(4);
+
+      setRecentDocuments(response);
+    };
+
+    fetchDocuments();
   }, [user?.id]);
 
   const [greeting] = useState(() => {
@@ -321,37 +342,6 @@ const DocumentsPage = () => {
     },
   ];
 
-  const recentDocuments = [
-    {
-      id: "project-roadmap",
-      title: "Q1 2024 Product Roadmap",
-      type: "Project Plan",
-      lastModified: new Date(),
-      icon: "🎯",
-    },
-    {
-      id: "meeting-notes-jan",
-      title: "Weekly Team Sync - January 15",
-      type: "Meeting Notes",
-      lastModified: new Date(),
-      icon: "📋",
-    },
-    {
-      id: "feature-spec",
-      title: "User Authentication System Spec",
-      type: "Technical Spec",
-      lastModified: new Date(),
-      icon: "🔐",
-    },
-    {
-      id: "design-system",
-      title: "Design System Guidelines",
-      type: "Design Doc",
-      lastModified: new Date(),
-      icon: "🎨",
-    },
-  ];
-
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "high":
@@ -525,9 +515,9 @@ const DocumentsPage = () => {
                   key={doc.id}
                   id={doc.id}
                   title={doc.title}
-                  type={doc.type}
+                  type="Document"
                   icon={doc.icon}
-                  lastModified={doc.lastModified}
+                  lastModified={doc.lastEditedAt || doc.createdAt}
                   onClick={onDocumentSelect}
                   showPreview={false}
                 />

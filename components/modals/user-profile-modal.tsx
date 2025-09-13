@@ -145,7 +145,7 @@ export function UserProfileModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999999] flex items-center justify-center p-4">
       <div className="bg-white dark:bg-[#161618] border border-gray-200 dark:border-[#1E1E20] rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-[#1E1E20]">

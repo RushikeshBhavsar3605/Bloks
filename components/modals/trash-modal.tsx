@@ -395,7 +395,7 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
 
         {/* Footer */}
         {totalFilteredDocuments > 0 && (
-          <div className="flex-shrink-0 flex items-center justify-between p-4 border-t border-[#1E1E20] bg-[#1A1A1C]">
+          <div className="flex-shrink-0 flex items-center justify-between p-4 border-t border-[#1E1E20] bg-[#1A1A1C] rounded-b-2xl">
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <AlertTriangle className="w-4 h-4 text-yellow-400" />
               <span>

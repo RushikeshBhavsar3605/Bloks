@@ -34,13 +34,13 @@ const LibraryPage = () => {
   const [documents, setDocuments] = useState<customDocumentWithMeta[]>([]);
 
   useEffect(() => {
-    const fetchStarredDocuments = async () => {
+    const fetchDocuments = async () => {
       const response = await getAllDocuments();
 
       setDocuments(response);
     };
 
-    fetchStarredDocuments();
+    fetchDocuments();
   }, [user?.id]);
 
   const onCreate = () => {
