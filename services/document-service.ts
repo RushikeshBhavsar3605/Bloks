@@ -516,6 +516,14 @@ export const getArchivedDocuments = async (
       orderBy: {
         createdAt: "desc",
       },
+      include: {
+        owner: {
+          select: {
+            name: true,
+            image: true,
+          },
+        },
+      },
     });
 
     // Get archived documents where user is a collaborator
@@ -554,10 +562,6 @@ export const getArchivedDocuments = async (
 
       return {
         ...doc,
-        owner: {
-          name: null,
-          image: null,
-        },
         isOwner,
         role,
       };

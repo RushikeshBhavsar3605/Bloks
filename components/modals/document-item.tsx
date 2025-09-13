@@ -75,10 +75,12 @@ export const DocumentItem = ({
 
   return (
     <div
-      className={`flex items-center gap-4 p-4 bg-[#1A1A1C] border rounded-lg transition-colors ${
-        canAction ? "hover:bg-[#1E1E20]" : ""
+      className={`flex items-center gap-4 p-4 bg-gray-50 dark:bg-[#1A1A1C] border rounded-lg transition-colors ${
+        canAction ? "hover:bg-gray-100 dark:hover:bg-[#1E1E20]" : ""
       } ${
-        isSelected ? "border-red-500/50 bg-red-600/10" : "border-[#2A2A2E]"
+        isSelected
+          ? "border-red-500/50 bg-red-600/10"
+          : "border-gray-200 dark:border-[#2A2A2E]"
       } ${!canAction ? "opacity-75" : ""}`}
     >
       {/* Checkbox - only for owned documents */}
@@ -88,7 +90,7 @@ export const DocumentItem = ({
           className={`w-5 h-5 border-2 rounded transition-colors ${
             isSelected
               ? "border-red-500 bg-red-500"
-              : "border-gray-600 hover:border-red-500"
+              : "border-gray-400 dark:border-gray-600 hover:border-red-500"
           }`}
         >
           {isSelected && <CheckSquare className="w-5 h-5 text-white" />}
@@ -105,15 +107,15 @@ export const DocumentItem = ({
       {/* Document Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
-          <h4 className="font-medium text-white truncate">
+          <h4 className="font-medium text-gray-900 dark:text-white truncate">
             {highlightMatch(doc.title, searchQuery)}
           </h4>
-          <span className="text-xs px-2 py-1 bg-[#2A2A2E] text-gray-400 rounded flex-shrink-0">
+          <span className="text-xs px-2 py-1 bg-gray-200 dark:bg-[#2A2A2E] text-gray-600 dark:text-gray-400 rounded flex-shrink-0">
             Document
           </span>
         </div>
 
-        <div className="flex items-center gap-4 text-xs text-gray-500">
+        <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-500">
           <div className="flex items-center gap-1">
             <User className="w-3 h-3" />
             <span>{doc.owner.name || "Unknown"}</span>
@@ -131,24 +133,21 @@ export const DocumentItem = ({
           <>
             <button
               onClick={() => onDocumentRestore(doc.id)}
-              className="p-2 hover:bg-green-600/20 rounded-lg transition-colors text-green-400 hover:text-green-300"
+              className="p-2 hover:bg-green-600/20 rounded-lg transition-colors text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300"
               title="Restore"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
             <button
               onClick={() => onDocumentDelete(doc.id)}
-              className="p-2 hover:bg-red-600/20 rounded-lg transition-colors text-red-400 hover:text-red-300"
+              className="p-2 hover:bg-red-600/20 rounded-lg transition-colors text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300"
               title="Delete Forever"
             >
               <Trash2 className="w-4 h-4" />
             </button>
-            <button className="p-2 hover:bg-[#2A2A2E] rounded-lg transition-colors text-gray-400 hover:text-white">
-              <MoreHorizontal className="w-4 h-4" />
-            </button>
           </>
         ) : (
-          <div className="flex items-center gap-2 text-gray-500">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-500">
             <span className="text-xs">Read-only access</span>
           </div>
         )}

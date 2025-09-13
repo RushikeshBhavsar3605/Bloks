@@ -206,7 +206,10 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
 
     return parts.map((part, index) =>
       regex.test(part) ? (
-        <mark key={index} className="bg-red-600/30 text-red-300 rounded px-0.5">
+        <mark
+          key={index}
+          className="bg-red-600/30 text-red-600 dark:text-red-300 rounded px-0.5"
+        >
           {part}
         </mark>
       ) : (
@@ -219,16 +222,18 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100000] flex items-center justify-center p-4">
-      <div className="bg-[#161618] border border-[#1E1E20] rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl">
+      <div className="bg-white dark:bg-[#161618] border border-gray-200 dark:border-[#1E1E20] rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-[#1E1E20]">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-[#1E1E20]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-red-600/20 rounded-lg flex items-center justify-center">
               <Trash2 className="w-5 h-5 text-red-400" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">Trash</h2>
-              <p className="text-sm text-gray-400">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                Trash
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {totalFilteredDocuments} item
                 {totalFilteredDocuments !== 1 ? "s" : ""} in trash
               </p>
@@ -236,24 +241,24 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-[#2A2A2E] rounded-lg transition-colors text-gray-400 hover:text-white"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-[#2A2A2E] rounded-lg transition-colors text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Search and Controls */}
-        <div className="flex-shrink-0 p-6 border-b border-[#1E1E20] space-y-4">
+        <div className="flex-shrink-0 p-6 border-b border-gray-200 dark:border-[#1E1E20] space-y-4">
           {/* Search Bar */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
             <input
               ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search in trash..."
-              className="w-full pl-10 pr-4 py-3 bg-[#1A1A1C] border border-[#2A2A2E] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-[#1A1A1C] border border-gray-300 dark:border-[#2A2A2E] rounded-lg text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
           </div>
 
@@ -263,7 +268,7 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
               {filteredOwnedDocuments.length > 0 && (
                 <button
                   onClick={handleSelectAll}
-                  className="flex items-center gap-2 px-3 py-2 bg-[#2A2A2E] hover:bg-[#323236] text-white text-sm rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-[#2A2A2E] hover:bg-gray-200 dark:hover:bg-[#323236] text-gray-900 dark:text-white text-sm rounded-lg transition-colors"
                 >
                   <CheckSquare className="w-4 h-4" />
                   {selectedItems.length === filteredOwnedDocuments.length
@@ -293,13 +298,15 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-400">Sort by:</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Sort by:
+              </span>
               <select
                 value={sortBy}
                 onChange={(e) =>
                   setSortBy(e.target.value as "name" | "deleted" | "type")
                 }
-                className="bg-[#2A2A2E] border border-[#323236] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="bg-gray-50 dark:bg-[#2A2A2E] border border-gray-300 dark:border-[#323236] rounded-lg px-3 py-2 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 <option value="deleted">Date Deleted</option>
                 <option value="name">Name</option>
@@ -313,13 +320,13 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
         <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
           {totalFilteredDocuments === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-16 h-16 bg-[#2A2A2E] rounded-full flex items-center justify-center mb-4">
-                <Trash2 className="w-8 h-8 text-gray-400" />
+              <div className="w-16 h-16 bg-gray-100 dark:bg-[#2A2A2E] rounded-full flex items-center justify-center mb-4">
+                <Trash2 className="w-8 h-8 text-gray-500 dark:text-gray-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 {searchQuery ? "No matching items in trash" : "Trash is empty"}
               </h3>
-              <p className="text-gray-400 max-w-md">
+              <p className="text-gray-600 dark:text-gray-400 max-w-md">
                 {searchQuery
                   ? `No items in trash match "${searchQuery}". Try different keywords.`
                   : "Deleted documents will appear here. You can restore them or delete them permanently."}
@@ -330,9 +337,9 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
               {/* My Documents Section */}
               {filteredOwnedDocuments.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     My Documents
-                    <span className="text-sm font-normal text-gray-400">
+                    <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
                       ({filteredOwnedDocuments.length})
                     </span>
                   </h3>
@@ -360,12 +367,12 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
               {/* Shared with Me Section */}
               {filteredSharedDocuments.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     Shared with Me
-                    <span className="text-sm font-normal text-gray-400">
+                    <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
                       ({filteredSharedDocuments.length})
                     </span>
-                    <span className="text-xs px-2 py-1 bg-yellow-600/20 text-yellow-400 rounded">
+                    <span className="text-xs px-2 py-1 bg-yellow-600/20 text-yellow-600 dark:text-yellow-400 rounded">
                       Read-only
                     </span>
                   </h3>
@@ -395,14 +402,14 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
 
         {/* Footer */}
         {totalFilteredDocuments > 0 && (
-          <div className="flex-shrink-0 flex items-center justify-between p-4 border-t border-[#1E1E20] bg-[#1A1A1C] rounded-b-2xl">
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <AlertTriangle className="w-4 h-4 text-yellow-400" />
+          <div className="flex-shrink-0 flex items-center justify-between p-4 border-t border-gray-200 dark:border-[#1E1E20] bg-gray-50 dark:bg-[#1A1A1C] rounded-b-2xl">
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
               <span>
                 Items in trash will be permanently deleted after 30 days
               </span>
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-500 dark:text-gray-500">
               {selectedItems.length > 0 &&
                 `${selectedItems.length} selected • `}
               {totalFilteredDocuments} item
