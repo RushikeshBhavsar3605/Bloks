@@ -12,6 +12,7 @@ import {
 import { DocumentWithMeta } from "@/types/shared";
 import { toast } from "sonner";
 import { DocumentItem } from "./document-item";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 interface TrashModalProps {
   isOpen: boolean;
@@ -28,6 +29,8 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<"name" | "deleted" | "type">("deleted");
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [showBulkRestoreDialog, setShowBulkRestoreDialog] = useState(false);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
 
   const onDocumentRestore = (documentId: string) => {
     const promise = fetch(`/api/socket/documents/${documentId}/restore`, {
@@ -186,6 +189,7 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
       onDocumentRestore?.(docId);
     });
     setSelectedItems([]);
+    setShowBulkRestoreDialog(false);
   };
 
   const handleBulkDelete = () => {
@@ -193,6 +197,20 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
       onDocumentDelete?.(docId);
     });
     setSelectedItems([]);
+    setShowBulkDeleteDialog(false);
+  };
+
+  // Get selected document titles for confirmation dialogs
+  const getSelectedDocumentTitles = () => {
+    const allDocuments = [
+      ...filteredOwnedDocuments,
+      ...filteredSharedDocuments,
+    ];
+    return selectedItems
+      .map(
+        (id) => allDocuments.find((doc) => doc.id === id)?.title || "Untitled"
+      )
+      .slice(0, 3); // Show max 3 titles
   };
 
   const highlightMatch = (text: string, query: string) => {
@@ -279,20 +297,160 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
 
               {selectedItems.length > 0 && (
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleBulkRestore}
-                    className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors"
+                  {/* Bulk Restore with Confirmation */}
+                  <Dialog
+                    open={showBulkRestoreDialog}
+                    onOpenChange={setShowBulkRestoreDialog}
                   >
-                    <RotateCcw className="w-4 h-4" />
-                    Restore ({selectedItems.length})
-                  </button>
-                  <button
-                    onClick={handleBulkDelete}
-                    className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
+                    <DialogTrigger asChild>
+                      <button className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors">
+                        <RotateCcw className="w-4 h-4" />
+                        Restore ({selectedItems.length})
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="w-full max-w-md bg-background dark:bg-[#161618] border border-gray-200 dark:border-[#1E1E20] text-gray-900 dark:text-white">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                            <RotateCcw className="w-5 h-5 text-green-600 dark:text-green-400" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                              Restore Documents
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {selectedItems.length} document
+                              {selectedItems.length > 1 ? "s" : ""} selected
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <p className="text-sm text-gray-700 dark:text-gray-300">
+                            Are you sure you want to restore{" "}
+                            {selectedItems.length} document
+                            {selectedItems.length > 1 ? "s" : ""}?
+                          </p>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="font-medium mb-1">
+                              Documents to restore:
+                            </p>
+                            <ul className="space-y-1 ml-2">
+                              {getSelectedDocumentTitles().map(
+                                (title, index) => (
+                                  <li key={index}>• {title}</li>
+                                )
+                              )}
+                              {selectedItems.length > 3 && (
+                                <li>
+                                  • and {selectedItems.length - 3} more...
+                                </li>
+                              )}
+                            </ul>
+                          </div>
+                          <p className="text-sm text-green-600 dark:text-green-400">
+                            All documents will be moved back to active documents
+                            and access will be restored for collaborators.
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-3 pt-4">
+                          <button
+                            onClick={() => setShowBulkRestoreDialog(false)}
+                            className="flex-1 px-4 py-2 bg-gray-100 dark:bg-[#2A2A2E] hover:bg-gray-200 dark:hover:bg-[#323236] text-gray-900 dark:text-white rounded-lg transition-colors text-sm"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleBulkRestore}
+                            className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium"
+                          >
+                            Restore All
+                          </button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* Bulk Delete with Confirmation */}
+                  <Dialog
+                    open={showBulkDeleteDialog}
+                    onOpenChange={setShowBulkDeleteDialog}
                   >
-                    <Trash2 className="w-4 h-4" />
-                    Delete Forever ({selectedItems.length})
-                  </button>
+                    <DialogTrigger asChild>
+                      <button className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                        Delete Forever ({selectedItems.length})
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="w-full max-w-md bg-background dark:bg-[#161618] border border-gray-200 dark:border-[#1E1E20] text-gray-900 dark:text-white">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+                            <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                              Delete Documents Forever
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {selectedItems.length} document
+                              {selectedItems.length > 1 ? "s" : ""} selected
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <p className="text-sm text-gray-700 dark:text-gray-300">
+                            Are you sure you want to permanently delete{" "}
+                            {selectedItems.length} document
+                            {selectedItems.length > 1 ? "s" : ""}? This action
+                            will:
+                          </p>
+                          <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1 ml-4">
+                            <li>• Permanently delete all document content</li>
+                            <li>• Remove access for all collaborators</li>
+                            <li>• Delete all comments and version history</li>
+                          </ul>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="font-medium mb-1">
+                              Documents to delete:
+                            </p>
+                            <ul className="space-y-1 ml-2">
+                              {getSelectedDocumentTitles().map(
+                                (title, index) => (
+                                  <li key={index}>• {title}</li>
+                                )
+                              )}
+                              {selectedItems.length > 3 && (
+                                <li>
+                                  • and {selectedItems.length - 3} more...
+                                </li>
+                              )}
+                            </ul>
+                          </div>
+                          <p className="text-sm font-medium text-red-600 dark:text-red-400">
+                            This action cannot be undone.
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-3 pt-4">
+                          <button
+                            onClick={() => setShowBulkDeleteDialog(false)}
+                            className="flex-1 px-4 py-2 bg-gray-100 dark:bg-[#2A2A2E] hover:bg-gray-200 dark:hover:bg-[#323236] text-gray-900 dark:text-white rounded-lg transition-colors text-sm"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleBulkDelete}
+                            className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium"
+                          >
+                            Delete Forever
+                          </button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               )}
             </div>
