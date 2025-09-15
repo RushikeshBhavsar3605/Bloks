@@ -1,0 +1,130 @@
+/* Table wrapper styles */
+.table-wrapper {
+  position: relative;
+  margin: 16px 0;
+  padding-bottom: 32px; /* Space for controls */
+}
+
+.table-wrapper table {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Table hover areas for adding rows/columns */
+.table-wrapper:hover .absolute {
+  opacity: 1;
+}
+
+/* Ensure proper spacing and visibility */
+.table-wrapper .group:hover .opacity-0 {
+  opacity: 1;
+}
+
+/* Table hover effects for adding rows/columns */
+.ProseMirror table {
+  position: relative;
+  margin: 16px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.ProseMirror table::after {
+  content: '';
+  position: absolute;
+  right: -20px;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.ProseMirror table:hover::after {
+  opacity: 1;
+  background: linear-gradient(to right, transparent, rgba(59, 130, 246, 0.1));
+}
+
+.ProseMirror table::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -20px;
+  height: 20px;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.ProseMirror table:hover::before {
+  opacity: 1;
+  background: linear-gradient(to bottom, transparent, rgba(59, 130, 246, 0.1));
+}
+
+/* Mobile responsive table */
+@media (max-width: 768px) {
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+  
+  .ProseMirror table {
+    min-width: 500px; /* Ensure table doesn't get too cramped */
+  }
+  
+  .table-wrapper .absolute {
+    position: relative !important;
+    bottom: auto !important;
+    right: auto !important;
+    opacity: 1 !important;
+    margin-top: 8px;
+  }
+  
+  .table-wrapper .absolute button {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+}
+
+/* Table cell hover effects */
+.ProseMirror td.group:hover::after,
+.ProseMirror th.group:hover::after {
+  content: '';
+  position: absolute;
+  right: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  background: #3b82f6;
+  border-radius: 50%;
+  opacity: 0.7;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ProseMirror td.group:hover::before,
+.ProseMirror th.group:hover::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 20px;
+  background: #3b82f6;
+  border-radius: 50%;
+  opacity: 0.7;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

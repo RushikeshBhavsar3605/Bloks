@@ -12,6 +12,10 @@ import Highlight from "@tiptap/extension-highlight";
 import Typography from "@tiptap/extension-typography";
 import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
+import Table from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableHeader from "@tiptap/extension-table-header";
+import TableCell from "@tiptap/extension-table-cell";
 
 import {
   CustomCodeBlock,
@@ -19,6 +23,9 @@ import {
   TrailingNodeExtension,
   CalloutExtension,
 } from "@/extensions/tiptap-extensions";
+import { TableControlsExtension } from "@/extensions/table-extension";
+import { ReactNodeViewRenderer } from '@tiptap/react';
+import { TableNodeView } from "@/extensions/table-node-view";
 import { CollaborationExtension } from "@/extensions/collaboration-extension";
 import { LiveCollaborationExtension } from "@/extensions/live-collaboration-extension";
 import { useSocket } from "@/components/providers/socket-provider";
@@ -95,6 +102,31 @@ export function SimpleEditorNoToolbar({
         CustomCodeBlock,
         CalloutExtension,
         Underline,
+        Table.configure({
+          resizable: true,
+          HTMLAttributes: {
+            class: "table-auto w-full border-collapse bg-gray-50 dark:bg-[#1A1A1C] rounded-lg overflow-hidden",
+          },
+          addNodeView() {
+            return ReactNodeViewRenderer(TableNodeView);
+          },
+        }),
+        TableRow.configure({
+          HTMLAttributes: {
+            class: "border-b border-gray-200 dark:border-[#2A2A2E]",
+          },
+        }),
+        TableHeader.configure({
+          HTMLAttributes: {
+            class: "bg-gray-100 dark:bg-[#2A2A2E] px-4 py-3 text-left text-sm font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-[#3A3A3E] last:border-r-0",
+          },
+        }),
+        TableCell.configure({
+          HTMLAttributes: {
+            class: "px-4 py-3 text-sm text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-[#2A2A2E] last:border-r-0 relative group",
+          },
+        }),
+        TableControlsExtension,
         // Only include collaboration extension when all dependencies are available
         ...(socket && documentId && user?.id
           ? [

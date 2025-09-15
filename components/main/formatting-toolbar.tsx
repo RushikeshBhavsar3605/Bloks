@@ -15,6 +15,7 @@ import {
   Quote,
   AlertCircle,
   Star,
+  Table,
 } from "lucide-react";
 import { HeadingDropdown } from "@/components/ui/tiptap/heading-dropdown";
 import { cn } from "@/lib/utils";
@@ -291,6 +292,22 @@ export const FormattingToolbar = ({
             title="Callout"
           >
             <AlertCircle className="w-4 h-4" />
+          </button>
+
+          {/* Table */}
+          <button
+            onClick={() => {
+              editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+            }}
+            className={cn(
+              "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
+              editor.isActive("table")
+                ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            )}
+            title="Insert Table"
+          >
+            <Table className="w-4 h-4" />
           </button>
         </div>
 

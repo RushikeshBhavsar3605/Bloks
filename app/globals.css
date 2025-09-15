@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import '../components/ui/table-styles.css';
+
 /* Custom scrollbar styles */
 .custom-scrollbar {
   scrollbar-width: none; /* Firefox */
