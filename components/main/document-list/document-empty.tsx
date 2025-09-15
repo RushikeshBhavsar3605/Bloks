@@ -12,7 +12,7 @@ export const DocumentEmpty = ({ level, expanded }: DocumentEmptyProps) => {
         paddingLeft: level ? `${level * 12 + 25}px` : undefined,
       }}
       className={cn(
-        "text-sm font-medium text-gray-400 dark:text-gray-400 text-gray-500",
+        "text-sm font-medium text-gray-500 dark:text-gray-400",
         expanded ? "block" : "hidden",
         level === 0 && "hidden"
       )}

@@ -115,7 +115,7 @@ export const Item = ({
       className={cn(
         "group min-h-[32px] text-sm py-1.5 pr-3 w-full flex items-center rounded-lg transition-all",
         "text-gray-600 dark:text-gray-400",
-        "hover:bg-gray-50 dark:hover:bg-[#1E1E20]",
+        "hover:bg-gray-100 dark:hover:bg-[#1E1E20]",
         "hover:text-gray-900 dark:hover:text-white",
         active && "bg-gray-100 dark:bg-[#2A2A2E] text-gray-900 dark:text-white"
       )}
