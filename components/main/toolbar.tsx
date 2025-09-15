@@ -80,11 +80,11 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
   return (
     <div className="max-w-4xl mx-auto px-8 py-12">
       {/* Document Header */}
-      <div>
-        <div className="flex items-center gap-4 mt-14">
+      <div className="group ml-3">
+        <div className="flex items-center gap-4 mt-14 relative">
           {/* Icon */}
           {!!initialData.icon && !preview && (
-            <div className="group/icon">
+            <div className="group/icon relative">
               <IconPicker onChange={onIconSelect}>
                 <span className="text-6xl hover:opacity-75 transition cursor-pointer">
                   {initialData.icon}
@@ -92,7 +92,7 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
               </IconPicker>
               <Button
                 onClick={onRemoveIcon}
-                className="rounded-full opacity-0 group-hover/icon:opacity-100 transition text-muted-foreground text-xs ml-2 absolute"
+                className="rounded-full opacity-0 group-hover/icon:opacity-100 transition text-muted-foreground text-xs absolute -top-2 -right-2"
                 variant="outline"
                 size="icon"
               >
@@ -106,7 +106,7 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
           )}
 
           {!initialData.icon && !preview && (
-            <div className="opacity-0 group-hover:opacity-100">
+            <div className="opacity-0 group-hover:opacity-100 absolute left-0 -top-10 z-10">
               <IconPicker asChild onChange={onIconSelect}>
                 <Button
                   className="text-muted-foreground text-xs"
