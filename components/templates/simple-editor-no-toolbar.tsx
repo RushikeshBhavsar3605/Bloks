@@ -23,9 +23,7 @@ import {
   TrailingNodeExtension,
   CalloutExtension,
 } from "@/extensions/tiptap-extensions";
-import { TableControlsExtension } from "@/extensions/table-extension";
-import { ReactNodeViewRenderer } from '@tiptap/react';
-import { TableNodeView } from "@/extensions/table-node-view";
+import { ReactNodeViewRenderer } from "@tiptap/react";
 import { CollaborationExtension } from "@/extensions/collaboration-extension";
 import { LiveCollaborationExtension } from "@/extensions/live-collaboration-extension";
 import { useSocket } from "@/components/providers/socket-provider";
@@ -105,10 +103,8 @@ export function SimpleEditorNoToolbar({
         Table.configure({
           resizable: true,
           HTMLAttributes: {
-            class: "table-auto w-full border-collapse bg-gray-50 dark:bg-[#1A1A1C] rounded-lg overflow-hidden",
-          },
-          addNodeView() {
-            return ReactNodeViewRenderer(TableNodeView);
+            class:
+              "table-auto w-full border-collapse bg-gray-50 dark:bg-[#1A1A1C] rounded-lg",
           },
         }),
         TableRow.configure({
@@ -118,15 +114,16 @@ export function SimpleEditorNoToolbar({
         }),
         TableHeader.configure({
           HTMLAttributes: {
-            class: "bg-gray-100 dark:bg-[#2A2A2E] px-4 py-3 text-left text-sm font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-[#3A3A3E] last:border-r-0",
+            class:
+              "bg-gray-100 dark:bg-[#2A2A2E] px-4 py-3 text-left text-sm font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-[#3A3A3E] last:border-r-0",
           },
         }),
         TableCell.configure({
           HTMLAttributes: {
-            class: "px-4 py-3 text-sm text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-[#2A2A2E] last:border-r-0 relative group",
+            class:
+              "px-4 py-3 text-sm text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-[#2A2A2E] last:border-r-0 relative",
           },
         }),
-        TableControlsExtension,
         // Only include collaboration extension when all dependencies are available
         ...(socket && documentId && user?.id
           ? [
@@ -163,6 +160,7 @@ export function SimpleEditorNoToolbar({
           });
         }
       },
+      
       editorProps: {
         attributes: {
           class: cn("mx-auto focus:outline-none min-h-[200px] p-4"),
@@ -207,6 +205,7 @@ export function SimpleEditorNoToolbar({
 
   return (
     <div className={cn("w-full px-[54px] mx-auto rounded-lg", className)}>
+
       {/* Editor Content */}
       <div className="relative flex justify-center">
         <EditorContent

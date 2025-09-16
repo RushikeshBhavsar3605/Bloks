@@ -31,7 +31,7 @@
 }
 
 .ProseMirror table::after {
-  content: '';
+  content: "";
   position: absolute;
   right: -20px;
   top: 0;
@@ -49,7 +49,7 @@
 }
 
 .ProseMirror table::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   right: 0;
@@ -73,11 +73,11 @@
     -webkit-overflow-scrolling: touch;
     max-width: 100%;
   }
-  
+
   .ProseMirror table {
     min-width: 500px; /* Ensure table doesn't get too cramped */
   }
-  
+
   .table-wrapper .absolute {
     position: relative !important;
     bottom: auto !important;
@@ -85,46 +85,87 @@
     opacity: 1 !important;
     margin-top: 8px;
   }
-  
+
   .table-wrapper .absolute button {
     font-size: 12px;
     padding: 4px 8px;
   }
 }
 
-/* Table cell hover effects */
-.ProseMirror td.group:hover::after,
-.ProseMirror th.group:hover::after {
-  content: '';
-  position: absolute;
-  right: -10px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  background: #3b82f6;
-  border-radius: 50%;
-  opacity: 0.7;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Official Tiptap table styles */
+.ProseMirror table {
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  overflow: hidden;
+  table-layout: fixed;
+  width: 100%;
+
+  td,
+  th {
+    border: 1px solid #e5e7eb;
+    box-sizing: border-box;
+    min-width: 1em;
+    padding: 6px 8px;
+    position: relative;
+    vertical-align: top;
+
+    > * {
+      margin-bottom: 0;
+    }
+  }
+
+  th {
+    background-color: #f3f4f6;
+    font-weight: bold;
+    text-align: left;
+  }
+
+  .selectedCell:after {
+    background: #e5e7eb;
+    content: "";
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    pointer-events: none;
+    position: absolute;
+    z-index: 2;
+  }
+
+  .column-resize-handle {
+    background-color: #3b82f6;
+    bottom: -2px;
+    pointer-events: none;
+    position: absolute;
+    right: -2px;
+    top: 0;
+    width: 4px;
+  }
 }
 
-.ProseMirror td.group:hover::before,
-.ProseMirror th.group:hover::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: -10px;
-  transform: translateX(-50%);
-  width: 20px;
-  height: 20px;
-  background: #3b82f6;
-  border-radius: 50%;
-  opacity: 0.7;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.ProseMirror .tableWrapper {
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+
+.ProseMirror.resize-cursor {
+  cursor: ew-resize;
+  cursor: col-resize;
+}
+
+/* Dark mode support */
+.dark .ProseMirror table {
+  td,
+  th {
+    border-color: #374151;
+  }
+
+  th {
+    background-color: #374151;
+    color: #f9fafb;
+  }
+
+  .selectedCell:after {
+    background: #374151;
+  }
 }

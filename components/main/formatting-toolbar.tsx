@@ -16,6 +16,11 @@ import {
   AlertCircle,
   Star,
   Table,
+  Plus,
+  Minus,
+  Trash2,
+  Columns,
+  Rows,
 } from "lucide-react";
 import { HeadingDropdown } from "@/components/ui/tiptap/heading-dropdown";
 import { cn } from "@/lib/utils";
@@ -23,6 +28,11 @@ import { useState, useEffect, useRef } from "react";
 import { sharedNavbarRef } from "./navigation";
 import { getStarred } from "@/actions/documents/get-starred";
 import { toggleStar } from "@/actions/documents/toggle-star";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface FormattingToolbarProps {
   editor: Editor | null;
@@ -122,25 +132,40 @@ export const FormattingToolbar = ({
   return (
     <div
       ref={toolbarRef}
-      className="fixed z-40 border-b border-gray-200 dark:border-[#1E1E20] px-8 py-2 bg-background dark:bg-[#0B0B0F]"
+      className="fixed z-[99999] border-b border-gray-200 dark:border-[#1E1E20] px-8 py-2 bg-background dark:bg-[#0B0B0F]"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
           {/* Undo/Redo */}
-          <button
-            onClick={() => editor.chain().focus().undo().run()}
-            disabled={!editor.can().undo()}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => editor.chain().focus().redo().run()}
-            disabled={!editor.can().redo()}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <RotateCw className="w-4 h-4" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => editor.chain().focus().undo().run()}
+                disabled={!editor.can().undo()}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>Undo</span>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => editor.chain().focus().redo().run()}
+                disabled={!editor.can().redo()}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <RotateCw className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>Redo</span>
+            </TooltipContent>
+          </Tooltip>
 
           <div className="w-px h-6 bg-gray-200 dark:bg-[#1E1E20] mx-2" />
 
@@ -156,159 +181,343 @@ export const FormattingToolbar = ({
           />
 
           {/* Bold */}
-          <button
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            className={cn(
-              "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
-              editor.isActive("bold")
-                ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            )}
-          >
-            <Bold className="w-4 h-4" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => editor.chain().focus().toggleBold().run()}
+                className={cn(
+                  "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
+                  editor.isActive("bold")
+                    ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                )}
+              >
+                <Bold className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>Bold</span>
+            </TooltipContent>
+          </Tooltip>
 
           {/* Italic */}
-          <button
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            className={cn(
-              "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
-              editor.isActive("italic")
-                ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            )}
-          >
-            <Italic className="w-4 h-4" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => editor.chain().focus().toggleItalic().run()}
+                className={cn(
+                  "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
+                  editor.isActive("italic")
+                    ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                )}
+              >
+                <Italic className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>Italic</span>
+            </TooltipContent>
+          </Tooltip>
 
           {/* Underline */}
-          <button
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            className={cn(
-              "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
-              editor.isActive("underline")
-                ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            )}
-          >
-            <Underline className="w-4 h-4" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => editor.chain().focus().toggleUnderline().run()}
+                className={cn(
+                  "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
+                  editor.isActive("underline")
+                    ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                )}
+              >
+                <Underline className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>Underline</span>
+            </TooltipContent>
+          </Tooltip>
 
           {/* Code Block */}
-          <button
-            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-            className={cn(
-              "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
-              editor.isActive("codeBlock")
-                ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            )}
-            title="Code Block"
-          >
-            <Code2 className="w-4 h-4" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+                className={cn(
+                  "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
+                  editor.isActive("codeBlock")
+                    ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                )}
+              >
+                <Code2 className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>Code Block</span>
+            </TooltipContent>
+          </Tooltip>
 
           <div className="w-px h-6 bg-gray-200 dark:bg-[#1E1E20] mx-2" />
 
           {/* Link */}
-          <button
-            onClick={() => {
-              const url = window.prompt("Enter URL:");
-              if (url) {
-                editor.chain().focus().setLink({ href: url }).run();
-              }
-            }}
-            className={cn(
-              "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
-              editor.isActive("link")
-                ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            )}
-          >
-            <Link className="w-4 h-4" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => {
+                  const url = window.prompt("Enter URL:");
+                  if (url) {
+                    editor.chain().focus().setLink({ href: url }).run();
+                  }
+                }}
+                className={cn(
+                  "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
+                  editor.isActive("link")
+                    ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                )}
+              >
+                <Link className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>Add Link</span>
+            </TooltipContent>
+          </Tooltip>
 
           {/* Bullet List */}
-          <button
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            className={cn(
-              "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
-              editor.isActive("bulletList")
-                ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            )}
-          >
-            <List className="w-4 h-4" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => editor.chain().focus().toggleBulletList().run()}
+                className={cn(
+                  "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
+                  editor.isActive("bulletList")
+                    ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                )}
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>Bullet List</span>
+            </TooltipContent>
+          </Tooltip>
 
           {/* Task List */}
-          <button
-            onClick={() => editor.chain().focus().toggleTaskList().run()}
-            className={cn(
-              "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
-              editor.isActive("taskList")
-                ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            )}
-          >
-            <CheckSquare className="w-4 h-4" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => editor.chain().focus().toggleTaskList().run()}
+                className={cn(
+                  "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
+                  editor.isActive("taskList")
+                    ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                )}
+              >
+                <CheckSquare className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>Task List</span>
+            </TooltipContent>
+          </Tooltip>
 
           {/* Image */}
-          <button
-            onClick={() => {
-              const url = window.prompt("Enter image URL:");
-              if (url) {
-                editor.chain().focus().setImage({ src: url }).run();
-              }
-            }}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-          >
-            <ImageIcon className="w-4 h-4" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => {
+                  const url = window.prompt("Enter image URL:");
+                  if (url) {
+                    editor.chain().focus().setImage({ src: url }).run();
+                  }
+                }}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              >
+                <ImageIcon className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>Insert Image</span>
+            </TooltipContent>
+          </Tooltip>
 
           {/* Quote */}
-          <button
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            className={cn(
-              "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
-              editor.isActive("blockquote")
-                ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            )}
-          >
-            <Quote className="w-4 h-4" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                className={cn(
+                  "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
+                  editor.isActive("blockquote")
+                    ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                )}
+              >
+                <Quote className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>Quote</span>
+            </TooltipContent>
+          </Tooltip>
 
           {/* Callout */}
-          <button
-            onClick={() => editor.chain().focus().toggleCallout().run()}
-            className={cn(
-              "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
-              editor.isActive("callout")
-                ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            )}
-            title="Callout"
-          >
-            <AlertCircle className="w-4 h-4" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => editor.chain().focus().toggleCallout().run()}
+                className={cn(
+                  "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
+                  editor.isActive("callout")
+                    ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                )}
+              >
+                <AlertCircle className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>Callout</span>
+            </TooltipContent>
+          </Tooltip>
+
+          <div className="w-px h-6 bg-gray-200 dark:bg-[#1E1E20] mx-2" />
 
           {/* Table */}
-          <button
-            onClick={() => {
-              editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
-            }}
-            className={cn(
-              "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
-              editor.isActive("table")
-                ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            )}
-            title="Insert Table"
-          >
-            <Table className="w-4 h-4" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => {
+                  editor
+                    .chain()
+                    .focus()
+                    .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+                    .run();
+                }}
+                className={cn(
+                  "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors",
+                  editor.isActive("table")
+                    ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1E1E20]"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                )}
+              >
+                <Table className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>Insert Table</span>
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Table Controls - Only show when table exists */}
+          {editor.getHTML().includes("<table") && (
+            <>
+              {/* Add Column */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() =>
+                      editor.chain().focus().addColumnAfter().run()
+                    }
+                    disabled={!editor.can().addColumnAfter()}
+                    className={cn(
+                      "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                      "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    )}
+                  >
+                    <Columns className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span>Add Column</span>
+                </TooltipContent>
+              </Tooltip>
+
+              {/* Add Row */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => editor.chain().focus().addRowAfter().run()}
+                    disabled={!editor.can().addRowAfter()}
+                    className={cn(
+                      "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                      "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    )}
+                  >
+                    <Rows className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span>Add Row</span>
+                </TooltipContent>
+              </Tooltip>
+
+              <div className="w-px h-6 bg-gray-200 dark:bg-[#1E1E20] mx-1" />
+
+              {/* Delete Column */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => editor.chain().focus().deleteColumn().run()}
+                    disabled={!editor.can().deleteColumn()}
+                    className={cn(
+                      "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                      "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    )}
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span>Delete Column</span>
+                </TooltipContent>
+              </Tooltip>
+
+              {/* Delete Row */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => editor.chain().focus().deleteRow().run()}
+                    disabled={!editor.can().deleteRow()}
+                    className={cn(
+                      "p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                      "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    )}
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span>Delete Row</span>
+                </TooltipContent>
+              </Tooltip>
+
+              {/* Delete Table */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => editor.chain().focus().deleteTable().run()}
+                    disabled={!editor.can().deleteTable()}
+                    className={cn(
+                      "p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                      "text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                    )}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span>Delete Table</span>
+                </TooltipContent>
+              </Tooltip>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
