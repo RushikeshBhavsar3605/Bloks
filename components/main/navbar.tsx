@@ -270,6 +270,14 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Save and Socket Indicators */}
+          <div className="flex items-center gap-4 text-xs text-gray-400">
+            <SaveIndicator />
+            <SocketIndicator />
+          </div>
+
+          <div className="w-px h-6 bg-gray-200 dark:bg-[#1E1E20] mx-2" />
+
           {/* Collaborators */}
           <div className="flex items-center -space-x-2">
             {document.collaborators
@@ -319,12 +327,6 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
               />
             </DialogContent>
           </Dialog>
-
-          {/* Save and Socket Indicators */}
-          <div className="flex items-center gap-1">
-            <SaveIndicator />
-            <SocketIndicator />
-          </div>
 
           {/* Menu */}
           <Menu documentId={document.id} />

@@ -1,18 +1,33 @@
 "use client";
 
 import { useSaveStatus } from "@/hooks/use-save-status";
-import { Badge } from "./ui/badge";
+import { AlertCircle, Check, Clock } from "lucide-react";
 
 export const SaveIndicator = () => {
   const { status, error } = useSaveStatus();
-  
+
   if (status === "Saving") {
-    return <Badge variant="saving">Saving...</Badge>;
-  }
-  
-  if (status === "Error") {
-    return <Badge variant="destructive" title={error}>Save Error</Badge>;
+    return (
+      <div className="flex items-center gap-1.5">
+        <Clock className="w-4 h-4 text-yellow-400 animate-spin" />
+        <span>Saving...</span>
+      </div>
+    );
   }
 
-  return <Badge variant="saved">Saved</Badge>;
+  if (status === "Error") {
+    return (
+      <div className="flex items-center gap-1.5">
+        <AlertCircle className="w-4 h-4 text-red-400" />
+        <span>Error</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <Check className="w-4 h-4 text-green-400" />
+      <span>Saved</span>
+    </div>
+  );
 };

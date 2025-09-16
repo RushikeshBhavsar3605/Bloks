@@ -1,18 +1,24 @@
 "use client";
 
+import { Wifi, WifiOff } from "lucide-react";
 import { useSocket } from "./providers/socket-provider";
-import { Badge } from "./ui/badge";
 
 export const SocketIndicator = () => {
   const { isConnected } = useSocket();
 
   if (!isConnected) {
     return (
-      <Badge variant="destructive" className="whitespace-nowrap">
-        Not connected
-      </Badge>
+      <div className="flex items-center gap-1.5">
+        <WifiOff className="w-4 h-4 text-red-400" />
+        <span>Offline</span>
+      </div>
     );
   }
 
-  return <Badge variant="connected">Connected</Badge>;
+  return (
+    <div className="flex items-center gap-1.5">
+      <Wifi className="w-4 h-4 text-green-400" />
+      <span>Online</span>
+    </div>
+  );
 };
