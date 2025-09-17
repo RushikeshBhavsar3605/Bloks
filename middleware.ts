@@ -4,6 +4,7 @@ import {
   DEFAULT_LOGIN_REDIRECT,
   apiAuthPrefix,
   authRoutes,
+  dynamicPublicRoutes,
   publicRoutes,
 } from "@/routes";
 
@@ -16,7 +17,9 @@ export default auth((req) => {
   const isApiAuthRoute = apiAuthPrefix.some((prefix) =>
     nextUrl.pathname.startsWith(prefix)
   );
-  const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
+  const isPublicRoute =
+    publicRoutes.includes(nextUrl.pathname) ||
+    dynamicPublicRoutes.some((route) => nextUrl.pathname.startsWith(route));
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
 
   if (isApiAuthRoute) {

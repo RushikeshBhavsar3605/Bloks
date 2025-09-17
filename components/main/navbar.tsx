@@ -16,6 +16,7 @@ import { Banner } from "./banner";
 import { Collaborator, Document } from "@prisma/client";
 import { Menu } from "./menu";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { Publish } from "./publish";
 
 interface NavbarProps {
   isCollapsed: boolean;
@@ -276,37 +277,46 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
             <SocketIndicator />
           </div>
 
-          <div className="w-px h-6 bg-gray-200 dark:bg-[#1E1E20] mx-2" />
+          {user?.id === document.userId && (
+            <>
+              <div className="w-[0.5px] h-6 bg-gray-200 dark:bg-[#1E1E20] mx-2" />
+              <Publish initialData={document} />
+            </>
+          )}
+
+          <div className="w-[0.5px] h-6 bg-gray-200 dark:bg-[#1E1E20] mx-2" />
 
           {/* Collaborators */}
-          <div className="flex items-center -space-x-2">
-            {document.collaborators
-              ?.slice(0, 3)
-              .filter((c) => c.userId !== user?.id)
-              .map((collaborator, index) => {
-                return (
-                  <>
-                    {collaborator.user.image ? (
-                      <img
-                        src={collaborator.user.image}
-                        alt={collaborator.user.name || "User"}
-                        className="w-7 h-7 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div
-                        key={collaborator.id}
-                        className={`w-7 h-7 ${getAvatarColor(
-                          collaborator.id
-                        )} rounded-full flex items-center justify-center text-xs font-medium text-white`}
-                        title={collaborator.user.name || "Collaborator"}
-                      >
-                        {getAvatarInitials(collaborator.user.name || "User")}
-                      </div>
-                    )}
-                  </>
-                );
-              })}
-          </div>
+          {document.collaborators.length > 1 && (
+            <div className="flex items-center -space-x-2">
+              {document.collaborators
+                ?.slice(0, 3)
+                .filter((c) => c.userId !== user?.id)
+                .map((collaborator, index) => {
+                  return (
+                    <>
+                      {collaborator.user.image ? (
+                        <img
+                          src={collaborator.user.image}
+                          alt={collaborator.user.name || "User"}
+                          className="w-7 h-7 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          key={collaborator.id}
+                          className={`w-7 h-7 ${getAvatarColor(
+                            collaborator.id
+                          )} rounded-full flex items-center justify-center text-xs font-medium text-white`}
+                          title={collaborator.user.name || "Collaborator"}
+                        >
+                          {getAvatarInitials(collaborator.user.name || "User")}
+                        </div>
+                      )}
+                    </>
+                  );
+                })}
+            </div>
+          )}
 
           {/* Document Settings Button */}
           <Dialog>

@@ -47,6 +47,10 @@ export const FormattingToolbar = ({
   userId,
   documentId,
 }: FormattingToolbarProps) => {
+  if (!editable) {
+    return null;
+  }
+
   const [starred, setStarred] = useState<boolean>(false);
   const [isToggling, setIsToggling] = useState(false);
   const [, forceUpdate] = useState({});
