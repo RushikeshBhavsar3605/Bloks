@@ -16,7 +16,6 @@ import { Banner } from "./banner";
 import { Collaborator, Document } from "@prisma/client";
 import { Menu } from "./menu";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { Publish } from "./publish";
 
 interface NavbarProps {
   isCollapsed: boolean;
@@ -227,6 +226,14 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
     };
   }, [socket, document]);
 
+  const updatePublishStatus = (isPublished: boolean) => {
+    if (!document) {
+      return;
+    }
+
+    setDocument({ ...document, isPublished });
+  };
+
   if (document === undefined) {
     return (
       <header className="h-[72px] flex items-center justify-between px-8 border-b border-gray-200 dark:border-[#1E1E20] bg-background dark:bg-[#0B0B0F]">
@@ -277,14 +284,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
             <SocketIndicator />
           </div>
 
-          {user?.id === document.userId && (
-            <>
-              <div className="w-[0.5px] h-6 bg-gray-200 dark:bg-[#1E1E20] mx-2" />
-              <Publish initialData={document} />
-            </>
-          )}
-
-          <div className="w-[0.5px] h-6 bg-gray-200 dark:bg-[#1E1E20] mx-2" />
+          <div className="w-px h-6 bg-gray-200 dark:bg-[#1E1E20] mx-2" />
 
           {/* Collaborators */}
           {document.collaborators.length > 1 && (
@@ -334,6 +334,8 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
                 documentIcon={document.icon}
                 documentCreatedAt={document.createdAt}
                 documentIsArchived={document.isArchived}
+                documentIsPublished={document.isPublished}
+                updatePublishStatus={updatePublishStatus}
               />
             </DialogContent>
           </Dialog>

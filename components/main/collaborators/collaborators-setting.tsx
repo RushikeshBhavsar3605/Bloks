@@ -7,9 +7,12 @@ import { toast } from "sonner";
 import { Spinner } from "@/components/spinner";
 import { useSocket } from "@/components/providers/socket-provider";
 import { getCollaborator } from "@/actions/collaborators/get-collaborator";
-import { Mail, Settings, UserPlus } from "lucide-react";
+import { Mail, Settings, UserPlus, Globe, Copy, Check } from "lucide-react";
 import { CollaboratorItem } from "./collaborator-item";
 import { DocumentDeleteSection } from "./document-delete-section";
+import { useOrigin } from "@/hooks/use-origin";
+import { publishDocument } from "@/actions/documents/publish-document";
+import { unpublishDocument } from "@/actions/documents/unpublish-document";
 
 export const CollaboratorsSetting = ({
   documentId,
@@ -18,6 +21,8 @@ export const CollaboratorsSetting = ({
   documentIcon,
   documentCreatedAt,
   documentIsArchived,
+  documentIsPublished,
+  updatePublishStatus,
 }: {
   documentId: string;
   documentOwnerId: string;
@@ -25,14 +30,19 @@ export const CollaboratorsSetting = ({
   documentIcon?: string | null;
   documentCreatedAt: Date;
   documentIsArchived: boolean;
+  documentIsPublished: boolean;
+  updatePublishStatus: (isPublished: boolean) => void;
 }) => {
   const [emailInput, setEmailInput] = useState("");
   const [isMounted, setIsMounted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copied, setCopied] = useState(false);
   const user = useCurrentUser();
   const { owner, isLoading, error, collaborators, setCollaborators } =
     useCollaborators(documentId);
   const isOwner = user?.id === owner?.id;
   const { socket } = useSocket();
+  const origin = useOrigin();
 
   // Hydration guard
   useEffect(() => {
@@ -244,6 +254,61 @@ export const CollaboratorsSetting = ({
     });
   };
 
+  // Function to handle publish document
+  const handlePublish = async () => {
+    setIsSubmitting(true);
+
+    const updatedDocument = publishDocument(documentId);
+
+    toast.promise(updatedDocument, {
+      loading: "Publishing...",
+      success: "Document published successfully!",
+      error: "Failed to publish document.",
+    });
+
+    updatedDocument
+      .then(() => {
+        updatePublishStatus(true);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
+  };
+
+  // Function to handle unpublish document
+  const handleUnpublish = async () => {
+    setIsSubmitting(true);
+
+    const updatedDocument = unpublishDocument(documentId);
+
+    toast.promise(updatedDocument, {
+      loading: "Unpublishing...",
+      success: "Document unpublished successfully!",
+      error: "Failed to unpublish document.",
+    });
+
+    updatedDocument
+      .then(() => {
+        updatePublishStatus(false);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
+  };
+
+  // Function to copy URL to clipboard
+  const handleCopyUrl = () => {
+    const url = `${origin}/preview/${documentId}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+
+    toast.success("URL copied to clipboard!");
+
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
+
   // Prevent hydration mismatch
   if (!isMounted) {
     return (
@@ -300,6 +365,125 @@ export const CollaboratorsSetting = ({
       </div>
 
       <div className="space-y-6 max-h-[calc(90vh-200px)] overflow-y-auto custom-scrollbar">
+        {/* Publish/Unpublish Section */}
+        {isOwner && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                Public sharing
+              </h3>
+              {documentIsPublished && (
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium rounded-full">
+                  <Globe className="h-3 w-3" />
+                  Live
+                </div>
+              )}
+            </div>
+
+            {documentIsPublished ? (
+              <div className="space-y-3">
+                {/* Primary sharing controls */}
+                <div className="p-4 bg-white dark:bg-[#1A1A1C] border border-gray-200 dark:border-[#2A2A2E] rounded-lg">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        Public link
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Anyone with link can view
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        className="flex-1 px-3 py-2.5 text-sm bg-gray-50 dark:bg-[#2A2A2E] border border-gray-300 dark:border-[#323236] rounded-lg text-gray-900 dark:text-white truncate focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        value={`${origin}/preview/${documentId}`}
+                        readOnly
+                      />
+                      <button
+                        onClick={handleCopyUrl}
+                        disabled={copied}
+                        className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="h-4 w-4" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4" />
+                            Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Secondary destructive action */}
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-[#1A1A1C] border border-gray-200 dark:border-[#2A2A2E] rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
+                      <Globe className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        Stop public sharing
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        Make document private
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleUnpublish}
+                    disabled={isSubmitting}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-3 h-3 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                        Unpublishing...
+                      </>
+                    ) : (
+                      "Unpublish"
+                    )}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-[#1A1A1C] border border-gray-200 dark:border-[#2A2A2E] rounded-lg">
+                <div className="w-10 h-10 bg-gray-100 dark:bg-[#2A2A2E] rounded-lg flex items-center justify-center">
+                  <Globe className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    Publish to web
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                    Share your work with anyone on the internet
+                  </p>
+                </div>
+                <button
+                  onClick={handlePublish}
+                  disabled={isSubmitting}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors text-sm"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Publishing...
+                    </>
+                  ) : (
+                    "Publish"
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Invite People Section */}
         {isOwner ? (
           <div className="space-y-4">
