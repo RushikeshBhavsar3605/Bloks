@@ -30,6 +30,57 @@ function htmlToMarkdown(html: string): string {
   return turndownService.turndown(html);
 }
 
+// Function to highlight matching text
+function highlightText(text: string, query: string): JSX.Element {
+  if (!query.trim()) {
+    return <span>{text}</span>;
+  }
+
+  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const parts = text.split(regex);
+
+  return (
+    <span>
+      {parts.map((part, index) => 
+        regex.test(part) ? (
+          <mark key={index} className="bg-yellow-200 dark:bg-yellow-600 text-gray-900 dark:text-white rounded px-0.5">
+            {part}
+          </mark>
+        ) : (
+          <span key={index}>{part}</span>
+        )
+      )}
+    </span>
+  );
+}
+
+// Function to get relevant content snippet with highlighting
+function getRelevantContentSnippet(content: string, query: string, maxLength: number = 120): string {
+  if (!content || !query.trim()) {
+    return content.substring(0, maxLength);
+  }
+
+  const lowerContent = content.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  const matchIndex = lowerContent.indexOf(lowerQuery);
+
+  if (matchIndex === -1) {
+    return content.substring(0, maxLength);
+  }
+
+  // Calculate start position to center the match
+  const startOffset = Math.max(0, matchIndex - Math.floor((maxLength - query.length) / 2));
+  const endOffset = Math.min(content.length, startOffset + maxLength);
+
+  let snippet = content.substring(startOffset, endOffset);
+  
+  // Add ellipsis if we're not at the beginning/end
+  if (startOffset > 0) snippet = "..." + snippet;
+  if (endOffset < content.length) snippet = snippet + "...";
+
+  return snippet;
+}
+
 function getRelativeTimeMessage(lastEditedAt: Date): string {
   const currDate = new Date();
   const diffMs = currDate.getTime() - lastEditedAt.getTime();
@@ -61,6 +112,7 @@ const StarredPage = () => {
   const [starredDocuments, setStarredDocuments] = useState<
     customDocumentWithMeta[]
   >([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   const onDocumentSelect = (documentId: string) => {
     router.push(`/documents/${documentId}`);
@@ -76,7 +128,20 @@ const StarredPage = () => {
     fetchStarredDocuments();
   }, [user?.id]);
 
-  const sortedDocuments = [...starredDocuments].sort((a, b) => {
+  // Filter documents based on search query
+  const filteredDocuments = starredDocuments.filter((doc) => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase();
+    const titleMatch = doc.title.toLowerCase().includes(query);
+    const contentMatch = doc.content 
+      ? htmlToMarkdown(doc.content).toLowerCase().includes(query)
+      : false;
+    
+    return titleMatch || contentMatch;
+  });
+
+  const sortedDocuments = [...filteredDocuments].sort((a, b) => {
     switch (sortBy) {
       case "name":
         return a.title.localeCompare(b.title);
@@ -97,11 +162,13 @@ const StarredPage = () => {
     <div className="flex-1 flex flex-col bg-white dark:bg-[#0B0B0F]">
       {/* Header */}
       <header className="h-[66px] flex items-center justify-between px-8 border-b border-gray-200 dark:border-[#1E1E20]">
-        <div className="flex items-center gap-4 flex-1 max-w-md">
+        <div className="flex items-center px-4 gap-4 flex-1 max-w-md border border-gray-200 dark:border-[#1E1E20] rounded-lg">
           <Search className="w-5 h-5 text-gray-500" />
           <Input
             placeholder="Search starred documents..."
-            className="bg-transparent border-none text-gray-900 dark:text-white placeholder-gray-500 text-sm focus-visible:ring-0 p-0"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-transparent border-none text-gray-900 dark:text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 focus:border-none focus:shadow-none p-0"
           />
         </div>
         <div className="flex items-center gap-3">
@@ -151,8 +218,19 @@ const StarredPage = () => {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                {starredDocuments.length} starred documents
+                {searchQuery.trim() 
+                  ? `${sortedDocuments.length} of ${starredDocuments.length} starred documents`
+                  : `${starredDocuments.length} starred documents`
+                }
               </span>
+              {searchQuery.trim() && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                >
+                  Clear search
+                </button>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
@@ -175,15 +253,29 @@ const StarredPage = () => {
           {sortedDocuments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="w-16 h-16 bg-gray-200 dark:bg-[#2A2A2E] rounded-full flex items-center justify-center mb-4">
-                <Star className="w-8 h-8 text-gray-600 dark:text-gray-400" />
+                {searchQuery.trim() ? (
+                  <Search className="w-8 h-8 text-gray-600 dark:text-gray-400" />
+                ) : (
+                  <Star className="w-8 h-8 text-gray-600 dark:text-gray-400" />
+                )}
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                No starred documents
+                {searchQuery.trim() ? "No matching documents" : "No starred documents"}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 max-w-md">
-                Star your important documents to quickly access them here. Click
-                the star icon on any document to add it to your favorites.
+                {searchQuery.trim() 
+                  ? `No starred documents match "${searchQuery}". Try a different search term or clear the search to see all starred documents.`
+                  : "Star your important documents to quickly access them here. Click the star icon on any document to add it to your favorites."
+                }
               </p>
+              {searchQuery.trim() && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm"
+                >
+                  Clear search
+                </button>
+              )}
             </div>
           ) : viewMode === "grid" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -196,8 +288,10 @@ const StarredPage = () => {
                   {/* Document Preview */}
                   <div className="aspect-video bg-gray-100 dark:bg-[#0F0F11] relative overflow-hidden p-4">
                     <div className="text-xs font-mono text-gray-600 dark:text-gray-300 leading-relaxed">
-                      {htmlToMarkdown(doc.content || "").substring(0, 120) +
-                        "..."}
+                      {highlightText(
+                        getRelevantContentSnippet(htmlToMarkdown(doc.content || ""), searchQuery, 120),
+                        searchQuery
+                      )}
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-gray-50 dark:from-[#161618] via-transparent to-transparent" />
                     <div className="absolute top-3 right-3 flex items-center gap-2">
@@ -213,7 +307,7 @@ const StarredPage = () => {
                   {/* Document Info */}
                   <div className="p-4">
                     <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-3 line-clamp-2 leading-tight group-hover:text-blue-400 transition-colors">
-                      {doc.title}
+                      {highlightText(doc.title, searchQuery)}
                     </h3>
                     <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
                       <UserIcon className="w-3 h-3" />
@@ -255,9 +349,17 @@ const StarredPage = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-400 transition-colors">
-                          {doc.title}
+                          {highlightText(doc.title, searchQuery)}
                         </h3>
                       </div>
+                      {searchQuery.trim() && doc.content && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-mono leading-relaxed">
+                          {highlightText(
+                            getRelevantContentSnippet(htmlToMarkdown(doc.content), searchQuery, 100),
+                            searchQuery
+                          )}
+                        </div>
+                      )}
                       <div className="flex items-center gap-4 text-xs text-gray-500">
                         <div className="flex items-center gap-1">
                           <UserIcon className="w-3 h-3" />

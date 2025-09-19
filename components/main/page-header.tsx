@@ -1,8 +1,7 @@
 "use client";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { Plus, Upload, MenuIcon } from "lucide-react";
+import { Upload, MenuIcon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { SearchInput } from "@/components/search/search-input";
 
@@ -68,21 +67,6 @@ export const PageHeader = ({
           </button>
         )}
         {additionalButtons}
-        <button
-          onClick={onNewPageClick}
-          className="flex items-center gap-2 px-4 py-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white text-sm font-medium rounded-lg transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          New Page
-        </button>
-        <Avatar className="w-8 h-8">
-          <AvatarFallback className="bg-blue-600 text-white text-sm font-medium">
-            {user?.name
-              ?.split(" ")
-              .map((n) => n[0])
-              .join("") || "U"}
-          </AvatarFallback>
-        </Avatar>
       </div>
     </header>
   );
