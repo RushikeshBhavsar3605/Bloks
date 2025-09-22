@@ -25,6 +25,8 @@ model User {
   emailVerified         DateTime?
   image                 String?
   password              String?
+  stripeCustomerId      String?
+  subscription          Subscription?
   accounts              Account[]
   isTwoFactorEnabled    Boolean                @default(false)
   twoFactorConfirmation TwoFactorConfirmation?
@@ -33,6 +35,16 @@ model User {
   editedDocuments       Document[]             @relation("LastEditor")   // optional backref
   collaborations        Collaborator[]
   stars                 Star[]                 // user's stars
+}
+
+model Subscription {
+  id                   String   @id @default(cuid()) @map("_id")
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id])
+  stripeCustomerId     String   @unique
+  priceId              String
+  plan                 String
+  hasAccess            Boolean  @default(false)
 }
 
 model Account {
