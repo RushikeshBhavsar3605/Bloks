@@ -321,12 +321,14 @@ export const Navigation = ({
         {!!params?.documentId ? (
           <Navbar isCollapsed={isCollapsed} onResetWidth={resetWidth} />
         ) : (
-          <PageHeader
-            searchPlaceholder="Search pages, projects, and more..."
-            onNewPageClick={onCreate}
-            isCollapsed={isCollapsed}
-            onResetWidth={resetWidth}
-          />
+          pathname !== "/billing" && (
+            <PageHeader
+              searchPlaceholder="Search pages, projects, and more..."
+              onNewPageClick={onCreate}
+              isCollapsed={isCollapsed}
+              onResetWidth={resetWidth}
+            />
+          )
         )}
       </div>
     </>

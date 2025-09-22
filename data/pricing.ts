@@ -1,4 +1,4 @@
-type planType = {
+export type planType = {
   id: string;
   name: string;
   price: {
@@ -17,9 +17,9 @@ type planType = {
   features: string[];
   limitations: string[];
   popular: boolean;
-}[];
+};
 
-export const plans: planType = [
+export const plans: planType[] = [
   {
     id: "free",
     name: "Free",
