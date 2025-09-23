@@ -51,7 +51,7 @@ export default async function handler(
     });
 
     if (!collaborator.success) {
-      return res.status(400).json({ error: "Invalid" });
+      return res.status(400).json({ error: collaborator.error });
     }
 
     // Generate verification token and send invite email

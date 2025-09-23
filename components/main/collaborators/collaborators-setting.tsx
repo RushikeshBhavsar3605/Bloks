@@ -175,12 +175,23 @@ export const CollaboratorsSetting = ({
       const data: {
         invited: boolean;
         newCollaborator: CollaboratorWithMeta;
+        error?: string;
       } = await response.json();
-
-      if (!response.ok) throw new Error("Invite failed");
 
       // Dismiss loading toast
       toast.dismiss(loadingToastId);
+
+      if (!response.ok) {
+        if (data.error && data.error === "Upgrade Required") {
+          openUpgradeAlert();
+          toast.error("Upgrade required to invite more collaborators");
+        } else {
+          toast.error(`Failed to invite ${emailInput}`, {
+            description: data.error || "Failed to send invitation",
+          });
+        }
+        return;
+      }
 
       // If added as collaborator, show success
       if (data.newCollaborator) {
@@ -269,7 +280,7 @@ export const CollaboratorsSetting = ({
       const result = await publishDocument(documentId);
 
       if (!result.success) {
-        if ('upgradeRequired' in result.data && result.data.upgradeRequired) {
+        if ("upgradeRequired" in result.data && result.data.upgradeRequired) {
           openUpgradeAlert();
           toast.error("Upgrade required to publish more documents");
         } else {

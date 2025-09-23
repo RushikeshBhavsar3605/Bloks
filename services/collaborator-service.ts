@@ -28,6 +28,30 @@ type ServiceResponse<T> = {
   status?: number;
 };
 
+const getUserPlanAccess = async (userId: string, documentId: string) => {
+  const collaboratorCount = await db.collaborator.count({
+    where: {
+      documentId,
+    },
+  });
+
+  const subscription = await db.subscription.findUnique({
+    where: {
+      userId,
+    },
+  });
+
+  if (
+    (!subscription || subscription?.plan === "free") &&
+    collaboratorCount >= 2
+  )
+    return false;
+
+  if (subscription?.plan === "pro" && collaboratorCount >= 8) return false;
+
+  return true;
+};
+
 // COLLABORATOR MANAGEMENT
 
 /**
@@ -53,6 +77,15 @@ export const addCollaborator = async ({
         success: false,
         error: "Document not found or you do not have permission to modify it",
         status: 403,
+      };
+    }
+
+    const hasAccess = await getUserPlanAccess(userId, documentId);
+    if (!hasAccess) {
+      return {
+        success: false,
+        error: "Upgrade Required",
+        status: 400,
       };
     }
 
