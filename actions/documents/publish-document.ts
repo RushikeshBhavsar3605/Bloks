@@ -2,8 +2,36 @@
 
 import { currentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getUserSubscription } from "../users/get-user-subscription";
+import { Document } from "@prisma/client";
 
-export const publishDocument = async (documentId: string) => {
+const getUserPlanAccess = async (userId: string) => {
+  const publishedDocumentCount = await db.document.count({
+    where: {
+      userId,
+      isPublished: true,
+    },
+  });
+
+  const subscriptionPlan = await getUserSubscription(userId);
+
+  if (subscriptionPlan === "free" && publishedDocumentCount >= 3) {
+    return false;
+  }
+
+  if (subscriptionPlan === "pro" && publishedDocumentCount >= 15) {
+    return false;
+  }
+
+  return true;
+};
+
+export const publishDocument = async (
+  documentId: string
+): Promise<{
+  success: boolean;
+  data: Document | { upgradeRequired: boolean };
+}> => {
   const user = await currentUser();
   if (!user) {
     throw new Error("Not authenticated");
@@ -23,12 +51,25 @@ export const publishDocument = async (documentId: string) => {
     throw new Error("Not authorized");
   }
 
-  return db.document.update({
-    where: {
-      id: document.id,
-    },
-    data: {
-      isPublished: true,
-    },
-  });
+  const hasAccess = await getUserPlanAccess(user.id);
+  if (!hasAccess) {
+    return {
+      success: false,
+      data: {
+        upgradeRequired: true,
+      },
+    };
+  }
+
+  return {
+    success: true,
+    data: await db.document.update({
+      where: {
+        id: document.id,
+      },
+      data: {
+        isPublished: true,
+      },
+    }),
+  };
 };

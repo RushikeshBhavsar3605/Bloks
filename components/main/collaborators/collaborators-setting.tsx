@@ -13,6 +13,8 @@ import { DocumentDeleteSection } from "./document-delete-section";
 import { useOrigin } from "@/hooks/use-origin";
 import { publishDocument } from "@/actions/documents/publish-document";
 import { unpublishDocument } from "@/actions/documents/unpublish-document";
+import { useUpgradeAlert } from "@/hooks/use-upgrade-alert";
+import { UpgradeAlertModal } from "@/components/modals/upgrade-alert-modal";
 
 export const CollaboratorsSetting = ({
   documentId,
@@ -43,6 +45,11 @@ export const CollaboratorsSetting = ({
   const isOwner = user?.id === owner?.id;
   const { socket } = useSocket();
   const origin = useOrigin();
+  const {
+    isOpen: isUpgradeAlertOpen,
+    openUpgradeAlert,
+    closeUpgradeAlert,
+  } = useUpgradeAlert();
 
   // Hydration guard
   useEffect(() => {
@@ -258,21 +265,27 @@ export const CollaboratorsSetting = ({
   const handlePublish = async () => {
     setIsSubmitting(true);
 
-    const updatedDocument = publishDocument(documentId);
+    try {
+      const result = await publishDocument(documentId);
 
-    toast.promise(updatedDocument, {
-      loading: "Publishing...",
-      success: "Document published successfully!",
-      error: "Failed to publish document.",
-    });
+      if (!result.success) {
+        if ('upgradeRequired' in result.data && result.data.upgradeRequired) {
+          openUpgradeAlert();
+          toast.error("Upgrade required to publish more documents");
+        } else {
+          toast.error("Failed to publish document");
+        }
+        return;
+      }
 
-    updatedDocument
-      .then(() => {
-        updatePublishStatus(true);
-      })
-      .finally(() => {
-        setIsSubmitting(false);
-      });
+      updatePublishStatus(true);
+      toast.success("Document published successfully!");
+    } catch (error) {
+      console.error("Error publishing document:", error);
+      toast.error("Failed to publish document");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Function to handle unpublish document
@@ -562,6 +575,12 @@ export const CollaboratorsSetting = ({
           />
         </div>
       </div>
+
+      {/* Upgrade Alert Modal */}
+      <UpgradeAlertModal
+        isOpen={isUpgradeAlertOpen}
+        onClose={closeUpgradeAlert}
+      />
     </div>
   );
 };
