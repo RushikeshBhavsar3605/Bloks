@@ -12,6 +12,9 @@ import {
 import { Skeleton } from "../ui/skeleton";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { UpgradeAlertModal } from "@/components/modals/upgrade-alert-modal";
+import { useUpgradeAlert } from "@/hooks/use-upgrade-alert";
+import { createDocumentWithUpgradeCheck } from "@/lib/document-creation-utils";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -51,6 +54,11 @@ export const Item = ({
 }: ItemProps) => {
   const user = useCurrentUser();
   const router = useRouter();
+  const {
+    isOpen: isUpgradeAlertOpen,
+    openUpgradeAlert,
+    closeUpgradeAlert,
+  } = useUpgradeAlert();
 
   const onArchive = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     event.stopPropagation();
@@ -81,27 +89,16 @@ export const Item = ({
     event.stopPropagation();
     if (!id) return;
 
-    const promise = fetch("/api/socket/documents", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ title: "Untitled", parentDocumentId: id }),
-    })
-      .then((res) => res.json())
-      .then((document: Document) => {
-        if ("error" in document) return;
+    createDocumentWithUpgradeCheck({
+      title: "Untitled",
+      parentDocumentId: id,
+      onSuccess: (document) => {
         if (!expanded) {
           onExpand?.();
         }
         router.push(`/documents/${document.id}`);
-      });
-
-    toast.promise(promise, {
-      loading: "Creating a new note...",
-      success: "New note created!",
-      error: "Failed to create a new note.",
+      },
+      onUpgradeRequired: openUpgradeAlert,
     });
   };
 
@@ -184,6 +181,10 @@ export const Item = ({
           )}
         </div>
       )}
+      <UpgradeAlertModal
+        isOpen={isUpgradeAlertOpen}
+        onClose={closeUpgradeAlert}
+      />
     </div>
   );
 };

@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { toast } from "sonner";
+import { UpgradeAlertModal } from "@/components/modals/upgrade-alert-modal";
+import { useUpgradeAlert } from "@/hooks/use-upgrade-alert";
+import { createDocumentWithUpgradeCheck } from "@/lib/document-creation-utils";
 import { SectionHeader } from "@/components/main/section-header";
 import { DocumentCard } from "@/components/main/document-card";
 import { ActionCard } from "@/components/main/action-card";
@@ -31,6 +33,11 @@ type customDocumentWithMeta = Document & {
 const LibraryPage = () => {
   const user = useCurrentUser();
   const router = useRouter();
+  const {
+    isOpen: isUpgradeAlertOpen,
+    openUpgradeAlert,
+    closeUpgradeAlert,
+  } = useUpgradeAlert();
   const [documents, setDocuments] = useState<customDocumentWithMeta[]>([]);
 
   useEffect(() => {
@@ -44,19 +51,12 @@ const LibraryPage = () => {
   }, [user?.id]);
 
   const onCreate = () => {
-    const promise = fetch("/api/socket/documents", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
+    createDocumentWithUpgradeCheck({
+      title: "Untitled",
+      onSuccess: (document) => {
+        router.push(`/documents/${document.id}`);
       },
-      body: JSON.stringify({ title: "Untitled" }),
-    });
-
-    toast.promise(promise, {
-      loading: "Creating a new note...",
-      success: "New note created!",
-      error: "Failed to create a new note.",
+      onUpgradeRequired: openUpgradeAlert,
     });
   };
 
@@ -197,6 +197,10 @@ const LibraryPage = () => {
           </section>
         </div>
       </main>
+      <UpgradeAlertModal
+        isOpen={isUpgradeAlertOpen}
+        onClose={closeUpgradeAlert}
+      />
     </div>
   );
 };

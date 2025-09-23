@@ -21,8 +21,10 @@ import {
 import { ElementRef, useCallback, useEffect, useRef, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 import UserItem from "./user-item";
-import { toast } from "sonner";
 import { DocumentTree } from "./document-list/document-tree";
+import { UpgradeAlertModal } from "@/components/modals/upgrade-alert-modal";
+import { useUpgradeAlert } from "@/hooks/use-upgrade-alert";
+import { createDocumentWithUpgradeCheck } from "@/lib/document-creation-utils";
 import { useSearch } from "@/hooks/use-search";
 import { Navbar } from "./navbar";
 import { PageHeader } from "./page-header";
@@ -45,6 +47,11 @@ export const Navigation = ({
   const searchParams = useSearchParams();
   const router = useRouter();
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const {
+    isOpen: isUpgradeAlertOpen,
+    openUpgradeAlert,
+    closeUpgradeAlert,
+  } = useUpgradeAlert();
 
   const isResizingRef = useRef(false);
   const sidebarRef = useRef<ElementRef<"aside">>(null);
@@ -124,19 +131,12 @@ export const Navigation = ({
   };
 
   const onCreate = () => {
-    const promise = fetch("/api/socket/documents", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
+    createDocumentWithUpgradeCheck({
+      title: "Untitled",
+      onSuccess: (document) => {
+        router.push(`/documents/${document.id}`);
       },
-      body: JSON.stringify({ title: "Untitled" }),
-    });
-
-    toast.promise(promise, {
-      loading: "Creating a new note...",
-      success: "New note created!",
-      error: "Failed to create a new note.",
+      onUpgradeRequired: openUpgradeAlert,
     });
   };
 
@@ -331,6 +331,10 @@ export const Navigation = ({
           )
         )}
       </div>
+      <UpgradeAlertModal
+        isOpen={isUpgradeAlertOpen}
+        onClose={closeUpgradeAlert}
+      />
     </>
   );
 };

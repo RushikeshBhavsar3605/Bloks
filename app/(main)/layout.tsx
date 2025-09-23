@@ -1,7 +1,6 @@
 "use client";
 
 import { Navigation } from "@/components/main/navigation";
-// Removed SearchCommand - now using integrated search in PageHeader
 import { Spinner } from "@/components/spinner";
 import { CollaboratorInviteToast } from "@/lib/toasts/collaborator-invite-toast";
 import { CollaboratorRemoveToast } from "@/lib/toasts/collaborator-remove-toast";
@@ -11,11 +10,18 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { SearchModal } from "@/components/search/search-modal";
-import { toast } from "sonner";
 import { TrashModal } from "@/components/modals/trash-modal";
+import { UpgradeAlertModal } from "@/components/modals/upgrade-alert-modal";
+import { useUpgradeAlert } from "@/hooks/use-upgrade-alert";
+import { createDocumentWithUpgradeCheck } from "@/lib/document-creation-utils";
 
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const { status } = useSession();
+  const {
+    isOpen: isUpgradeAlertOpen,
+    openUpgradeAlert,
+    closeUpgradeAlert,
+  } = useUpgradeAlert();
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -53,19 +59,12 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
   }, [searchParams]);
 
   const onCreate = () => {
-    const promise = fetch("/api/socket/documents", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
+    createDocumentWithUpgradeCheck({
+      title: "Untitled",
+      onSuccess: (document) => {
+        router.push(`/documents/${document.id}`);
       },
-      body: JSON.stringify({ title: "Untitled" }),
-    });
-
-    toast.promise(promise, {
-      loading: "Creating a new note...",
-      success: "New note created!",
-      error: "Failed to create a new note.",
+      onUpgradeRequired: openUpgradeAlert,
     });
   };
 
@@ -98,6 +97,10 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
           }}
         />
         <TrashModal isOpen={isTrashModalOpen} onClose={closeModal} />
+        <UpgradeAlertModal
+          isOpen={isUpgradeAlertOpen}
+          onClose={closeUpgradeAlert}
+        />
         <CollaboratorInviteToast />
         <CollaboratorRemoveToast />
         <CollaboratorUpdateToast />

@@ -28,6 +28,30 @@ interface UpdateDocumentProps extends DocumentActionProps {
   isPublished?: boolean;
 }
 
+const getUserPlanAccess = async (userId: string) => {
+  const documentCount = await db.document.count({
+    where: {
+      userId,
+    },
+  });
+
+  const subscription = await db.subscription.findUnique({
+    where: {
+      userId,
+    },
+  });
+
+  console.log("Count: ", JSON.stringify(documentCount));
+  console.log("Subscription: ", JSON.stringify(subscription));
+
+  if ((!subscription || subscription?.plan === "free") && documentCount >= 25)
+    return false;
+
+  if (subscription?.plan === "pro" && documentCount >= 200) return false;
+
+  return true;
+};
+
 // DOCUMENT ACCESS FUNCTIONS
 
 /**
@@ -137,6 +161,15 @@ export const createDocument = async ({
           status: 403,
         };
       }
+    }
+
+    const hasAccess = await getUserPlanAccess(userId);
+    if (!hasAccess) {
+      return {
+        success: false,
+        error: "Upgrade required",
+        status: 200,
+      };
     }
 
     // Create the document first
