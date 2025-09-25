@@ -78,7 +78,7 @@ export const CurrentPlanCard = ({
           <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-[#1E1E20]">
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
               <Calendar className="w-4 h-4" />
-              <span>Next billing: February 15, 2024</span>
+              <span>Billing</span>
             </div>
             <div className="flex items-center gap-3">
               <button

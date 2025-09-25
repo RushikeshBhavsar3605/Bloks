@@ -8,9 +8,48 @@ import { getUserSubscription } from "@/actions/users/get-user-subscription";
 import { CurrentPlanCard } from "@/components/main/billing/current-plan-card";
 import { UsageStatCard } from "@/components/main/billing/usage-stat-card";
 import { PricingCard } from "@/components/main/billing/pricing-card";
-import { PaymentMethodCard } from "@/components/main/billing/payment-method-card";
-import { BillingHistory } from "@/components/main/billing/billing-history";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getUsageStats } from "@/actions/users/get-usage-stats";
+
+const limitData = {
+  free: {
+    personal: 25,
+    public: 5,
+    coeditor: 3,
+  },
+  pro: {
+    personal: 25,
+    public: 5,
+    coeditor: 3,
+  },
+  team: {
+    personal: -1,
+    public: -1,
+    coeditor: -1,
+  },
+};
+
+const createUsageStat = (
+  label: string,
+  current: number,
+  limit: number,
+  isUnlimited = false
+) => {
+  const isUnlimitedPlan = limit === -1 || isUnlimited;
+  const limitText = isUnlimitedPlan ? "Unlimited" : limit;
+  const percentage = isUnlimitedPlan
+    ? 0
+    : current < limit
+    ? (current / limit) * 100
+    : 100;
+
+  return {
+    label,
+    current,
+    limit: limitText,
+    percentage,
+  };
+};
 
 const BillingPage = () => {
   const user = useCurrentUser();
@@ -19,6 +58,14 @@ const BillingPage = () => {
     "monthly"
   );
   const [currentPlan, setCurrentPlan] = useState<"free" | "pro" | "team">();
+  const [usageStats, setUsageStats] = useState<
+    {
+      label: string;
+      current: number;
+      limit: string | number;
+      percentage: number;
+    }[]
+  >();
 
   useEffect(() => {
     if (!user?.id) return;
@@ -31,6 +78,43 @@ const BillingPage = () => {
 
     fetchSubscription();
   }, [user?.id]);
+
+  useEffect(() => {
+    const fetchUsage = async () => {
+      if (!currentPlan) {
+        return null;
+      }
+
+      const usage = await getUsageStats();
+
+      const data = [
+        createUsageStat(
+          "Pages Created",
+          usage.personalDocument,
+          limitData[currentPlan].personal
+        ),
+        createUsageStat(
+          "Public Pages",
+          usage.publicDocument,
+          limitData[currentPlan].public
+        ),
+        createUsageStat(
+          "Team Members",
+          usage.coeditorsCount,
+          limitData[currentPlan].coeditor
+        ),
+        createUsageStat(
+          "Collaborated Pages",
+          usage.collaboratingDocument,
+          -1,
+          true
+        ),
+      ];
+      setUsageStats(data);
+    };
+
+    fetchUsage();
+  });
 
   // Helper function to get plan index from plan ID
   const getPlanIndex = (planId: "free" | "pro" | "team"): number => {
@@ -64,54 +148,7 @@ const BillingPage = () => {
     router.push(`${redirectUrl}?prefilled_email=${user?.email}`);
   };
 
-  const billingHistory = [
-    {
-      id: "inv-001",
-      date: "Jan 15, 2024",
-      description: "Pro Plan - Monthly",
-      amount: "₹499.00",
-      status: "paid",
-      downloadUrl: "#",
-    },
-    {
-      id: "inv-002",
-      date: "Dec 15, 2023",
-      description: "Pro Plan - Monthly",
-      amount: "₹499.00",
-      status: "paid",
-      downloadUrl: "#",
-    },
-    {
-      id: "inv-003",
-      date: "Nov 15, 2023",
-      description: "Pro Plan - Monthly",
-      amount: "₹499.00",
-      status: "paid",
-      downloadUrl: "#",
-    },
-    {
-      id: "inv-004",
-      date: "Oct 15, 2023",
-      description: "Pro Plan - Monthly",
-      amount: "₹499.00",
-      status: "paid",
-      downloadUrl: "#",
-    },
-  ];
-
-  const usageStats = [
-    { label: "Pages Created", current: 47, limit: "Unlimited", percentage: 0 },
-    { label: "Workspaces", current: 3, limit: 5, percentage: 60 },
-    { label: "Team Members", current: 4, limit: 10, percentage: 40 },
-    {
-      label: "Storage Used",
-      current: "2.3 GB",
-      limit: "100 GB",
-      percentage: 2.3,
-    },
-  ];
-
-  if (currentPlan === undefined || !user?.email) {
+  if (currentPlan === undefined || usageStats === undefined || !user?.email) {
     return (
       <div className="flex-1 flex flex-col bg-white dark:bg-[#0B0B0F] overflow-y-auto custom-scrollbar">
         <div className="px-8 py-8">
@@ -158,24 +195,6 @@ const BillingPage = () => {
                 <PricingCard.Skeleton key={index} />
               ))}
             </div>
-          </div>
-
-          {/* Payment Method Skeleton */}
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Payment Method
-            </h2>
-            <PaymentMethodCard.Skeleton />
-          </div>
-
-          {/* Billing History Skeleton */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Billing History
-              </h2>
-            </div>
-            <BillingHistory.Skeleton />
           </div>
         </div>
       </div>
@@ -267,29 +286,6 @@ const BillingPage = () => {
               />
             ))}
           </div>
-        </div>
-
-        {/* Payment Method */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Payment Method
-          </h2>
-          <PaymentMethodCard
-            cardNumber={4242}
-            expiry="12/2027"
-            cardType="VISA"
-            userEmail={user.email}
-          />
-        </div>
-
-        {/* Billing History */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Billing History
-            </h2>
-          </div>
-          <BillingHistory billingHistory={billingHistory} />
         </div>
       </div>
     </div>
