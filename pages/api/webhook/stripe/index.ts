@@ -159,12 +159,9 @@ export default async function handler(
         });
 
         if (existingSubscription) {
-          await db.subscription.update({
+          await db.subscription.delete({
             where: {
               stripeCustomerId: customerId,
-            },
-            data: {
-              hasAccess: false,
             },
           });
         } else {
@@ -234,13 +231,10 @@ export default async function handler(
             });
           }
         } else {
-          // Plan expired/canceled - revoke access but keep existing priceId/plan
-          await db.subscription.update({
+          // Plan expired/canceled
+          await db.subscription.delete({
             where: {
               stripeCustomerId: customerId,
-            },
-            data: {
-              hasAccess: false,
             },
           });
         }

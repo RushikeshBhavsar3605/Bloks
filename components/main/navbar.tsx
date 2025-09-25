@@ -1,6 +1,13 @@
 "use client";
 
-import { MenuIcon, Settings, ArrowLeft } from "lucide-react";
+import {
+  MenuIcon,
+  Settings,
+  ArrowLeft,
+  Download,
+  FileText,
+  FileImage,
+} from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Title } from "./title";
@@ -16,6 +23,19 @@ import { Banner } from "./banner";
 import { Collaborator, Document } from "@prisma/client";
 import { Menu } from "./menu";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { useUpgradeAlert } from "@/hooks/use-upgrade-alert";
+import { UpgradeAlertModal } from "../modals/upgrade-alert-modal";
+import { getUserSubscription } from "@/actions/users/get-user-subscription";
+import {
+  downloadDocumentAsMarkdown,
+  downloadDocumentAsHTML,
+} from "@/actions/documents/download-document";
 
 interface NavbarProps {
   isCollapsed: boolean;
@@ -55,6 +75,12 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
     DocumentWithMeta & { collaborators: CollaboratorWithMeta[] }
   >();
   const user = useCurrentUser();
+  const [userPlan, setUserPlan] = useState<"free" | "pro" | "team">("free");
+  const {
+    isOpen: isUpgradeAlertOpen,
+    openUpgradeAlert,
+    closeUpgradeAlert,
+  } = useUpgradeAlert();
 
   const fetchDocuments = useCallback(async () => {
     try {
@@ -100,9 +126,131 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
     }
   }, [params?.documentId, router]);
 
+  // Fetch user subscription plan
+  const fetchUserPlan = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      const plan = await getUserSubscription(user.id);
+      setUserPlan(plan);
+    } catch (error) {
+      console.error("Failed to fetch user plan:", error);
+      setUserPlan("free"); // Default to free on error
+    }
+  }, [user?.id]);
+
+  // Download handlers
+  const handleDownloadClick = () => {
+    if (userPlan === "free") {
+      openUpgradeAlert();
+      return;
+    }
+    // For pro and team plans, the dropdown will handle the options
+  };
+
+  const handleMarkdownDownload = async () => {
+    if (!document?.id) {
+      toast.error("Document not found");
+      return;
+    }
+
+    try {
+      toast.loading("Preparing download...");
+
+      const result = await downloadDocumentAsMarkdown(document.id);
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to download document");
+        return;
+      }
+
+      // Create blob and download file
+      const blob = new Blob([result.data!.content], {
+        type: result.data!.mimeType,
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = window.document.createElement("a");
+      link.href = url;
+      link.download = result.data!.filename;
+
+      // Trigger download
+      window.document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      window.document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.dismiss(); // Dismiss loading toast
+      toast.success("Document downloaded successfully!");
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.dismiss(); // Dismiss loading toast
+      toast.error("Failed to download document");
+    }
+  };
+
+  const handleHTMLDownload = async () => {
+    if (userPlan !== "team") {
+      toast.error("HTML download requires Team plan");
+      return;
+    }
+
+    if (!document?.id) {
+      toast.error("Document not found");
+      return;
+    }
+
+    try {
+      toast.loading("Generating HTML...");
+
+      const result = await downloadDocumentAsHTML(document.id);
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to generate HTML");
+        return;
+      }
+
+      if (!result.data?.content) {
+        toast.error("No HTML content received");
+        return;
+      }
+
+      // Create blob and download file
+      const blob = new Blob([result.data.content], {
+        type: result.data.mimeType,
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = window.document.createElement("a");
+      link.href = url;
+      link.download = result.data.filename;
+
+      // Trigger download
+      window.document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      window.document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.dismiss(); // Dismiss loading toast
+      toast.success("HTML downloaded successfully!");
+    } catch (error) {
+      console.error("HTML download error:", error);
+      toast.dismiss(); // Dismiss loading toast
+      toast.error("Failed to download HTML");
+    }
+  };
+
   useEffect(() => {
     fetchDocuments();
   }, [fetchDocuments]);
+
+  useEffect(() => {
+    fetchUserPlan();
+  }, [fetchUserPlan]);
 
   // Join document socket room
   useEffect(() => {
@@ -283,9 +431,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
             <SaveIndicator />
             <SocketIndicator />
           </div>
-
           <div className="w-px h-6 bg-gray-200 dark:bg-[#1E1E20] mx-2" />
-
           {/* Collaborators */}
           {document.collaborators.length > 1 && (
             <div className="flex items-center -space-x-2">
@@ -294,7 +440,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
                 .filter((c) => c.userId !== user?.id)
                 .map((collaborator, index) => {
                   return (
-                    <>
+                    <div key={collaborator.id}>
                       {collaborator.user.image ? (
                         <img
                           src={collaborator.user.image}
@@ -303,7 +449,6 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
                         />
                       ) : (
                         <div
-                          key={collaborator.id}
                           className={`w-7 h-7 ${getAvatarColor(
                             collaborator.id
                           )} rounded-full flex items-center justify-center text-xs font-medium text-white`}
@@ -312,11 +457,61 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
                           {getAvatarInitials(collaborator.user.name || "User")}
                         </div>
                       )}
-                    </>
+                    </div>
                   );
                 })}
             </div>
           )}
+
+          {/* Download Button */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-[#2A2A2E] hover:bg-gray-200 dark:hover:bg-[#323236] text-gray-900 dark:text-white text-sm rounded-lg transition-colors">
+                <Download className="w-4 h-4" />
+                Download
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={
+                  userPlan !== "free" ? handleMarkdownDownload : undefined
+                }
+                disabled={userPlan === "free"}
+                className={`flex items-center gap-2 ${
+                  userPlan !== "free"
+                    ? "cursor-pointer"
+                    : "cursor-not-allowed opacity-50"
+                }`}
+                title={userPlan === "free" ? "Upgrade to unlock" : ""}
+              >
+                <FileText className="w-4 h-4" />
+                Markdown
+                {userPlan === "free" && (
+                  <span className="ml-auto text-xs text-gray-500">
+                    Upgrade to unlock
+                  </span>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={userPlan === "team" ? handleHTMLDownload : undefined}
+                disabled={userPlan !== "team"}
+                className={`flex items-center gap-2 ${
+                  userPlan === "team"
+                    ? "cursor-pointer"
+                    : "cursor-not-allowed opacity-50"
+                }`}
+                title={userPlan !== "team" ? "Upgrade to unlock" : ""}
+              >
+                <FileImage className="w-4 h-4" />
+                HTML
+                {userPlan !== "team" && (
+                  <span className="ml-auto text-xs text-gray-500">
+                    Upgrade to unlock
+                  </span>
+                )}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Document Settings Button */}
           <Dialog>
@@ -339,9 +534,6 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
               />
             </DialogContent>
           </Dialog>
-
-          {/* Menu */}
-          <Menu documentId={document.id} />
         </div>
       </header>
 
@@ -352,6 +544,12 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
           isOwner={document.isOwner}
         />
       )}
+
+      {/* Upgrade Alert Modal */}
+      <UpgradeAlertModal
+        isOpen={isUpgradeAlertOpen}
+        onClose={closeUpgradeAlert}
+      />
     </>
   );
 };

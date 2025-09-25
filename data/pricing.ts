@@ -87,7 +87,7 @@ export const plans: planType[] = [
       "Unlimited documents",
       "Unlimited public publications",
       "Unlimited collaborators per document",
-      "Advanced export options (PDF, Markdown, HTML)",
+      "Advanced export options (Markdown, HTML)",
       "Community support",
     ],
     limitations: [],
