@@ -88,13 +88,6 @@ export const Navigation = ({
       onClick: () => openSearchModal(),
     },
     {
-      id: "notifications",
-      label: "Notifications",
-      icon: Bell,
-      path: "/notifications",
-      onClick: () => router.push("/notifications"),
-    },
-    {
       id: "billing",
       label: "Billing",
       icon: CreditCard,
