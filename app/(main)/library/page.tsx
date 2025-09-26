@@ -38,7 +38,7 @@ const LibraryPage = () => {
     openUpgradeAlert,
     closeUpgradeAlert,
   } = useUpgradeAlert();
-  const [documents, setDocuments] = useState<customDocumentWithMeta[]>([]);
+  const [documents, setDocuments] = useState<customDocumentWithMeta[]>();
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -111,21 +111,64 @@ const LibraryPage = () => {
     },
   ];
 
+  if (documents === undefined) {
+    return (
+      <div className="flex-1 flex flex-col bg-white dark:bg-[#0B0B0F]">
+        <div className="h-[72px]" />
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto custom-scrollbar">
+          <div className="px-8 py-8">
+            {/* Page Title Skeleton */}
+            <div className="mb-12">
+              <div className="flex items-center gap-2 text-xs font-medium text-gray-500 mb-2 tracking-wider">
+                <span>WORKSPACE</span>
+              </div>
+              <div className="h-8 w-48 bg-gray-200 dark:bg-[#2A2A2E] rounded animate-pulse mb-2" />
+            </div>
+
+            {/* Tabs Skeleton */}
+            <div className="flex items-center gap-8 mb-10">
+              <div className="pb-3 relative">
+                <div className="h-4 w-12 bg-gray-200 dark:bg-[#2A2A2E] rounded animate-pulse" />
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-200 dark:bg-[#2A2A2E] rounded-full" />
+              </div>
+            </div>
+
+            {/* Quick Actions Skeleton */}
+            <section className="mb-12">
+              <SectionHeader icon={Target} title="Quick Start" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <ActionCard.Skeleton key={index} variant="library" />
+                ))}
+              </div>
+            </section>
+
+            {/* Recent Pages Section Skeleton */}
+            <section>
+              <SectionHeader
+                icon={Clock}
+                title="Recent Pages"
+                actionButton={
+                  <div className="h-9 w-24 bg-gray-200 dark:bg-[#2A2A2E] rounded-lg animate-pulse" />
+                }
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <DocumentCard.Skeleton key={index} showPreview={true} />
+                ))}
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col bg-white dark:bg-[#0B0B0F]">
       <div className="h-[72px]" />
-      {/* Header */}
-      {/* <PageHeader 
-        searchPlaceholder="Search for pages, projects, tasks & folders"
-        showImportButton={true}
-        onNewPageClick={onCreate}
-        additionalButtons={
-          <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-[#2A2A2E] hover:bg-gray-200 dark:hover:bg-[#323236] text-gray-900 dark:text-white text-sm font-medium rounded-lg transition-colors">
-            <Upload className="w-4 h-4" />
-            Import
-          </button>
-        }
-      /> */}
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto custom-scrollbar">

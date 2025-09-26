@@ -142,10 +142,10 @@ DocumentCard.Skeleton = function DocumentCardSkeleton({
       {showPreview && (
         <div className="aspect-video bg-gray-100 dark:bg-[#0F0F11] relative overflow-hidden p-4">
           <div className="space-y-2">
-            <Skeleton className="h-3 w-full" />
             <Skeleton className="h-3 w-4/5" />
+            <Skeleton className="h-3 w-3/5" />
             <Skeleton className="h-3 w-3/4" />
-            <Skeleton className="h-3 w-2/3" />
+            <Skeleton className="h-3 w-2/4" />
           </div>
           <div className="absolute top-3 right-3">
             <Skeleton className="w-6 h-6 rounded" />
