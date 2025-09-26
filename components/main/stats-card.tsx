@@ -1,6 +1,7 @@
 "use client";
 
 import { LucideIcon, MoreHorizontal } from "lucide-react";
+import { Skeleton } from "../ui/skeleton";
 
 interface StatsCardProps {
   icon: LucideIcon;
@@ -35,7 +36,9 @@ export const StatsCard = ({
       className={`bg-gray-50 dark:bg-[#161618] border border-gray-200 dark:border-[#1E1E20] rounded-xl ${
         isFolder ? "p-5" : "p-6"
       } ${
-        onClick ? "hover:bg-gray-100 dark:hover:bg-[#1A1A1C] transition-colors cursor-pointer group" : ""
+        onClick
+          ? "hover:bg-gray-100 dark:hover:bg-[#1A1A1C] transition-colors cursor-pointer group"
+          : ""
       }`}
     >
       {/* Stats variant */}
@@ -47,16 +50,22 @@ export const StatsCard = ({
             </div>
             {change && (
               <span
-                className={`text-sm font-medium ${
-                  change.startsWith("+") ? "text-green-400" : "text-gray-600 dark:text-gray-400"
+                className={`text-sm font-medium whitespace-pre-line ${
+                  change.startsWith("+")
+                    ? "text-green-400"
+                    : "text-gray-600 dark:text-gray-400"
                 }`}
               >
                 {change}
               </span>
             )}
           </div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{value}</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">{label}</div>
+          <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            {value}
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            {label}
+          </div>
         </>
       )}
 
@@ -71,8 +80,50 @@ export const StatsCard = ({
               </button>
             )}
           </div>
-          <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-1 leading-tight">{name}</h3>
+          <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-1 leading-tight">
+            {name}
+          </h3>
           <p className="text-xs text-gray-500">{count} pages</p>
+        </>
+      )}
+    </div>
+  );
+};
+
+StatsCard.Skeleton = function StatsCardSkeleton({
+  variant = "stats",
+}: {
+  variant?: "stats" | "folder";
+}) {
+  const isFolder = variant === "folder";
+
+  return (
+    <div
+      className={`bg-gray-50 dark:bg-[#161618] border border-gray-200 dark:border-[#1E1E20] rounded-xl ${
+        isFolder ? "p-5" : "p-6"
+      }`}
+    >
+      {/* Stats variant skeleton */}
+      {!isFolder && (
+        <>
+          <div className="flex items-center justify-between mb-4">
+            <Skeleton className="w-10 h-10 rounded-lg" />
+            <Skeleton className="w-12 h-4" />
+          </div>
+          <Skeleton className="h-8 w-16 mb-1" />
+          <Skeleton className="h-4 w-24" />
+        </>
+      )}
+
+      {/* Folder variant skeleton */}
+      {isFolder && (
+        <>
+          <div className="flex items-start justify-between mb-4">
+            <Skeleton className="w-8 h-8 rounded" />
+            <Skeleton className="w-6 h-6 rounded" />
+          </div>
+          <Skeleton className="h-4 w-20 mb-1" />
+          <Skeleton className="h-3 w-16" />
         </>
       )}
     </div>

@@ -2,6 +2,7 @@
 
 import { MoreHorizontal, User } from "lucide-react";
 import TurndownService from "turndown";
+import { Skeleton } from "../ui/skeleton";
 
 // Initialize turndown service
 const turndownService = new TurndownService({
@@ -124,6 +125,68 @@ export const DocumentCard = ({
           <div className="text-xs text-gray-500">
             Modified {getRelativeTimeMessage(lastModified)}
           </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+DocumentCard.Skeleton = function DocumentCardSkeleton({
+  showPreview = false,
+}: {
+  showPreview?: boolean;
+}) {
+  return (
+    <div className="bg-gray-50 dark:bg-[#161618] border border-gray-200 dark:border-[#1E1E20] rounded-xl overflow-hidden">
+      {/* Preview Section Skeleton (only for library-style cards) */}
+      {showPreview && (
+        <div className="aspect-video bg-gray-100 dark:bg-[#0F0F11] relative overflow-hidden p-4">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-4/5" />
+            <Skeleton className="h-3 w-3/4" />
+            <Skeleton className="h-3 w-2/3" />
+          </div>
+          <div className="absolute top-3 right-3">
+            <Skeleton className="w-6 h-6 rounded" />
+          </div>
+        </div>
+      )}
+
+      {/* Card Content Skeleton */}
+      <div className={showPreview ? "p-4" : "p-5"}>
+        {/* Simple layout skeleton for documents page */}
+        {!showPreview && (
+          <>
+            <div className="flex items-center gap-3 mb-3">
+              <Skeleton className="w-8 h-8 rounded" />
+              <div className="flex-1 min-w-0">
+                <Skeleton className="h-4 w-32 mb-1" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+            </div>
+            <Skeleton className="h-3 w-24" />
+          </>
+        )}
+
+        {/* Complex layout skeleton for library page */}
+        {showPreview && (
+          <>
+            <div className="flex items-center gap-2 mb-2">
+              <Skeleton className="h-5 w-16 rounded" />
+            </div>
+            <Skeleton className="h-4 w-40 mb-3" />
+            <div className="flex items-center gap-2 mb-2">
+              <Skeleton className="w-3 h-3 rounded-full" />
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-3 w-1" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="w-6 h-6 rounded" />
+            </div>
+          </>
         )}
       </div>
     </div>
