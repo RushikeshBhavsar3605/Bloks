@@ -1,6 +1,6 @@
 "use client";
 
-import { getStarredDocuments } from "@/actions/documents/get-starred-documents";
+import { getStarredDocumentsPaginated } from "@/actions/documents/get-starred-documents-paginated";
 import { Input } from "@/components/ui/input";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Document, User } from "@prisma/client";
@@ -13,9 +13,11 @@ import {
   Search,
   Star,
   User as UserIcon,
+  Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { toast } from "sonner";
 import TurndownService from "turndown";
 
 // Initialize turndown service
@@ -36,14 +38,20 @@ function highlightText(text: string, query: string): JSX.Element {
     return <span>{text}</span>;
   }
 
-  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const regex = new RegExp(
+    `(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+    "gi"
+  );
   const parts = text.split(regex);
 
   return (
     <span>
-      {parts.map((part, index) => 
+      {parts.map((part, index) =>
         regex.test(part) ? (
-          <mark key={index} className="bg-yellow-200 dark:bg-yellow-600 text-gray-900 dark:text-white rounded px-0.5">
+          <mark
+            key={index}
+            className="bg-yellow-200 dark:bg-yellow-600 text-gray-900 dark:text-white rounded px-0.5"
+          >
             {part}
           </mark>
         ) : (
@@ -55,7 +63,11 @@ function highlightText(text: string, query: string): JSX.Element {
 }
 
 // Function to get relevant content snippet with highlighting
-function getRelevantContentSnippet(content: string, query: string, maxLength: number = 120): string {
+function getRelevantContentSnippet(
+  content: string,
+  query: string,
+  maxLength: number = 120
+): string {
   if (!content || !query.trim()) {
     return content.substring(0, maxLength);
   }
@@ -69,11 +81,14 @@ function getRelevantContentSnippet(content: string, query: string, maxLength: nu
   }
 
   // Calculate start position to center the match
-  const startOffset = Math.max(0, matchIndex - Math.floor((maxLength - query.length) / 2));
+  const startOffset = Math.max(
+    0,
+    matchIndex - Math.floor((maxLength - query.length) / 2)
+  );
   const endOffset = Math.min(content.length, startOffset + maxLength);
 
   let snippet = content.substring(startOffset, endOffset);
-  
+
   // Add ellipsis if we're not at the beginning/end
   if (startOffset > 0) snippet = "..." + snippet;
   if (endOffset < content.length) snippet = snippet + "...";
@@ -106,57 +121,104 @@ const StarredPage = () => {
   const user = useCurrentUser();
   const router = useRouter();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [sortBy, setSortBy] = useState<"name" | "modified" | "created">(
-    "modified"
-  );
   const [starredDocuments, setStarredDocuments] = useState<
     customDocumentWithMeta[]
   >([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(0);
+
+  const LIMIT = 10;
 
   const onDocumentSelect = (documentId: string) => {
     router.push(`/documents/${documentId}`);
   };
 
+  // Debounce search query
   useEffect(() => {
-    const fetchStarredDocuments = async () => {
-      const response = await getStarredDocuments(user?.id as string);
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 2000);
 
-      setStarredDocuments(response);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Fetch initial documents
+  useEffect(() => {
+    const fetchInitialDocuments = async () => {
+      setLoading(true);
+      try {
+        const response = await getStarredDocumentsPaginated(LIMIT, 0, "");
+        setStarredDocuments(response.documents);
+        setHasMore(response.hasMore);
+        setOffset(LIMIT);
+      } catch (error) {
+        console.error("Error fetching initial documents:", error);
+        toast.error("Failed to load starred documents");
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetchStarredDocuments();
+    if (user?.id) {
+      fetchInitialDocuments();
+    }
   }, [user?.id]);
 
-  // Filter documents based on search query
-  const filteredDocuments = starredDocuments.filter((doc) => {
-    if (!searchQuery.trim()) return true;
-    
-    const query = searchQuery.toLowerCase();
-    const titleMatch = doc.title.toLowerCase().includes(query);
-    const contentMatch = doc.content 
-      ? htmlToMarkdown(doc.content).toLowerCase().includes(query)
-      : false;
-    
-    return titleMatch || contentMatch;
-  });
-
-  const sortedDocuments = [...filteredDocuments].sort((a, b) => {
-    switch (sortBy) {
-      case "name":
-        return a.title.localeCompare(b.title);
-      case "created":
-        return (
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-      case "modified":
-      default:
-        return (
-          new Date(b.lastEditedAt || b.createdAt).getTime() -
-          new Date(a.lastEditedAt || a.createdAt).getTime()
-        );
+  // Handle search
+  useEffect(() => {
+    if (searchQuery !== debouncedSearchQuery) {
+      setSearching(true);
+      return;
     }
-  });
+
+    const fetchSearchResults = async () => {
+      setSearching(true);
+      try {
+        const response = await getStarredDocumentsPaginated(
+          LIMIT,
+          0,
+          debouncedSearchQuery
+        );
+        setStarredDocuments(response.documents);
+        setHasMore(response.hasMore);
+        setOffset(LIMIT);
+      } catch (error) {
+        console.error("Error searching starred documents:", error);
+        toast.error("Failed to search starred documents");
+      } finally {
+        setSearching(false);
+      }
+    };
+
+    fetchSearchResults();
+  }, [debouncedSearchQuery, searchQuery]);
+
+  // Load more documents
+  const loadMoreDocuments = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+
+    setLoadingMore(true);
+    try {
+      const response = await getStarredDocumentsPaginated(
+        LIMIT,
+        offset,
+        debouncedSearchQuery
+      );
+      setStarredDocuments((prev) => [...prev, ...response.documents]);
+      setHasMore(response.hasMore);
+      setOffset((prev) => prev + LIMIT);
+    } catch (error) {
+      console.error("Error loading more documents:", error);
+      toast.error("Failed to load more documents. Please try again.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [offset, debouncedSearchQuery, loadingMore, hasMore]);
 
   return (
     <div className="flex-1 flex flex-col bg-white dark:bg-[#0B0B0F]">
@@ -170,6 +232,9 @@ const StarredPage = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="bg-transparent border-none text-gray-900 dark:text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 focus:border-none focus:shadow-none p-0"
           />
+          {searching && (
+            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+          )}
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center bg-gray-100 dark:bg-[#161618] rounded-lg p-1">
@@ -218,12 +283,13 @@ const StarredPage = () => {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                {searchQuery.trim() 
-                  ? `${sortedDocuments.length} of ${starredDocuments.length} starred documents`
-                  : `${starredDocuments.length} starred documents`
-                }
+                {searching
+                  ? "Searching..."
+                  : `${starredDocuments.length} starred document${
+                      starredDocuments.length !== 1 ? "s" : ""
+                    }`}
               </span>
-              {searchQuery.trim() && (
+              {searchQuery.trim() && !searching && (
                 <button
                   onClick={() => setSearchQuery("")}
                   className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
@@ -232,25 +298,42 @@ const StarredPage = () => {
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <select
-                  value={sortBy}
-                  onChange={(e) =>
-                    setSortBy(e.target.value as "name" | "modified" | "created")
-                  }
-                  className="bg-gray-50 dark:bg-[#161618] border border-gray-200 dark:border-[#1E1E20] rounded-lg px-3 py-2 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="modified">Last Modified</option>
-                  <option value="name">Name</option>
-                  <option value="created">Date Created</option>
-                </select>
-              </div>
-            </div>
           </div>
 
-          {/* Documents Grid/List */}
-          {sortedDocuments.length === 0 ? (
+          {/* Loading State */}
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-50 dark:bg-[#161618] rounded-xl overflow-hidden border border-gray-200 dark:border-[#1E1E20]"
+                >
+                  <div className="aspect-video bg-gray-100 dark:bg-[#0F0F11] animate-pulse" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-4 bg-gray-200 dark:bg-[#2A2A2E] rounded animate-pulse" />
+                    <div className="h-3 bg-gray-200 dark:bg-[#2A2A2E] rounded w-3/4 animate-pulse" />
+                    <div className="h-3 bg-gray-200 dark:bg-[#2A2A2E] rounded w-1/2 animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : searching ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-50 dark:bg-[#161618] rounded-xl overflow-hidden border border-gray-200 dark:border-[#1E1E20]"
+                >
+                  <div className="aspect-video bg-gray-100 dark:bg-[#0F0F11] animate-pulse" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-4 bg-gray-200 dark:bg-[#2A2A2E] rounded animate-pulse" />
+                    <div className="h-3 bg-gray-200 dark:bg-[#2A2A2E] rounded w-3/4 animate-pulse" />
+                    <div className="h-3 bg-gray-200 dark:bg-[#2A2A2E] rounded w-1/2 animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : starredDocuments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="w-16 h-16 bg-gray-200 dark:bg-[#2A2A2E] rounded-full flex items-center justify-center mb-4">
                 {searchQuery.trim() ? (
@@ -260,13 +343,14 @@ const StarredPage = () => {
                 )}
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {searchQuery.trim() ? "No matching documents" : "No starred documents"}
+                {searchQuery.trim()
+                  ? "No matching documents"
+                  : "No starred documents"}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 max-w-md">
-                {searchQuery.trim() 
+                {searchQuery.trim()
                   ? `No starred documents match "${searchQuery}". Try a different search term or clear the search to see all starred documents.`
-                  : "Star your important documents to quickly access them here. Click the star icon on any document to add it to your favorites."
-                }
+                  : "Star your important documents to quickly access them here. Click the star icon on any document to add it to your favorites."}
               </p>
               {searchQuery.trim() && (
                 <button
@@ -278,114 +362,146 @@ const StarredPage = () => {
               )}
             </div>
           ) : viewMode === "grid" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {sortedDocuments.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="bg-gray-50 dark:bg-[#161618] rounded-xl overflow-hidden hover:bg-gray-100 dark:hover:bg-[#1A1A1C] transition-colors cursor-pointer group border border-gray-200 dark:border-[#1E1E20]"
-                  onClick={() => onDocumentSelect(doc.id)}
-                >
-                  {/* Document Preview */}
-                  <div className="aspect-video bg-gray-100 dark:bg-[#0F0F11] relative overflow-hidden p-4">
-                    <div className="text-xs font-mono text-gray-600 dark:text-gray-300 leading-relaxed">
-                      {highlightText(
-                        getRelevantContentSnippet(htmlToMarkdown(doc.content || ""), searchQuery, 120),
-                        searchQuery
-                      )}
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {starredDocuments.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="bg-gray-50 dark:bg-[#161618] rounded-xl overflow-hidden hover:bg-gray-100 dark:hover:bg-[#1A1A1C] transition-colors cursor-pointer group border border-gray-200 dark:border-[#1E1E20]"
+                    onClick={() => onDocumentSelect(doc.id)}
+                  >
+                    {/* Document Preview */}
+                    <div className="aspect-video bg-gray-100 dark:bg-[#0F0F11] relative overflow-hidden p-4">
+                      <div className="text-xs font-mono text-gray-600 dark:text-gray-300 leading-relaxed">
+                        {highlightText(
+                          getRelevantContentSnippet(
+                            htmlToMarkdown(doc.content || ""),
+                            debouncedSearchQuery,
+                            120
+                          ),
+                          debouncedSearchQuery
+                        )}
+                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-gray-50 dark:from-[#161618] via-transparent to-transparent" />
+                      <div className="absolute top-3 right-3 flex items-center gap-2">
+                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                        {doc.icon ? (
+                          <span className="text-xl">{doc.icon}</span>
+                        ) : (
+                          <FileText className="text-gray-600 dark:text-gray-400 w-6 h-6" />
+                        )}
+                      </div>
                     </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-gray-50 dark:from-[#161618] via-transparent to-transparent" />
-                    <div className="absolute top-3 right-3 flex items-center gap-2">
-                      <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                      {doc.icon ? (
-                        <span className="text-xl">{doc.icon}</span>
-                      ) : (
-                        <FileText className="text-gray-600 dark:text-gray-400 w-6 h-6" />
-                      )}
+
+                    {/* Document Info */}
+                    <div className="p-4">
+                      <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-3 line-clamp-2 leading-tight group-hover:text-blue-400 transition-colors">
+                        {highlightText(doc.title, debouncedSearchQuery)}
+                      </h3>
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                        <UserIcon className="w-3 h-3" />
+                        <span>{doc.lastEditedBy?.name}</span>
+                        <span>•</span>
+                        <span>
+                          {getRelativeTimeMessage(
+                            doc.lastEditedAt ? doc.lastEditedAt : doc.createdAt
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs text-gray-500">Starred</div>
+                        <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 dark:hover:bg-[#2A2A2E] rounded">
+                          <MoreHorizontal className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Document Info */}
-                  <div className="p-4">
-                    <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-3 line-clamp-2 leading-tight group-hover:text-blue-400 transition-colors">
-                      {highlightText(doc.title, searchQuery)}
-                    </h3>
-                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                      <UserIcon className="w-3 h-3" />
-                      <span>{doc.lastEditedBy?.name}</span>
-                      <span>•</span>
-                      <span>
-                        {getRelativeTimeMessage(
-                          doc.lastEditedAt ? doc.lastEditedAt : doc.createdAt
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="space-y-2">
+                {starredDocuments.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="bg-gray-50 dark:bg-[#161618] border border-gray-200 dark:border-[#1E1E20] rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-[#1A1A1C] transition-colors cursor-pointer group"
+                    onClick={() => onDocumentSelect(doc.id)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
+                        <Star className="w-4 h-4 text-yellow-400 fill-current flex-shrink-0" />
+                        {doc.icon ? (
+                          <span className="text-2xl">{doc.icon}</span>
+                        ) : (
+                          <FileText className="text-gray-600 dark:text-gray-400 w-7 h-7 mr-1" />
                         )}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs text-gray-500">Starred</div>
-                      <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 dark:hover:bg-[#2A2A2E] rounded">
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-400 transition-colors">
+                            {highlightText(doc.title, searchQuery)}
+                          </h3>
+                        </div>
+                        {searchQuery.trim() && doc.content && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-mono leading-relaxed">
+                            {highlightText(
+                              getRelevantContentSnippet(
+                                htmlToMarkdown(doc.content),
+                                searchQuery,
+                                100
+                              ),
+                              searchQuery
+                            )}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <div className="flex items-center gap-1">
+                            <UserIcon className="w-3 h-3" />
+                            <span>{doc.lastEditedBy?.name}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            <span>
+                              Modified{" "}
+                              {getRelativeTimeMessage(
+                                doc.lastEditedAt
+                                  ? doc.lastEditedAt
+                                  : doc.createdAt
+                              )}
+                            </span>
+                          </div>
+                          <span>Starred</span>
+                        </div>
+                      </div>
+                      <button className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-gray-200 dark:hover:bg-[#2A2A2E] rounded">
                         <MoreHorizontal className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                       </button>
                     </div>
                   </div>
+                ))}
+              </div>
+
+              {/* Load More Button */}
+              {hasMore && (
+                <div className="flex justify-center mt-8">
+                  <button
+                    onClick={loadMoreDocuments}
+                    disabled={loadingMore}
+                    className="flex items-center gap-2 px-6 py-3 bg-gray-100 dark:bg-[#2A2A2E] hover:bg-gray-200 dark:hover:bg-[#323236] disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      "Load More Documents"
+                    )}
+                  </button>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {sortedDocuments.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="bg-gray-50 dark:bg-[#161618] border border-gray-200 dark:border-[#1E1E20] rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-[#1A1A1C] transition-colors cursor-pointer group"
-                  onClick={() => onDocumentSelect(doc.id)}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-3">
-                      <Star className="w-4 h-4 text-yellow-400 fill-current flex-shrink-0" />
-                      {doc.icon ? (
-                        <span className="text-2xl">{doc.icon}</span>
-                      ) : (
-                        <FileText className="text-gray-600 dark:text-gray-400 w-7 h-7 mr-1" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-400 transition-colors">
-                          {highlightText(doc.title, searchQuery)}
-                        </h3>
-                      </div>
-                      {searchQuery.trim() && doc.content && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-mono leading-relaxed">
-                          {highlightText(
-                            getRelevantContentSnippet(htmlToMarkdown(doc.content), searchQuery, 100),
-                            searchQuery
-                          )}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <div className="flex items-center gap-1">
-                          <UserIcon className="w-3 h-3" />
-                          <span>{doc.lastEditedBy?.name}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          <span>
-                            Modified{" "}
-                            {getRelativeTimeMessage(
-                              doc.lastEditedAt
-                                ? doc.lastEditedAt
-                                : doc.createdAt
-                            )}
-                          </span>
-                        </div>
-                        <span>Starred</span>
-                      </div>
-                    </div>
-                    <button className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-gray-200 dark:hover:bg-[#2A2A2E] rounded">
-                      <MoreHorizontal className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </main>
