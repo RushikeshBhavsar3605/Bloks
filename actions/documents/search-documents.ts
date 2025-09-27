@@ -12,8 +12,10 @@ export const getSearch = async () => {
 
   const documents = await db?.document.findMany({
     where: {
-      userId: user.id,
-      isArchived: false,
+      OR: [
+        { userId: user.id },
+        { collaborators: { some: { userId: user.id } } },
+      ],
     },
     orderBy: {
       createdAt: "desc",

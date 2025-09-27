@@ -48,6 +48,7 @@ export function SearchModal({
   const [userModalUserId, setUserModalUserId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
@@ -101,12 +102,71 @@ export function SearchModal({
 
   // Scroll selected item into view
   useEffect(() => {
-    if (resultsRef.current) {
-      const selectedElement = resultsRef.current.children[
-        selectedIndex
-      ] as HTMLElement;
+    if (resultsRef.current && contentRef.current) {
+      // Find the selected button element across all result groups
+      let currentIndex = 0;
+      let selectedElement: HTMLElement | null = null;
+
+      // Iterate through all result groups to find the selected element
+      const resultGroups = resultsRef.current.children;
+      for (let i = 0; i < resultGroups.length; i++) {
+        const group = resultGroups[i] as HTMLElement;
+        const buttonsContainer = group.querySelector(".space-y-1");
+        if (buttonsContainer) {
+          const buttons = buttonsContainer.children;
+          for (let j = 0; j < buttons.length; j++) {
+            if (currentIndex === selectedIndex) {
+              selectedElement = buttons[j] as HTMLElement;
+              break;
+            }
+            currentIndex++;
+          }
+        }
+        if (selectedElement) break;
+      }
+
       if (selectedElement) {
-        selectedElement.scrollIntoView({ block: "nearest" });
+        // Get the content container bounds
+        const contentRect = contentRef.current.getBoundingClientRect();
+        const elementRect = selectedElement.getBoundingClientRect();
+
+        // Calculate if element is visible
+        const isVisible =
+          elementRect.top >= contentRect.top &&
+          elementRect.bottom <= contentRect.bottom;
+
+        if (!isVisible) {
+          // Scroll the content container to bring element into view
+          const scrollTop = contentRef.current.scrollTop;
+          const containerHeight = contentRef.current.clientHeight;
+
+          // Calculate element's position relative to the scrollable content
+          let elementOffsetTop = 0;
+          let currentElement = selectedElement;
+          while (currentElement && currentElement !== contentRef.current) {
+            elementOffsetTop += currentElement.offsetTop;
+            currentElement = currentElement.offsetParent as HTMLElement;
+          }
+
+          const elementHeight = selectedElement.offsetHeight;
+
+          let newScrollTop = scrollTop;
+
+          if (elementRect.top < contentRect.top) {
+            // Element is above visible area - scroll up
+            newScrollTop =
+              elementOffsetTop - containerHeight + elementHeight + 20; // 20px padding from top
+          } else if (elementRect.bottom > contentRect.bottom) {
+            // Element is below visible area - scroll down
+            newScrollTop =
+              elementOffsetTop - containerHeight + elementHeight + 20; // 20px padding from bottom
+          }
+
+          contentRef.current.scrollTo({
+            top: Math.max(0, newScrollTop), // Ensure we don't scroll to negative values
+            behavior: "smooth",
+          });
+        }
       }
     }
   }, [selectedIndex]);
@@ -258,7 +318,10 @@ export function SearchModal({
           </div>
 
           {/* Content */}
-          <div className="max-h-[calc(70vh-80px)] overflow-y-auto custom-scrollbar">
+          <div
+            ref={contentRef}
+            className="max-h-[calc(70vh-120px)] overflow-y-auto custom-scrollbar"
+          >
             {!query.trim() ? (
               /* Recent Searches & Quick Actions */
               <div className="p-4 space-y-6">
@@ -335,7 +398,20 @@ export function SearchModal({
                   </div>
                 </div>
               </div>
-            ) : searchResults.length === 0 && !isSearching ? (
+            ) : isSearching ? (
+              /* Searching State */
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-16 h-16 bg-gray-100 dark:bg-[#2A2A2E] rounded-full flex items-center justify-center mb-4">
+                  <Search className="w-8 h-8 text-gray-400 dark:text-gray-400 animate-pulse" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Searching...
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 max-w-md">
+                  Finding the best matches for &quot;{query}&quot;
+                </p>
+              </div>
+            ) : searchResults.length === 0 ? (
               /* No Results */
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="w-16 h-16 bg-gray-100 dark:bg-[#2A2A2E] rounded-full flex items-center justify-center mb-4">
@@ -454,8 +530,13 @@ export function SearchModal({
                 <span>esc to close</span>
               </div>
               <div>
-                {searchResults.length} result
-                {searchResults.length !== 1 ? "s" : ""}
+                {isSearching
+                  ? "Searching..."
+                  : searchResults.length > 0
+                  ? `Showing top ${searchResults.length} result${
+                      searchResults.length !== 1 ? "s" : ""
+                    }`
+                  : "No results"}
               </div>
             </div>
           )}
