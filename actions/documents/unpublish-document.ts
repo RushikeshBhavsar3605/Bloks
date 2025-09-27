@@ -29,6 +29,7 @@ export const unpublishDocument = async (documentId: string) => {
     },
     data: {
       isPublished: false,
+      publishedAt: null,
     },
   });
 };

@@ -69,6 +69,7 @@ export const publishDocument = async (
       },
       data: {
         isPublished: true,
+        publishedAt: new Date(),
       },
     }),
   };

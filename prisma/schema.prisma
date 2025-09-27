@@ -139,6 +139,8 @@ model Document {
   coverImage       String?
   icon             String?
   isPublished      Boolean
+  publishedAt      DateTime?
+  views            Int        @default(0)
 
   collaborators    Collaborator[]
   stars            Star[]    // stars on this document

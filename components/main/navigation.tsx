@@ -2,8 +2,8 @@
 
 import { cn } from "@/lib/utils";
 import {
-  Bell,
   ChevronsLeft,
+  ChevronsRight,
   CreditCard,
   Home,
   Library,
@@ -313,15 +313,23 @@ export const Navigation = ({
       >
         {!!params?.documentId ? (
           <Navbar isCollapsed={isCollapsed} onResetWidth={resetWidth} />
+        ) : pathname !== "/billing" && pathname !== "/explore" ? (
+          <PageHeader
+            searchPlaceholder="Search pages, projects, and more..."
+            onNewPageClick={onCreate}
+            isCollapsed={isCollapsed}
+            onResetWidth={resetWidth}
+          />
         ) : (
-          pathname !== "/billing" && (
-            <PageHeader
-              searchPlaceholder="Search pages, projects, and more..."
-              onNewPageClick={onCreate}
-              isCollapsed={isCollapsed}
-              onResetWidth={resetWidth}
-            />
-          )
+          <nav className="bg-transparent px-1 py-3 w-full">
+            {isCollapsed && (
+              <ChevronsRight
+                role="button"
+                onClick={resetWidth}
+                className="h-6 w-6 text-muted-foreground text-gray-600 dark:text-gray-400 rounded-sm hover:bg-gray-200 dark:hover:bg-[#1E1E20]"
+              />
+            )}
+          </nav>
         )}
       </div>
       <UpgradeAlertModal
