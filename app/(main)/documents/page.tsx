@@ -17,9 +17,6 @@ import {
   FileText,
   Users,
   ArrowRight,
-  Activity,
-  CheckCircle,
-  AlertCircle,
   Zap,
   Share2,
   Pencil,
@@ -35,7 +32,7 @@ import { getCoeditors } from "@/actions/collaborators/get-co-editors";
 import { getSharedDocuments } from "@/actions/collaborators/get-shared-documents";
 import { getLasteditedDocument } from "@/actions/documents/get-lastedited-document";
 import { Document, User } from "@prisma/client";
-import { getAllDocuments } from "@/actions/documents/get-all-documents";
+import { getAllDocumentsPaginated } from "@/actions/documents/get-all-documents-paginated";
 
 type customDocumentWithMeta = Document & {
   lastEditedBy: User | null;
@@ -154,9 +151,9 @@ const DocumentsPage = () => {
 
   useEffect(() => {
     const fetchDocuments = async () => {
-      const response = await getAllDocuments(4);
+      const response = await getAllDocumentsPaginated(4, 0);
 
-      setRecentDocuments(response);
+      setRecentDocuments(response.documents);
     };
 
     fetchDocuments();
