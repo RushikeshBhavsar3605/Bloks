@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { UpgradeAlertModal } from "@/components/modals/upgrade-alert-modal";
@@ -18,9 +18,11 @@ import {
   Briefcase,
   Calendar,
   Plus,
+  Loader2,
 } from "lucide-react";
-import { getAllDocuments } from "@/actions/documents/get-all-documents";
+import { getAllDocumentsPaginated } from "@/actions/documents/get-all-documents-paginated";
 import { Document, User } from "@prisma/client";
+import { toast } from "sonner";
 
 type customDocumentWithMeta = Document & {
   lastEditedBy: User | null;
@@ -38,17 +40,51 @@ const LibraryPage = () => {
     openUpgradeAlert,
     closeUpgradeAlert,
   } = useUpgradeAlert();
-  const [documents, setDocuments] = useState<customDocumentWithMeta[]>();
+  const [documents, setDocuments] = useState<customDocumentWithMeta[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(0);
 
+  const LIMIT = 10;
+
+  // Fetch initial documents
   useEffect(() => {
-    const fetchDocuments = async () => {
-      const response = await getAllDocuments();
-
-      setDocuments(response);
+    const fetchInitialDocuments = async () => {
+      setLoading(true);
+      try {
+        const response = await getAllDocumentsPaginated(LIMIT, 0);
+        setDocuments(response.documents);
+        setHasMore(response.hasMore);
+        setOffset(LIMIT);
+      } catch (error) {
+        console.error("Error fetching initial documents:", error);
+        toast.error("Failed to load documents");
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetchDocuments();
+    fetchInitialDocuments();
   }, [user?.id]);
+
+  // Load more documents
+  const loadMoreDocuments = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+
+    setLoadingMore(true);
+    try {
+      const response = await getAllDocumentsPaginated(LIMIT, offset);
+      setDocuments((prev) => [...prev, ...response.documents]);
+      setHasMore(response.hasMore);
+      setOffset((prev) => prev + LIMIT);
+    } catch (error) {
+      console.error("Error loading more documents:", error);
+      toast.error("Failed to load more documents. Please try again.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [offset, loadingMore, hasMore]);
 
   const onCreate = () => {
     createDocumentWithUpgradeCheck({
@@ -111,7 +147,7 @@ const LibraryPage = () => {
     },
   ];
 
-  if (documents === undefined) {
+  if (loading) {
     return (
       <div className="flex-1 flex flex-col bg-white dark:bg-[#0B0B0F]">
         <div className="h-[72px]" />
@@ -220,23 +256,57 @@ const LibraryPage = () => {
                 </button>
               }
             />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {documents.map((page) => (
-                <DocumentCard
-                  key={page.id}
-                  id={page.id}
-                  title={page.title}
-                  type="Document"
-                  icon={page.icon as string}
-                  preview={page.content || "Empty"}
-                  author={page.owner.name as string}
-                  timestamp={page.createdAt}
-                  lastModified={page.lastEditedAt ?? undefined}
-                  onClick={onDocumentSelect}
-                  showPreview={true}
-                />
-              ))}
-            </div>
+            {documents.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  No documents found
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Create your first document to get started
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {documents.map((page) => (
+                    <DocumentCard
+                      key={page.id}
+                      id={page.id}
+                      title={page.title}
+                      type="Document"
+                      icon={page.icon as string}
+                      preview={page.content || "Empty"}
+                      author={page.owner.name as string}
+                      timestamp={page.createdAt}
+                      lastModified={page.lastEditedAt ?? undefined}
+                      onClick={onDocumentSelect}
+                      showPreview={true}
+                    />
+                  ))}
+                </div>
+
+                {/* Load More Button */}
+                {hasMore && (
+                  <div className="flex justify-center mt-8">
+                    <button
+                      onClick={loadMoreDocuments}
+                      disabled={loadingMore}
+                      className="flex items-center gap-2 px-6 py-3 bg-gray-100 dark:bg-[#2A2A2E] hover:bg-gray-200 dark:hover:bg-[#323236] disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                      {loadingMore ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        "Load More Documents"
+                      )}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </section>
         </div>
       </main>
