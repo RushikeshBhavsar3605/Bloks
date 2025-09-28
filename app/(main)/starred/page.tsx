@@ -418,6 +418,26 @@ const StarredPage = () => {
                   </div>
                 ))}
               </div>
+
+              {/* Load More Button */}
+              {hasMore && (
+                <div className="flex justify-center mt-8">
+                  <button
+                    onClick={loadMoreDocuments}
+                    disabled={loadingMore}
+                    className="flex items-center gap-2 px-6 py-3 bg-gray-100 dark:bg-[#2A2A2E] hover:bg-gray-200 dark:hover:bg-[#323236] disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      "Load More Documents"
+                    )}
+                  </button>
+                </div>
+              )}
             </>
           ) : (
             <>
