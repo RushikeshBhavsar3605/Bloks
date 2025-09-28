@@ -3,6 +3,7 @@
 import { MoreHorizontal, User } from "lucide-react";
 import TurndownService from "turndown";
 import { Skeleton } from "../ui/skeleton";
+import React from "react";
 
 // Initialize turndown service
 const turndownService = new TurndownService({
@@ -32,6 +33,70 @@ function getRelativeTimeMessage(lastEditedAt: Date): string {
   return `${diffYears} years ago`;
 }
 
+// Function to highlight matching text
+function highlightText(text: string, query: string): JSX.Element {
+  if (!query.trim()) {
+    return <span>{text}</span>;
+  }
+
+  const regex = new RegExp(
+    `(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+    "gi"
+  );
+  const parts = text.split(regex);
+
+  return (
+    <span>
+      {parts.map((part, index) =>
+        regex.test(part) ? (
+          <mark
+            key={index}
+            className="bg-yellow-200 dark:bg-yellow-600 text-gray-900 dark:text-white rounded px-0.5"
+          >
+            {part}
+          </mark>
+        ) : (
+          <span key={index}>{part}</span>
+        )
+      )}
+    </span>
+  );
+}
+
+// Function to get relevant content snippet with highlighting
+function getRelevantContentSnippet(
+  content: string,
+  query: string,
+  maxLength: number = 150
+): string {
+  if (!content || !query.trim()) {
+    return content.substring(0, maxLength);
+  }
+
+  const lowerContent = content.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  const matchIndex = lowerContent.indexOf(lowerQuery);
+
+  if (matchIndex === -1) {
+    return content.substring(0, maxLength);
+  }
+
+  // Calculate start position to center the match
+  const startOffset = Math.max(
+    0,
+    matchIndex - Math.floor((maxLength - query.length) / 2)
+  );
+  const endOffset = Math.min(content.length, startOffset + maxLength);
+
+  let snippet = content.substring(startOffset, endOffset);
+
+  // Add ellipsis if we're not at the beginning/end
+  if (startOffset > 0) snippet = "..." + snippet;
+  if (endOffset < content.length) snippet = snippet + "...";
+
+  return snippet;
+}
+
 interface DocumentCardProps {
   id: string;
   title: string;
@@ -44,6 +109,7 @@ interface DocumentCardProps {
   workspace?: string;
   onClick: (id: string) => void;
   showPreview?: boolean;
+  searchQuery?: string; // Optional search query for highlighting
 }
 
 export const DocumentCard = ({
@@ -58,6 +124,7 @@ export const DocumentCard = ({
   workspace,
   onClick,
   showPreview = false,
+  searchQuery = "", // Default to empty string for backward compatibility
 }: DocumentCardProps) => {
   return (
     <div
@@ -68,7 +135,16 @@ export const DocumentCard = ({
       {showPreview && preview && (
         <div className="aspect-video bg-gray-100 dark:bg-[#0F0F11] relative overflow-hidden p-4">
           <div className="text-xs font-mono text-gray-600 dark:text-gray-300 leading-relaxed">
-            {htmlToMarkdown(preview).substring(0, 150)} ...
+            {searchQuery
+              ? highlightText(
+                  getRelevantContentSnippet(
+                    htmlToMarkdown(preview),
+                    searchQuery,
+                    150
+                  ),
+                  searchQuery
+                )
+              : htmlToMarkdown(preview).substring(0, 150) + " ..."}
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-gray-50 dark:from-[#161618] via-transparent to-transparent" />
           <div className="absolute top-3 right-3">
@@ -85,7 +161,7 @@ export const DocumentCard = ({
             <span className="text-2xl">{icon || "📄"}</span>
             <div className="flex-1 min-w-0">
               <h3 className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-blue-400 transition-colors line-clamp-1">
-                {title}
+                {searchQuery ? highlightText(title, searchQuery) : title}
               </h3>
               <p className="text-xs text-gray-500">{type}</p>
             </div>
@@ -101,7 +177,7 @@ export const DocumentCard = ({
               </span>
             </div>
             <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-3 line-clamp-2 leading-tight group-hover:text-blue-400 transition-colors">
-              {title}
+              {searchQuery ? highlightText(title, searchQuery) : title}
             </h3>
             {author && timestamp && (
               <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
