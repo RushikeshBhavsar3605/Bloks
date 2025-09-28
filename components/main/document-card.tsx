@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontal, User } from "lucide-react";
+import { MoreHorizontal, User, Star } from "lucide-react";
 import TurndownService from "turndown";
 import { Skeleton } from "../ui/skeleton";
 import React from "react";
@@ -110,6 +110,8 @@ interface DocumentCardProps {
   onClick: (id: string) => void;
   showPreview?: boolean;
   searchQuery?: string; // Optional search query for highlighting
+  showStarIcon?: boolean; // Optional star icon for starred documents
+  onStarClick?: (id: string, event: React.MouseEvent) => void; // Optional star click handler
 }
 
 export const DocumentCard = ({
@@ -125,6 +127,8 @@ export const DocumentCard = ({
   onClick,
   showPreview = false,
   searchQuery = "", // Default to empty string for backward compatibility
+  showStarIcon = false, // Default to false for backward compatibility
+  onStarClick, // Optional star click handler
 }: DocumentCardProps) => {
   return (
     <div
@@ -150,6 +154,18 @@ export const DocumentCard = ({
           <div className="absolute top-3 right-3">
             <span className="text-xl">{icon || "📄"}</span>
           </div>
+          {/* Star Icon */}
+          {showStarIcon && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onStarClick?.(id, e);
+              }}
+              className="absolute top-3 left-3 p-1 hover:bg-gray-200 dark:hover:bg-[#2A2A2E] rounded transition-colors"
+            >
+              <Star className="w-4 h-4 text-yellow-400 fill-current" />
+            </button>
+          )}
         </div>
       )}
 

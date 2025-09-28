@@ -4,97 +4,16 @@ import { getStarredDocumentsPaginated } from "@/actions/documents/get-starred-do
 import { Input } from "@/components/ui/input";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Document, User } from "@prisma/client";
-import {
-  Clock,
-  FileText,
-  Grid3X3,
-  List,
-  MoreHorizontal,
-  Search,
-  Star,
-  User as UserIcon,
-  Loader2,
-} from "lucide-react";
+import { Search, Star, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
-import TurndownService from "turndown";
+import { DocumentCard } from "@/components/main/document-card";
+import { toggleStar } from "@/actions/documents/toggle-star";
 
-// Initialize turndown service
-const turndownService = new TurndownService({
-  headingStyle: "atx",
-  codeBlockStyle: "fenced",
-});
-
-// Function to convert HTML to Markdown
-function htmlToMarkdown(html: string): string {
-  if (!html) return "";
-  return turndownService.turndown(html);
-}
-
-// Function to highlight matching text
-function highlightText(text: string, query: string): JSX.Element {
-  if (!query.trim()) {
-    return <span>{text}</span>;
-  }
-
-  const regex = new RegExp(
-    `(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-    "gi"
-  );
-  const parts = text.split(regex);
-
-  return (
-    <span>
-      {parts.map((part, index) =>
-        regex.test(part) ? (
-          <mark
-            key={index}
-            className="bg-yellow-200 dark:bg-yellow-600 text-gray-900 dark:text-white rounded px-0.5"
-          >
-            {part}
-          </mark>
-        ) : (
-          <span key={index}>{part}</span>
-        )
-      )}
-    </span>
-  );
-}
-
-// Function to get relevant content snippet with highlighting
-function getRelevantContentSnippet(
-  content: string,
-  query: string,
-  maxLength: number = 120
-): string {
-  if (!content || !query.trim()) {
-    return content.substring(0, maxLength);
-  }
-
-  const lowerContent = content.toLowerCase();
-  const lowerQuery = query.toLowerCase();
-  const matchIndex = lowerContent.indexOf(lowerQuery);
-
-  if (matchIndex === -1) {
-    return content.substring(0, maxLength);
-  }
-
-  // Calculate start position to center the match
-  const startOffset = Math.max(
-    0,
-    matchIndex - Math.floor((maxLength - query.length) / 2)
-  );
-  const endOffset = Math.min(content.length, startOffset + maxLength);
-
-  let snippet = content.substring(startOffset, endOffset);
-
-  // Add ellipsis if we're not at the beginning/end
-  if (startOffset > 0) snippet = "..." + snippet;
-  if (endOffset < content.length) snippet = snippet + "...";
-
-  return snippet;
-}
+type customDocumentWithMeta = Document & {
+  lastEditedBy: User | null;
+};
 
 function getRelativeTimeMessage(lastEditedAt: Date): string {
   const currDate = new Date();
@@ -113,14 +32,9 @@ function getRelativeTimeMessage(lastEditedAt: Date): string {
   return `${diffYears} years ago`;
 }
 
-type customDocumentWithMeta = Document & {
-  lastEditedBy: User | null;
-};
-
 const StarredPage = () => {
   const user = useCurrentUser();
   const router = useRouter();
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [starredDocuments, setStarredDocuments] = useState<
     customDocumentWithMeta[]
   >([]);
@@ -136,6 +50,21 @@ const StarredPage = () => {
 
   const onDocumentSelect = (documentId: string) => {
     router.push(`/documents/${documentId}`);
+  };
+
+  const onStarClick = async (documentId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    try {
+      await toggleStar({ userId: user?.id as string, documentId });
+      // Remove the document from the starred list
+      setStarredDocuments((prev) =>
+        prev.filter((doc) => doc.id !== documentId)
+      );
+      toast.success("Document removed from starred");
+    } catch (error) {
+      console.error("Error toggling star:", error);
+      toast.error("Failed to remove star");
+    }
   };
 
   // Debounce search query
@@ -236,30 +165,6 @@ const StarredPage = () => {
             <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
           )}
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center bg-gray-100 dark:bg-[#161618] rounded-lg p-1">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`p-2 rounded-md transition-colors ${
-                viewMode === "grid"
-                  ? "bg-gray-200 dark:bg-[#2A2A2E] text-gray-900 dark:text-white"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              }`}
-            >
-              <Grid3X3 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`p-2 rounded-md transition-colors ${
-                viewMode === "list"
-                  ? "bg-gray-200 dark:bg-[#2A2A2E] text-gray-900 dark:text-white"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              }`}
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
       </header>
 
       {/* Main Content */}
@@ -304,33 +209,13 @@ const StarredPage = () => {
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {Array.from({ length: 8 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="bg-gray-50 dark:bg-[#161618] rounded-xl overflow-hidden border border-gray-200 dark:border-[#1E1E20]"
-                >
-                  <div className="aspect-video bg-gray-100 dark:bg-[#0F0F11] animate-pulse" />
-                  <div className="p-4 space-y-3">
-                    <div className="h-4 bg-gray-200 dark:bg-[#2A2A2E] rounded animate-pulse" />
-                    <div className="h-3 bg-gray-200 dark:bg-[#2A2A2E] rounded w-3/4 animate-pulse" />
-                    <div className="h-3 bg-gray-200 dark:bg-[#2A2A2E] rounded w-1/2 animate-pulse" />
-                  </div>
-                </div>
+                <DocumentCard.Skeleton key={index} showPreview={true} />
               ))}
             </div>
           ) : searching ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {Array.from({ length: 6 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="bg-gray-50 dark:bg-[#161618] rounded-xl overflow-hidden border border-gray-200 dark:border-[#1E1E20]"
-                >
-                  <div className="aspect-video bg-gray-100 dark:bg-[#0F0F11] animate-pulse" />
-                  <div className="p-4 space-y-3">
-                    <div className="h-4 bg-gray-200 dark:bg-[#2A2A2E] rounded animate-pulse" />
-                    <div className="h-3 bg-gray-200 dark:bg-[#2A2A2E] rounded w-3/4 animate-pulse" />
-                    <div className="h-3 bg-gray-200 dark:bg-[#2A2A2E] rounded w-1/2 animate-pulse" />
-                  </div>
-                </div>
+                <DocumentCard.Skeleton key={index} showPreview={true} />
               ))}
             </div>
           ) : starredDocuments.length === 0 ? (
@@ -361,144 +246,26 @@ const StarredPage = () => {
                 </button>
               )}
             </div>
-          ) : viewMode === "grid" ? (
+          ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {starredDocuments.map((doc) => (
-                  <div
+                  <DocumentCard
                     key={doc.id}
-                    className="bg-gray-50 dark:bg-[#161618] rounded-xl overflow-hidden hover:bg-gray-100 dark:hover:bg-[#1A1A1C] transition-colors cursor-pointer group border border-gray-200 dark:border-[#1E1E20]"
-                    onClick={() => onDocumentSelect(doc.id)}
-                  >
-                    {/* Document Preview */}
-                    <div className="aspect-video bg-gray-100 dark:bg-[#0F0F11] relative overflow-hidden p-4">
-                      <div className="text-xs font-mono text-gray-600 dark:text-gray-300 leading-relaxed">
-                        {highlightText(
-                          getRelevantContentSnippet(
-                            htmlToMarkdown(doc.content || ""),
-                            debouncedSearchQuery,
-                            120
-                          ),
-                          debouncedSearchQuery
-                        )}
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-gray-50 dark:from-[#161618] via-transparent to-transparent" />
-                      <div className="absolute top-3 right-3 flex items-center gap-2">
-                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                        {doc.icon ? (
-                          <span className="text-xl">{doc.icon}</span>
-                        ) : (
-                          <FileText className="text-gray-600 dark:text-gray-400 w-6 h-6" />
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Document Info */}
-                    <div className="p-4">
-                      <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-3 line-clamp-2 leading-tight group-hover:text-blue-400 transition-colors">
-                        {highlightText(doc.title, debouncedSearchQuery)}
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                        <UserIcon className="w-3 h-3" />
-                        <span>{doc.lastEditedBy?.name}</span>
-                        <span>•</span>
-                        <span>
-                          {getRelativeTimeMessage(
-                            doc.lastEditedAt ? doc.lastEditedAt : doc.createdAt
-                          )}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-xs text-gray-500">Starred</div>
-                        <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 dark:hover:bg-[#2A2A2E] rounded">
-                          <MoreHorizontal className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Load More Button */}
-              {hasMore && (
-                <div className="flex justify-center mt-8">
-                  <button
-                    onClick={loadMoreDocuments}
-                    disabled={loadingMore}
-                    className="flex items-center gap-2 px-6 py-3 bg-gray-100 dark:bg-[#2A2A2E] hover:bg-gray-200 dark:hover:bg-[#323236] disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-white text-sm font-medium rounded-lg transition-colors"
-                  >
-                    {loadingMore ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Loading...
-                      </>
-                    ) : (
-                      "Load More Documents"
-                    )}
-                  </button>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div className="space-y-2">
-                {starredDocuments.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="bg-gray-50 dark:bg-[#161618] border border-gray-200 dark:border-[#1E1E20] rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-[#1A1A1C] transition-colors cursor-pointer group"
-                    onClick={() => onDocumentSelect(doc.id)}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-3">
-                        <Star className="w-4 h-4 text-yellow-400 fill-current flex-shrink-0" />
-                        {doc.icon ? (
-                          <span className="text-2xl">{doc.icon}</span>
-                        ) : (
-                          <FileText className="text-gray-600 dark:text-gray-400 w-7 h-7 mr-1" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-400 transition-colors">
-                            {highlightText(doc.title, searchQuery)}
-                          </h3>
-                        </div>
-                        {searchQuery.trim() && doc.content && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-mono leading-relaxed">
-                            {highlightText(
-                              getRelevantContentSnippet(
-                                htmlToMarkdown(doc.content),
-                                searchQuery,
-                                100
-                              ),
-                              searchQuery
-                            )}
-                          </div>
-                        )}
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
-                          <div className="flex items-center gap-1">
-                            <UserIcon className="w-3 h-3" />
-                            <span>{doc.lastEditedBy?.name}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            <span>
-                              Modified{" "}
-                              {getRelativeTimeMessage(
-                                doc.lastEditedAt
-                                  ? doc.lastEditedAt
-                                  : doc.createdAt
-                              )}
-                            </span>
-                          </div>
-                          <span>Starred</span>
-                        </div>
-                      </div>
-                      <button className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-gray-200 dark:hover:bg-[#2A2A2E] rounded">
-                        <MoreHorizontal className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                      </button>
-                    </div>
-                  </div>
+                    id={doc.id}
+                    title={doc.title}
+                    icon={doc.icon}
+                    type="Document"
+                    preview={doc.content || ""}
+                    author={doc.lastEditedBy?.name || "Unknown"}
+                    timestamp={doc.lastEditedAt || doc.createdAt}
+                    workspace="Starred"
+                    onClick={onDocumentSelect}
+                    showPreview={true}
+                    searchQuery={debouncedSearchQuery}
+                    showStarIcon={true}
+                    onStarClick={onStarClick}
+                  />
                 ))}
               </div>
 
