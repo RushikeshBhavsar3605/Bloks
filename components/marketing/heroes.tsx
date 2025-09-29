@@ -1,9 +1,22 @@
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "../ui/button";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+
+// Animation constants
+const ANIMATION_CONFIG = {
+  SPEED: 1, // Pixels per frame
+  MIN_SPACING: 80, // Minimum space between elements
+  POSITION_CALC_DELAY: 100, // Delay for position calculation
+  REPOSITION_THRESHOLD: 100, // Extra space before repositioning
+} as const;
 
 export const Heroes = ({ onSignUp }: { onSignUp(): void }) => {
-  const [isPaused, setIsPaused] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const elementsRef = useRef<HTMLDivElement[]>([]);
+  const animationRef = useRef<number>();
+  const positionsRef = useRef<number[]>([]);
+  const isPausedRef = useRef(false);
+  const elementWidthsRef = useRef<number[]>([]);
 
   // Company data for the carousel
   const companies = [
@@ -27,6 +40,86 @@ export const Heroes = ({ onSignUp }: { onSignUp(): void }) => {
     "Cocoon",
     "Brightback",
   ];
+
+  // Calculate element widths and positions
+  const calculatePositions = () => {
+    elementWidthsRef.current = [];
+
+    // Calculate actual width of each element
+    elementsRef.current.forEach((element, index) => {
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        elementWidthsRef.current[index] =
+          rect.width + ANIMATION_CONFIG.MIN_SPACING;
+      }
+    });
+
+    // Calculate cumulative positions based on actual widths
+    let currentPosition = 0;
+    positionsRef.current = elementWidthsRef.current.map((width) => {
+      const position = currentPosition;
+      currentPosition += width;
+      return position;
+    });
+  };
+
+  // Handle element repositioning when it moves off-screen
+  const repositionElement = (position: number, index: number): number => {
+    const elementWidth = elementWidthsRef.current[index] || 0;
+
+    if (position < -(elementWidth + ANIMATION_CONFIG.REPOSITION_THRESHOLD)) {
+      const maxPosition = Math.max(...positionsRef.current);
+      const lastElementIndex = positionsRef.current.indexOf(maxPosition);
+      const lastElementWidth = elementWidthsRef.current[lastElementIndex] || 0;
+      return maxPosition + lastElementWidth;
+    }
+
+    return position - ANIMATION_CONFIG.SPEED;
+  };
+
+  // Apply transforms to all elements
+  const applyTransforms = () => {
+    elementsRef.current.forEach((element, index) => {
+      if (element) {
+        element.style.transform = `translateX(${positionsRef.current[index]}px)`;
+      }
+    });
+  };
+
+  // Main animation loop
+  const animate = () => {
+    if (!containerRef.current) return;
+
+    if (isPausedRef.current) {
+      animationRef.current = requestAnimationFrame(animate);
+      return;
+    }
+
+    // Update positions
+    positionsRef.current = positionsRef.current.map(repositionElement);
+
+    // Apply transforms
+    applyTransforms();
+
+    animationRef.current = requestAnimationFrame(animate);
+  };
+
+  // Initialize carousel animation
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    // Calculate positions after elements are rendered
+    setTimeout(calculatePositions, ANIMATION_CONFIG.POSITION_CALC_DELAY);
+
+    // Start animation
+    animate();
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [companies.length]);
 
   return (
     <section className="relative py-24 lg:py-32 overflow-hidden">
@@ -75,41 +168,29 @@ export const Heroes = ({ onSignUp }: { onSignUp(): void }) => {
           {/* Social Proof - Enhanced Carousel */}
           <div className="flex flex-col items-center gap-6">
             <p className="text-sm text-muted-foreground">Trusted by teams at</p>
-            <div className="relative w-full max-w-6xl overflow-hidden">
-              <style jsx>{`
-                @keyframes scroll {
-                  0% {
-                    transform: translateX(100%);
-                  }
-                  100% {
-                    transform: translateX(-100%);
-                  }
-                }
-                .carousel-container {
-                  animation: scroll 30s linear infinite;
-                  animation-play-state: ${isPaused ? "paused" : "running"};
-                }
-              `}</style>
-
+            <div className="relative w-full max-w-6xl overflow-hidden h-8 [mask-image:linear-gradient(to_right,transparent,black_48px,black_calc(100%-48px),transparent)] [-webkit-mask-image:linear-gradient(to_right,transparent,black_48px,black_calc(100%-48px),transparent)] [mask-mode:alpha]">
               <div
-                className="flex carousel-container"
-                onMouseEnter={() => setIsPaused(true)}
-                onMouseLeave={() => setIsPaused(false)}
+                ref={containerRef}
+                className="relative w-full h-full"
+                onMouseEnter={() => (isPausedRef.current = true)}
+                onMouseLeave={() => (isPausedRef.current = false)}
               >
-                {/* Continuous stream of companies for seamless scrolling */}
-                {[...companies, ...companies].map((company, index) => (
+                {/* Single array of companies with circular positioning */}
+                {companies.map((company, index) => (
                   <div
-                    key={index}
-                    className="text-base sm:text-lg font-semibold opacity-60 hover:opacity-100 transition-opacity duration-300 whitespace-nowrap cursor-default flex-shrink-0 mx-6 sm:mx-8"
+                    key={company}
+                    ref={(el) => {
+                      if (el) elementsRef.current[index] = el;
+                    }}
+                    className="absolute top-0 -translate-y-1/2 text-base sm:text-lg font-semibold opacity-60 hover:opacity-100 transition-opacity duration-300 whitespace-nowrap cursor-default"
+                    style={{
+                      transform: `translateX(0px) translateY(-50%)`,
+                    }}
                   >
                     {company}
                   </div>
                 ))}
               </div>
-
-              {/* Gradient overlays for fade effect */}
-              <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-20 bg-gradient-to-r from-background to-transparent pointer-events-none z-10" />
-              <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-20 bg-gradient-to-l from-background to-transparent pointer-events-none z-10" />
             </div>
           </div>
         </div>
