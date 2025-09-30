@@ -145,7 +145,8 @@ const BillingPage = () => {
     }
 
     // Navigate to the appropriate URL
-    router.push(`${redirectUrl}?prefilled_email=${user?.email}`);
+    const url = `${redirectUrl}?prefilled_email=${user?.email}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   if (currentPlan === undefined || usageStats === undefined || !user?.email) {

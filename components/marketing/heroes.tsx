@@ -147,10 +147,9 @@ export const Heroes = ({ onSignUp }: { onSignUp(): void }) => {
 
           {/* Subtitle */}
           <p className="text-base sm:text-lg lg:text-xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed font-normal">
-            Break free from rigid folder structures. With Jotion&apos;s
-            revolutionary approach, every document becomes a container—nest
-            files infinitely, organize naturally, and let your ideas flow
-            without boundaries.
+            Jotion is a connected workspace where better, faster work happens.
+            Write, plan, share, and get organized. Everything you need in one
+            place.
           </p>
 
           {/* CTA Buttons */}

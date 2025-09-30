@@ -2,39 +2,17 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useCurrentUser } from "@/hooks/use-current-user";
 import { SectionHeader } from "@/components/main/section-header";
 import { DocumentCard } from "@/components/main/document-card";
 import { StatsCard } from "@/components/main/stats-card";
 import { PageTitle } from "@/components/main/page-title";
-import { Globe, Eye, Search, FileText, Calendar, Loader2 } from "lucide-react";
+import { Globe, Search, FileText, Calendar, Loader2 } from "lucide-react";
 import { DocumentWithMeta } from "@/types/shared";
 import { getPublicDocumentsPaginated } from "@/actions/documents/get-public-documents-paginated";
 import { getPublicPageStats } from "@/actions/documents/get-public-page-stats";
 import { toast } from "sonner";
 
-interface PublicDocument {
-  id: string;
-  title: string;
-  content: string;
-  icon: string;
-  author: string;
-  createdAt: Date;
-  views: number;
-  likes: number;
-  category: string;
-  tags: string[];
-}
-
-const formatNumber = (num: number) => {
-  if (num >= 1000) {
-    return `${(num / 1000).toFixed(1)}k`;
-  }
-  return num.toString();
-};
-
 const ExplorePage = () => {
-  const user = useCurrentUser();
   const router = useRouter();
   const [documents, setDocuments] = useState<DocumentWithMeta[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -42,7 +20,6 @@ const ExplorePage = () => {
   const [stats, setStats] = useState<{
     totalDocuments: number;
     recentlyPublished: number;
-    mostPopularViews: number;
   }>();
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -164,8 +141,8 @@ const ExplorePage = () => {
             </div>
             <section className="mb-12">
               <SectionHeader icon={FileText} title="Content Overview" />
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {Array.from({ length: 3 }).map((_, index) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {Array.from({ length: 2 }).map((_, index) => (
                   <StatsCard.Skeleton key={index} variant="stats" />
                 ))}
               </div>
@@ -173,15 +150,6 @@ const ExplorePage = () => {
             <section className="mb-8">
               <div className="flex flex-col md:flex-row gap-4 mb-6">
                 <div className="flex-1 h-10 bg-gray-200 dark:bg-[#2A2A2E] rounded-lg animate-pulse" />
-                <div className="h-10 w-32 bg-gray-200 dark:bg-[#2A2A2E] rounded-lg animate-pulse" />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {Array.from({ length: 1 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="h-8 w-20 bg-gray-200 dark:bg-[#2A2A2E] rounded-full animate-pulse"
-                  />
-                ))}
               </div>
             </section>
             <section>
@@ -213,13 +181,6 @@ const ExplorePage = () => {
       icon: Calendar,
       color: "text-green-400",
     },
-    {
-      label: "Most Popular",
-      value: formatNumber(stats.mostPopularViews),
-      change: "Views on top document",
-      icon: Eye,
-      color: "text-purple-400",
-    },
   ];
 
   return (
@@ -235,7 +196,7 @@ const ExplorePage = () => {
 
           <section className="mb-12">
             <SectionHeader icon={FileText} title="Content Overview" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {statsData.map((stat, index) => (
                 <StatsCard
                   key={index}
@@ -314,7 +275,7 @@ const ExplorePage = () => {
                       preview={doc.content || ""}
                       author={doc.owner.name || ""}
                       timestamp={doc.publishedAt || doc.createdAt}
-                      workspace={`${formatNumber(doc.views)} views`}
+                      lastModified={doc.lastEditedAt ?? undefined}
                       onClick={onDocumentSelect}
                       showPreview={true}
                       searchQuery={debouncedSearchQuery}

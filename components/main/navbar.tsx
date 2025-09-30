@@ -3,7 +3,6 @@
 import {
   MenuIcon,
   Settings,
-  ArrowLeft,
   Download,
   FileText,
   FileImage,
@@ -384,7 +383,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
 
   if (document === undefined) {
     return (
-      <header className="h-[72px] flex items-center justify-between px-8 border-b border-gray-200 dark:border-[#1E1E20] bg-background dark:bg-[#0B0B0F]">
+      <header className="h-[72px] flex items-center justify-between px-4 border-b border-gray-200 dark:border-[#1E1E20] bg-background dark:bg-[#0B0B0F]">
         <div className="flex items-center gap-4">
           {isCollapsed && <Skeleton className="h-7 w-7" />}
           <Skeleton className="h-7 w-7" />
@@ -403,7 +402,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
 
   return (
     <>
-      <header className="h-[66px] flex items-center justify-between px-8 border-b border-gray-200 dark:border-[#1E1E20] bg-background dark:bg-[#0B0B0F]">
+      <header className="h-[66px] flex items-center justify-between px-4 border-b border-gray-200 dark:border-[#1E1E20] bg-background dark:bg-[#0B0B0F]">
         <div className="flex items-center gap-4">
           {isCollapsed && (
             <button
@@ -413,12 +412,6 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
               <MenuIcon className="w-5 h-5" />
             </button>
           )}
-          <button
-            onClick={() => router.push("/documents")}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded-lg transition-colors text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
           <div className="flex items-center gap-3">
             <span className="text-2xl">{document.icon || "📄"}</span>
             <Title initialData={document} />
@@ -427,11 +420,11 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
 
         <div className="flex items-center gap-3">
           {/* Save and Socket Indicators */}
-          <div className="flex items-center gap-4 text-xs text-gray-400">
+          <div className="hidden sm:flex items-center gap-4 text-xs text-gray-400">
             <SaveIndicator />
             <SocketIndicator />
           </div>
-          <div className="w-px h-6 bg-gray-200 dark:bg-[#1E1E20] mx-2" />
+          <div className="hidden sm:flex w-px h-6 bg-gray-200 dark:bg-[#1E1E20] mx-2" />
           {/* Collaborators */}
           {document.collaborators.length > 1 && (
             <div className="flex items-center -space-x-2">
@@ -468,7 +461,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-[#2A2A2E] hover:bg-gray-200 dark:hover:bg-[#323236] text-gray-900 dark:text-white text-sm rounded-lg transition-colors">
                 <Download className="w-4 h-4" />
-                Download
+                <span className="hidden sm:block">Download</span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -518,7 +511,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
             <DialogTrigger asChild>
               <button className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-[#2A2A2E] hover:bg-gray-200 dark:hover:bg-[#323236] text-gray-900 dark:text-white text-sm rounded-lg transition-colors">
                 <Settings className="w-4 h-4" />
-                Settings
+                <span className="hidden sm:block">Settings</span>
               </button>
             </DialogTrigger>
             <DialogContent className="w-full max-w-3xl bg-background dark:bg-[#161618] border border-gray-200 dark:border-[#1E1E20] text-gray-900 dark:text-white">

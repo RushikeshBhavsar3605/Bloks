@@ -86,7 +86,7 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
           {!!initialData.icon && !preview && (
             <div className="group/icon relative">
               <IconPicker onChange={onIconSelect}>
-                <span className="text-6xl hover:opacity-75 transition cursor-pointer">
+                <span className="text-5xl sm:text-6xl hover:opacity-75 transition cursor-pointer">
                   {initialData.icon}
                 </span>
               </IconPicker>
@@ -102,7 +102,7 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
           )}
 
           {!!initialData.icon && preview && (
-            <span className="text-6xl">{initialData.icon}</span>
+            <span className="text-5xl sm:text-6xl">{initialData.icon}</span>
           )}
 
           {!initialData.icon && !preview && (
@@ -129,12 +129,12 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
                 onKeyDown={onKeyDown}
                 value={value}
                 onChange={(e) => onInput(e.target.value)}
-                className="text-5xl bg-transparent font-bold break-words outline-none text-gray-900 dark:text-white resize-none w-full mb-2"
+                className="text-3xl sm:text-5xl bg-transparent font-bold break-words outline-none text-gray-900 dark:text-white resize-none w-full mb-2"
               />
             ) : (
               <h1
                 onClick={enableInput}
-                className="text-5xl font-bold text-gray-900 dark:text-white mb-2 cursor-text"
+                className="text-3xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-2 cursor-text"
               >
                 {initialData.title}
               </h1>

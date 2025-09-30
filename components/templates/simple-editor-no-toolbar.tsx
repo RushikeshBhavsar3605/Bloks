@@ -160,7 +160,7 @@ export function SimpleEditorNoToolbar({
           });
         }
       },
-      
+
       editorProps: {
         attributes: {
           class: cn("mx-auto focus:outline-none min-h-[200px] p-4"),
@@ -205,13 +205,12 @@ export function SimpleEditorNoToolbar({
 
   return (
     <div className={cn("w-full px-[54px] mx-auto rounded-lg", className)}>
-
       {/* Editor Content */}
       <div className="relative flex justify-center">
         <EditorContent
           editor={editor}
           className={cn(
-            "min-h-[400px] w-[835px]",
+            "min-h-[400px] min-w-[450px] max-w-[835px]",
             !editable && "cursor-default"
           )}
         />

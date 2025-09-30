@@ -131,7 +131,7 @@ export const FormattingToolbar = ({
   return (
     <div
       ref={toolbarRef}
-      className="fixed z-[99999] border-b border-gray-200 dark:border-[#1E1E20] px-8 py-2 bg-background dark:bg-[#0B0B0F]"
+      className="fixed z-[99999] border-b border-gray-200 dark:border-[#1E1E20] px-4 py-2 bg-background dark:bg-[#0B0B0F] overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
@@ -326,26 +326,6 @@ export const FormattingToolbar = ({
             </TooltipContent>
           </Tooltip>
 
-          {/* Image */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => {
-                  const url = window.prompt("Enter image URL:");
-                  if (url) {
-                    editor.chain().focus().setImage({ src: url }).run();
-                  }
-                }}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-              >
-                <ImageIcon className="w-4 h-4" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <span>Insert Image</span>
-            </TooltipContent>
-          </Tooltip>
-
           {/* Quote */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -519,7 +499,7 @@ export const FormattingToolbar = ({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="pl-5 flex items-center gap-2">
           <button
             onClick={toggle}
             disabled={isToggling}

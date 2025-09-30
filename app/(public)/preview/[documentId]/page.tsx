@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getPreviewDocument } from "@/actions/documents/get-preview-document";
 import { DocumentWithMeta } from "@/types/shared";
-import { incrementView } from "@/actions/documents/increment-view";
 
 const DocumentIdPage = () => {
   const params = useParams();
@@ -27,9 +26,6 @@ const DocumentIdPage = () => {
       }
 
       const data = await getPreviewDocument(documentId);
-      if (data !== null) {
-        await incrementView(data.id);
-      }
 
       setDocument(data);
     } catch (error) {

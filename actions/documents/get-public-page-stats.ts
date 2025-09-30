@@ -5,7 +5,6 @@ import { db } from "@/lib/db";
 export const getPublicPageStats = async (): Promise<{
   totalDocuments: number;
   recentlyPublished: number;
-  mostPopularViews: number;
 }> => {
   const totalDocuments = await db.document.count({
     where: {
@@ -25,21 +24,8 @@ export const getPublicPageStats = async (): Promise<{
     },
   });
 
-  const mostPopularViews = await db.document.findFirst({
-    where: {
-      isPublished: true,
-    },
-    orderBy: {
-      views: "desc",
-    },
-    select: {
-      views: true,
-    },
-  });
-
   return {
     totalDocuments,
     recentlyPublished,
-    mostPopularViews: mostPopularViews !== null ? mostPopularViews.views : 0,
   };
 };

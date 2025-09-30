@@ -25,9 +25,10 @@ import { DocumentTree } from "./document-list/document-tree";
 import { UpgradeAlertModal } from "@/components/modals/upgrade-alert-modal";
 import { useUpgradeAlert } from "@/hooks/use-upgrade-alert";
 import { createDocumentWithUpgradeCheck } from "@/lib/document-creation-utils";
-import { useSearch } from "@/hooks/use-search";
 import { Navbar } from "./navbar";
 import { PageHeader } from "./page-header";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { getUserSubscription } from "@/actions/users/get-user-subscription";
 
 // Create a ref that can be shared
 export const sharedNavbarRef = { current: null as ElementRef<"div"> | null };
@@ -41,7 +42,9 @@ export const Navigation = ({
   openSearchModal,
   openTrashModal,
 }: NavigationProps) => {
-  const search = useSearch();
+  const user = useCurrentUser();
+  const [userPlan, setUserPlan] = useState<"free" | "pro" | "team">();
+
   const params = useParams();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -63,6 +66,15 @@ export const Navigation = ({
   useEffect(() => {
     sharedNavbarRef.current = navbarRef.current;
   }, []);
+
+  useEffect(() => {
+    const fetchPlan = async () => {
+      const response = await getUserSubscription(user?.id as string);
+      setUserPlan(response);
+    };
+
+    fetchPlan();
+  }, [user?.id]);
 
   // Menu items with route-based activation
   const menuItems = [
@@ -267,7 +279,7 @@ export const Navigation = ({
             <DocumentTree />
           </div>
 
-          <div className="px-4 mt-8">
+          <div className="px-4 my-8">
             <div className="space-y-1">
               {/* Trash */}
               <button
@@ -282,19 +294,24 @@ export const Navigation = ({
         </div>
 
         {/* Upgrade Section */}
-        <div className="p-4 mt-auto">
-          <div className="bg-white dark:bg-[#1A1A1C] rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-              Upgrade to Pro
-            </h4>
-            <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
-              Unlock AI features like transcription, AI summary, and more.
-            </p>
-            <button className="w-full bg-gray-900 dark:bg-white text-white dark:text-black text-sm font-medium py-2.5 px-4 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors">
-              Upgrade
-            </button>
+        {userPlan && userPlan !== "team" && (
+          <div className="p-4 mt-auto">
+            <div className="bg-white dark:bg-[#1A1A1C] rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                Upgrade to {userPlan === "free" ? "Pro" : "Team"}
+              </h4>
+              <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
+                Unlock AI features like transcription, AI summary, and more.
+              </p>
+              <button
+                onClick={() => router.push("/billing")}
+                className="w-full bg-gray-900 dark:bg-white text-white dark:text-black text-sm font-medium py-2.5 px-4 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
+              >
+                Upgrade
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         <div
           onMouseDown={handleMouseDown}

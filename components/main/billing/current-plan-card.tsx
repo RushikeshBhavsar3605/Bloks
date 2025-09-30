@@ -82,11 +82,10 @@ export const CurrentPlanCard = ({
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={() =>
-                  router.push(
-                    `${customerPortalLink}?prefilled_email=${userEmail}`
-                  )
-                }
+                onClick={() => {
+                  const url = `${customerPortalLink}?prefilled_email=${userEmail}`;
+                  window.open(url, "_blank", "noopener,noreferrer");
+                }}
                 className="px-4 py-2 bg-gray-100 dark:bg-[#2A2A2E] hover:bg-gray-200 dark:hover:bg-[#323236] text-gray-900 dark:text-white text-sm font-medium rounded-lg transition-colors"
               >
                 Manage Plan
