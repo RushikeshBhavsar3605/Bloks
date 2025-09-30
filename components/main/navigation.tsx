@@ -301,7 +301,9 @@ export const Navigation = ({
                 Upgrade to {userPlan === "free" ? "Pro" : "Team"}
               </h4>
               <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
-                Unlock AI features like transcription, AI summary, and more.
+                {userPlan === "free"
+                  ? "Built for power users: more docs, more publishes, more collaborators—plus Markdown export."
+                  : "Team-ready at scale: unlimited everything with advanced export options."}
               </p>
               <button
                 onClick={() => router.push("/billing")}
