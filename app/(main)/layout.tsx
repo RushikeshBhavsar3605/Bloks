@@ -82,7 +82,7 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
         openSearchModal={openSearchModal}
         openTrashModal={openTrashModal}
       />
-      <main className="flex-1 h-full overflow-y-auto">
+      <main className="flex-1 h-full overflow-y-auto custom-scrollbar">
         {/* Search functionality now integrated in PageHeader */}
         <SearchModal
           isOpen={isSearchModalOpen}
