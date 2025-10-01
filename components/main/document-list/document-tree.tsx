@@ -154,7 +154,6 @@ export const DocumentTree = ({
     fetchDocuments();
   }, [fetchDocuments]);
 
-
   const handleArchived = useCallback((id: string) => {
     setDocuments((prevDocs) => {
       if (prevDocs && Array.isArray(prevDocs)) {
@@ -177,13 +176,15 @@ export const DocumentTree = ({
     });
   }, []);
 
-  const handleUpdateTitle = useCallback(
+  const handleDocHeaderChange = useCallback(
     ({
       documentId,
+      userId,
       title,
       icon,
     }: {
       documentId: string;
+      userId: string;
       title?: string;
       icon?: string;
     }) => {
@@ -344,7 +345,7 @@ export const DocumentTree = ({
           onExpand={onExpand}
           onRedirect={onRedirect}
           handleArchived={handleArchived}
-          handleUpdateTitle={handleUpdateTitle}
+          handleDocHeaderChange={handleDocHeaderChange}
           handleCollaboratorRemove={handleCollaboratorRemove}
           handleCollaboratorRoleChange={handleCollaboratorRoleChange}
           activeDocumentId={params?.documentId as string}
@@ -360,7 +361,7 @@ export const DocumentTree = ({
           onExpand={onExpand}
           onRedirect={onRedirect}
           handleArchived={handleArchived}
-          handleUpdateTitle={handleUpdateTitle}
+          handleDocHeaderChange={handleDocHeaderChange}
           handleCollaboratorRemove={handleCollaboratorRemove}
           handleCollaboratorRoleChange={handleCollaboratorRoleChange}
           activeDocumentId={params?.documentId as string}
@@ -375,7 +376,7 @@ export const DocumentTree = ({
           onExpand={onExpand}
           onRedirect={onRedirect}
           handleArchived={handleArchived}
-          handleUpdateTitle={handleUpdateTitle}
+          handleDocHeaderChange={handleDocHeaderChange}
           handleCollaboratorRemove={handleCollaboratorRemove}
           handleCollaboratorRoleChange={handleCollaboratorRoleChange}
           activeDocumentId={params?.documentId as string}

@@ -43,6 +43,12 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
 
     setValue(newValue);
 
+    socket.emit("doc-header-change", {
+      documentId: initialData.id,
+      userId: user.id,
+      title: newValue,
+    });
+
     socket.emit("document:update:title", {
       documentId: initialData.id,
       title: newValue,
@@ -60,6 +66,12 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
   const onIconSelect = (icon: string) => {
     if (!socket || !user?.id || preview) return;
 
+    socket.emit("doc-header-change", {
+      documentId: initialData.id,
+      userId: user.id,
+      icon: icon,
+    });
+
     socket.emit("document:update:title", {
       documentId: initialData.id,
       icon: icon,
@@ -69,6 +81,12 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
 
   const onRemoveIcon = () => {
     if (!socket || !user?.id || preview) return;
+
+    socket.emit("doc-header-change", {
+      documentId: initialData.id,
+      userId: user.id,
+      icon: "",
+    });
 
     socket.emit("document:update:title", {
       documentId: initialData.id,

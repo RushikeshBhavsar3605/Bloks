@@ -64,10 +64,12 @@ const DocumentSaveManager = (() => {
 
           if (ioInstance) {
             // Only emit save status to the user who made the changes
-            ioInstance.to(`user:${data.lastAuthorizedUserId}`).emit("save:status", {
-              status: "saved",
-              documentId: documentId,
-            });
+            ioInstance
+              .to(`user:${data.lastAuthorizedUserId}`)
+              .emit("save:status", {
+                status: "saved",
+                documentId: documentId,
+              });
           }
         } else {
           console.error(
@@ -76,11 +78,13 @@ const DocumentSaveManager = (() => {
 
           if (ioInstance) {
             // Only emit save status to the user who made the changes
-            ioInstance.to(`user:${data.lastAuthorizedUserId}`).emit("save:status", {
-              status: "error",
-              error: response.error,
-              documentId: documentId,
-            });
+            ioInstance
+              .to(`user:${data.lastAuthorizedUserId}`)
+              .emit("save:status", {
+                status: "error",
+                error: response.error,
+                documentId: documentId,
+              });
           }
         }
       } catch (error) {
@@ -91,11 +95,13 @@ const DocumentSaveManager = (() => {
 
         if (ioInstance) {
           // Only emit save status to the user who made the changes
-          ioInstance.to(`user:${data.lastAuthorizedUserId}`).emit("save:status", {
-            status: "error",
-            error: "Failed to save document",
-            documentId: documentId,
-          });
+          ioInstance
+            .to(`user:${data.lastAuthorizedUserId}`)
+            .emit("save:status", {
+              status: "error",
+              error: "Failed to save document",
+              documentId: documentId,
+            });
         }
       }
     }, 2000);
@@ -177,6 +183,7 @@ class SocketDocumentManager {
 
     socket.on("document:update:title", this.handleTitleUpdate);
     socket.on("document:update:content", this.handleContentUpdate);
+    socket.on("doc-header-change", this.handleDocHeaderChange);
     socket.on("doc-change", this.handleDocChange);
     socket.on("cursor-update", this.handleCursorUpdate);
     socket.on("collaborator-disconnect", this.handleCollaboratorDisconnect);
@@ -414,8 +421,8 @@ class SocketDocumentManager {
       }
 
       // Broadcast real-time update to other users
-      const updateTitleEvent = `document:receive:title:${documentId}`;
-      this.io.to(room).emit(updateTitleEvent, { documentId, title, icon });
+      // const updateTitleEvent = `document:receive:title:${documentId}`;
+      // this.io.to(room).emit(updateTitleEvent, { documentId, title, icon });
 
       // Check if user is authorized to save first
       const accessResult = await getDirectDocumentAccess(
@@ -536,6 +543,89 @@ class SocketDocumentManager {
         "INTERNAL_ERROR"
       );
       console.error("[Socket.io] Content update error:", error);
+    }
+  };
+
+  private handleDocHeaderChange = async (data: {
+    documentId: string;
+    userId: string;
+    title?: string;
+    icon?: string;
+  }) => {
+    try {
+      const { documentId, userId, title, icon } = data;
+
+      if (!documentId || !userId) {
+        this.emitError(
+          "doc-header-change",
+          "Invalid parameters",
+          "INVALID_PARAMETERS"
+        );
+        return console.warn(
+          "[Socket.io] Invalid documentId in doc-header-change"
+        );
+      }
+
+      const activeRoom = `room:active:document:${documentId}`;
+
+      if (!this.socket.rooms.has(activeRoom)) {
+        console.warn(
+          `[Socket.io] User ${this.userId} not in active room ${documentId}, attempting to join`
+        );
+
+        // Try to join the active room
+        try {
+          const documentExists = await verifyDocumentAccess(
+            documentId,
+            this.userId
+          );
+          if (documentExists) {
+            this.socket.join(activeRoom);
+            this.activeRoom = documentId;
+            console.log(
+              `[Socket.io] Auto-joined user ${this.userId} to active room ${activeRoom}`
+            );
+          } else {
+            this.emitError(
+              "doc-header-change",
+              "Access denied",
+              "UNAUTHORIZED"
+            );
+            return console.warn(
+              `[Socket.io] User not authorized to access document ${documentId}`
+            );
+          }
+        } catch (error) {
+          this.emitError(
+            "doc-header-change",
+            "Failed to join room",
+            "INTERNAL_ERROR"
+          );
+          return console.error("[Socket.io] Error joining active room:", error);
+        }
+      }
+
+      // Get all sockets in the room for debugging
+      const socketsInRoom = await this.io.in(activeRoom).allSockets();
+      console.log(
+        `[Socket.io] Broadcasting doc-header-change from ${this.userId} to ${
+          socketsInRoom.size - 1
+        } other users in room ${activeRoom}`
+      );
+
+      // Broadcast to all other users in the active document room (exclude sender)
+      this.io.to(activeRoom).emit("doc-header-change", data);
+      this.io.to(`room:document:${documentId}`).emit("doc-header-change", data);
+      console.log(
+        `[Socket.io] Doc change broadcasted for document ${documentId} with ${data.title}`
+      );
+    } catch (error) {
+      this.emitError(
+        "doc-change",
+        "Failed to broadcast change",
+        "INTERNAL_ERROR"
+      );
+      console.error("[Socket.io] Doc change error:", error);
     }
   };
 
@@ -693,6 +783,7 @@ class SocketDocumentManager {
 
       this.socket.off("document:update:title", this.handleTitleUpdate);
       this.socket.off("document:update:content", this.handleContentUpdate);
+      this.socket.off("doc-header-change", this.handleDocHeaderChange);
       this.socket.off("doc-change", this.handleDocChange);
       this.socket.off("cursor-update", this.handleCursorUpdate);
       this.socket.off(

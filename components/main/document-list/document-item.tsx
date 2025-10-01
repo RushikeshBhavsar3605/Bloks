@@ -15,12 +15,16 @@ interface DocumentItemProps {
   onRedirect: (document: string) => void;
   role: CollaboratorRole | "OWNER" | null;
   handleArchived: (id: string) => void;
-  handleUpdateTitle: ({
+  handleDocHeaderChange: ({
     documentId,
+    userId,
     title,
+    icon,
   }: {
     documentId: string;
+    userId: string;
     title: string;
+    icon: string;
   }) => void;
   handleCollaboratorRemove: ({
     addedBy,
@@ -68,7 +72,7 @@ export const DocumentItem = ({
   onRedirect,
   role,
   handleArchived,
-  handleUpdateTitle,
+  handleDocHeaderChange,
   handleCollaboratorRemove,
   handleCollaboratorRoleChange,
   activeDocumentId,
@@ -83,7 +87,7 @@ export const DocumentItem = ({
       !document.id ||
       !user?.id ||
       !handleArchived ||
-      !handleUpdateTitle
+      !handleDocHeaderChange
     )
       return;
 
@@ -91,20 +95,20 @@ export const DocumentItem = ({
     const userId = user.id;
 
     const archiveEvent = `document:archived:${document.id}`;
-    const titleChangeEvent = `document:receive:title:${document.id}`;
+    const docHeaderChange = `doc-header-change`;
     const collaboratorRemoveEvent = "collaborator:settings:remove";
     const collaboratorRoleChangeEvent = "collaborator:settings:role";
 
     joinDocument(documentId, userId);
     socket.on(archiveEvent, handleArchived);
-    socket.on(titleChangeEvent, handleUpdateTitle);
+    socket.on(docHeaderChange, handleDocHeaderChange);
     socket.on(collaboratorRemoveEvent, handleCollaboratorRemove);
     socket.on(collaboratorRoleChangeEvent, handleCollaboratorRoleChange);
 
     return () => {
       leaveDocument(documentId, userId);
       socket.off(archiveEvent, handleArchived);
-      socket.off(titleChangeEvent, handleUpdateTitle);
+      socket.off(docHeaderChange, handleDocHeaderChange);
       socket.off(collaboratorRemoveEvent, handleCollaboratorRemove);
       socket.off(collaboratorRoleChangeEvent, handleCollaboratorRoleChange);
     };
@@ -115,7 +119,7 @@ export const DocumentItem = ({
     joinDocument,
     leaveDocument,
     handleArchived,
-    handleUpdateTitle,
+    handleDocHeaderChange,
     handleCollaboratorRemove,
     handleCollaboratorRoleChange,
   ]);

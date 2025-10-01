@@ -262,15 +262,18 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
   useEffect(() => {
     if (!socket || !document?.id) return;
 
-    const handleUpdateTitle = ({
+    const handleDocHeaderChange = ({
       documentId,
+      userId,
       title,
       icon,
     }: {
       documentId: string;
+      userId: string;
       title?: string;
       icon?: string;
     }) => {
+      console.log("Real-time title change", JSON.stringify(title));
       setDocument((doc) => {
         if (!doc) return doc;
         return {
@@ -350,9 +353,9 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
       );
     };
 
-    const titleChangeEvent = `document:receive:title:${document.id}`;
+    const docHeaderChange = `doc-header-change`;
 
-    socket.on(titleChangeEvent, handleUpdateTitle);
+    socket.on(docHeaderChange, handleDocHeaderChange);
     socket.on(`document:archived:${document.id}`, handleArchived);
     socket.on(
       `document:restore:${document.parentDocumentId || "root"}`,
@@ -362,7 +365,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
     socket.on("collaborator:settings:remove", handleCollaboratorRemove);
 
     return () => {
-      socket.off(titleChangeEvent, handleUpdateTitle);
+      socket.off(docHeaderChange, handleDocHeaderChange);
       socket.off(`document:archived:${document.id}`, handleArchived);
       socket.off(
         `document:restore:${document.parentDocumentId || "root"}`,

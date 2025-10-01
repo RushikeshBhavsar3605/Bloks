@@ -17,30 +17,6 @@ export const Title = ({ initialData }: TitleProps) => {
     setTitle(initialData.title || "Untitled");
   }, [initialData.title, initialData.id]);
 
-  // Listen for title changes
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleTitleUpdate = ({
-      documentId,
-      title: newTitle,
-    }: {
-      documentId: string;
-      title?: string;
-    }) => {
-      if (documentId === initialData.id && newTitle !== undefined) {
-        setTitle(newTitle);
-      }
-    };
-
-    const titleChangeEvent = `document:receive:title:${initialData.id}`;
-    socket.on(titleChangeEvent, handleTitleUpdate);
-
-    return () => {
-      socket.off(titleChangeEvent, handleTitleUpdate);
-    };
-  }, [socket, initialData.id]);
-
   return (
     <div>
       <h1 className="text-gray-900 dark:text-white text-sm font-medium">

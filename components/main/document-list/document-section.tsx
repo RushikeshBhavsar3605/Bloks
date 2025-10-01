@@ -10,12 +10,16 @@ interface DocumentSectionProps {
   onExpand: (documentId: string) => void;
   onRedirect: (documentId: string) => void;
   handleArchived: (id: string) => void;
-  handleUpdateTitle: ({
+  handleDocHeaderChange: ({
     documentId,
+    userId,
     title,
+    icon,
   }: {
     documentId: string;
+    userId: string;
     title: string;
+    icon: string;
   }) => void;
   handleCollaboratorRemove: ({
     addedBy,
@@ -63,7 +67,7 @@ export const DocumentSection = ({
   onExpand,
   onRedirect,
   handleArchived,
-  handleUpdateTitle,
+  handleDocHeaderChange,
   handleCollaboratorRemove,
   handleCollaboratorRoleChange,
   activeDocumentId,
@@ -86,7 +90,7 @@ export const DocumentSection = ({
           onRedirect={onRedirect}
           role={document.role}
           handleArchived={handleArchived}
-          handleUpdateTitle={handleUpdateTitle}
+          handleDocHeaderChange={handleDocHeaderChange}
           handleCollaboratorRemove={handleCollaboratorRemove}
           handleCollaboratorRoleChange={handleCollaboratorRoleChange}
           activeDocumentId={activeDocumentId}

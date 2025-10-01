@@ -49,12 +49,14 @@ const DocumentIdPage = () => {
 
     if (!socket || !documentId || !userId) return;
 
-    const handleUpdateTitle = ({
+    const handleDocHeaderChange = ({
       documentId,
+      userId,
       title,
       icon,
     }: {
       documentId: string;
+      userId: string;
       title?: string;
       icon?: string;
     }) => {
@@ -95,13 +97,13 @@ const DocumentIdPage = () => {
       }
     };
 
-    const titleChangeEvent = `document:receive:title:${documentId}`;
+    const docHeaderChange = `doc-header-change`;
 
     console.log(
       `[PAGE] Joining active document: ${documentId} for user: ${userId}`
     );
     joinActiveDocument(documentId, userId);
-    socket.on(titleChangeEvent, handleUpdateTitle);
+    socket.on(docHeaderChange, handleDocHeaderChange);
     socket.on("collaborator:settings:role", handleCollaboratorRoleChange);
 
     return () => {
@@ -109,7 +111,7 @@ const DocumentIdPage = () => {
         `[PAGE] Leaving active document: ${documentId} for user: ${userId}`
       );
       leaveActiveDocument(documentId, userId);
-      socket.off(titleChangeEvent, handleUpdateTitle);
+      socket.off(docHeaderChange, handleDocHeaderChange);
       socket.off("collaborator:settings:role", handleCollaboratorRoleChange);
     };
   }, [socket, documentId, user?.id, joinActiveDocument, leaveActiveDocument]);
