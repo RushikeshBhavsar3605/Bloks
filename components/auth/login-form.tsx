@@ -80,7 +80,7 @@ export const LoginForm = () => {
       headerLabel={!showTwoFactor ? "Sign in" : "Two-Factor Verification"}
       headerDescription={
         !showTwoFactor
-          ? "Log in to your Jotion account"
+          ? "Log in to your Bloks account"
           : "Enter the 6-digit code received on your email"
       }
       backButtonLabel="Don't have an account?"

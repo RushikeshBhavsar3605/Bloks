@@ -1,4 +1,9 @@
+import { useTheme } from "next-themes";
+import Image from "next/image";
+
 export const Footer = () => {
+  const { resolvedTheme } = useTheme();
+
   return (
     <footer className="border-t border-border py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -106,14 +111,21 @@ export const Footer = () => {
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-border">
-          <div className="flex items-center gap-2 mb-4 md:mb-0">
-            <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded flex items-center justify-center">
-              <span className="text-white font-bold text-xs">J</span>
-            </div>
-            <span className="font-semibold">Jotion</span>
+          <div className="flex items-center mb-4 md:mb-0">
+            <Image
+              src={
+                resolvedTheme === "dark"
+                  ? "/images/logo-dark.png"
+                  : "/images/logo.png"
+              }
+              alt="Bloks Logo"
+              width={1000}
+              height={32}
+              className="h-5 w-auto"
+            />
           </div>
           <p className="text-muted-foreground text-sm">
-            © 2024 Jotion. All rights reserved.
+            © 2025 Bloks. All rights reserved.
           </p>
         </div>
       </div>

@@ -72,7 +72,7 @@ export function useAdvancedSearch() {
 
   // Load recent searches from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem("jotion-recent-searches");
+    const saved = localStorage.getItem("bloks-recent-searches");
     if (saved) {
       try {
         setRecentSearches(JSON.parse(saved));
@@ -92,13 +92,13 @@ export function useAdvancedSearch() {
     ].slice(0, 10);
 
     setRecentSearches(updated);
-    localStorage.setItem("jotion-recent-searches", JSON.stringify(updated));
+    localStorage.setItem("bloks-recent-searches", JSON.stringify(updated));
   };
 
   // Clear recent searches
   const clearRecentSearches = () => {
     setRecentSearches([]);
-    localStorage.removeItem("jotion-recent-searches");
+    localStorage.removeItem("bloks-recent-searches");
   };
 
   // Group results by type

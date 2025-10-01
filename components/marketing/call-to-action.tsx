@@ -12,8 +12,7 @@ export const CallToAction = ({ onSignUp }: { onSignUp(): void }) => {
           Ready to transform your workflow?
         </h2>
         <p className="text-xl text-muted-foreground mb-10">
-          Join thousands of users who trust Jotion for their most important
-          work.
+          Join thousands of users who trust Bloks for their most important work.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-md mx-auto">

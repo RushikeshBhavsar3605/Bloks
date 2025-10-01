@@ -7,7 +7,7 @@ export const Testimonials = () => {
       role: "Product Manager at TechCorp",
       avatar: "SC",
       content:
-        "Jotion has transformed how our team collaborates. The nested file structure and powerful search make it indispensable.",
+        "Bloks has transformed how our team collaborates. The nested file structure and powerful search make it indispensable.",
       rating: 5,
     },
     {
@@ -15,7 +15,7 @@ export const Testimonials = () => {
       role: "Startup Founder",
       avatar: "AR",
       content:
-        "Finally, a workspace that grows with us. From simple notes to complex nested documentation, Jotion handles it all beautifully.",
+        "Finally, a workspace that grows with us. From simple notes to complex nested documentation, Bloks handles it all beautifully.",
       rating: 5,
     },
     {
@@ -36,7 +36,7 @@ export const Testimonials = () => {
             Loved by teams worldwide
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            See what our users have to say about their experience with Jotion.
+            See what our users have to say about their experience with Bloks.
           </p>
         </div>
 

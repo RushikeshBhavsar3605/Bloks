@@ -2,7 +2,7 @@ import { emailStyles } from "./styles";
 
 const emailHeader = `
     <div class="email-header">
-        <div class="logo">Jotion</div>
+        <div class="logo">Bloks</div>
         <div class="tagline">Personal Learning Project</div>
     </div>
 `;
@@ -10,7 +10,7 @@ const emailHeader = `
 const emailFooter = `
     <div class="email-footer">
         <div class="footer-text">
-            <p><strong>Jotion</strong> - A personal learning project built to master full-stack development and crack MAANG interviews.</p>
+            <p><strong>Bloks</strong> - A personal learning project built to master full-stack development and crack MAANG interviews.</p>
             <p>This is a portfolio project demonstrating modern web development practices.</p>
         </div>
         <div class="footer-links">
@@ -27,7 +27,7 @@ export const twoFactorTokenTemplate = (token: string) => `
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Jotion Email Templates</title>
+        <title>Bloks Email Templates</title>
         <style>
             ${emailStyles}
         </style>
@@ -41,7 +41,7 @@ export const twoFactorTokenTemplate = (token: string) => `
                     <div class="greeting">Hello there! 👋</div>
                     
                     <div class="message">
-                        <p>You've requested a two-factor authentication code for your Jotion account. Here's your secure verification code:</p>
+                        <p>You've requested a two-factor authentication code for your Bloks account. Here's your secure verification code:</p>
                     </div>
                     
                     <div class="token-container">
@@ -71,7 +71,7 @@ export const passwordResetTemplate = (resetLink: string) => `
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Jotion Email Templates</title>
+        <title>Bloks Email Templates</title>
         <style>
             ${emailStyles}
         </style>
@@ -85,7 +85,7 @@ export const passwordResetTemplate = (resetLink: string) => `
                     <div class="greeting">Password Reset Request 🔐</div>
                     
                     <div class="message">
-                        <p>We received a request to reset your password for your Jotion account. If you made this request, click the button below to create a new password:</p>
+                        <p>We received a request to reset your password for your Bloks account. If you made this request, click the button below to create a new password:</p>
                     </div>
                     
                     <div style="text-align: center; margin: 32px 0;">
@@ -115,7 +115,7 @@ export const verificationTemplate = (confirmLink: string) => `
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Jotion Email Templates</title>
+        <title>Bloks Email Templates</title>
         <style>
             ${emailStyles}
         </style>
@@ -126,10 +126,10 @@ export const verificationTemplate = (confirmLink: string) => `
                 ${emailHeader}
                 
                 <div class="email-content">
-                    <div class="greeting">Welcome to Jotion! 🎉</div>
+                    <div class="greeting">Welcome to Bloks! 🎉</div>
                     
                     <div class="message">
-                        <p>Thank you for signing up for Jotion! To complete your registration and start exploring our note-taking platform, please verify your email address by clicking the button below:</p>
+                        <p>Thank you for signing up for Bloks! To complete your registration and start exploring our note-taking platform, please verify your email address by clicking the button below:</p>
                     </div>
                     
                     <div style="text-align: center; margin: 32px 0;">

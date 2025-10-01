@@ -197,7 +197,7 @@ export const CollaboratorsSetting = ({
       if (data.newCollaborator) {
         toast.success(`${emailInput} invited successfully`);
       } else {
-        toast.success(`${emailInput} invited to join Jotion & collaborate`);
+        toast.success(`${emailInput} invited to join Bloks & collaborate`);
       }
 
       // Clear input

@@ -60,7 +60,7 @@ export const ResetForm = () => {
   return (
     <CardWrapper
       headerLabel="Forgot your password?"
-      headerDescription="Reset the password of your Jotion account"
+      headerDescription="Reset the password of your Bloks account"
       backButtonLabel="Back to login"
       backButtonHref="/auth/login"
     >

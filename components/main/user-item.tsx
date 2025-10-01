@@ -101,7 +101,7 @@ const UserItem = () => {
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm line-clamp-1">{user?.name}&apos;s Jotion</p>
+              <p className="text-sm line-clamp-1">{user?.name}&apos;s Bloks</p>
             </div>
           </div>
         </div>

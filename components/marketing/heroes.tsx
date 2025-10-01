@@ -147,7 +147,7 @@ export const Heroes = ({ onSignUp }: { onSignUp(): void }) => {
 
           {/* Subtitle */}
           <p className="text-base sm:text-lg lg:text-xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed font-normal">
-            Jotion is a connected workspace where better, faster work happens.
+            Bloks is a connected workspace where better, faster work happens.
             Write, plan, share, and get organized. Everything you need in one
             place.
           </p>

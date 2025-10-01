@@ -62,7 +62,7 @@ export const RegisterForm = () => {
   return (
     <CardWrapper
       headerLabel="Sign up"
-      headerDescription="Create an Jotion account"
+      headerDescription="Create an Bloks account"
       backButtonLabel="Already have an account?"
       backButtonHref="/auth/login"
       showSocial

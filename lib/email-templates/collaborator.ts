@@ -2,7 +2,7 @@ import { emailStyles } from "./styles";
 
 const emailHeader = `
     <div class="email-header">
-        <div class="logo">Jotion</div>
+        <div class="logo">Bloks</div>
         <div class="tagline">Personal Learning Project</div>
     </div>
 `;
@@ -10,7 +10,7 @@ const emailHeader = `
 const emailFooter = `
     <div class="email-footer">
         <div class="footer-text">
-            <p><strong>Jotion</strong> - A personal learning project built to master full-stack development and crack MAANG interviews.</p>
+            <p><strong>Bloks</strong> - A personal learning project built to master full-stack development and crack MAANG interviews.</p>
             <p>This is a portfolio project demonstrating modern web development practices.</p>
         </div>
         <div class="footer-links">
@@ -27,7 +27,7 @@ export const collaboratorVerificationTemplate = (confirmLink: string) => `
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Jotion Email Templates</title>
+        <title>Bloks Email Templates</title>
         <style>
             ${emailStyles}
         </style>
@@ -41,7 +41,7 @@ export const collaboratorVerificationTemplate = (confirmLink: string) => `
                     <div class="greeting">You're Invited to Collaborate! 🤝</div>
                     
                     <div class="message">
-                        <p>Great news! You've been invited to collaborate on a Jotion workspace. This is an exciting opportunity to work together on shared notes and projects.</p>
+                        <p>Great news! You've been invited to collaborate on a Bloks workspace. This is an exciting opportunity to work together on shared notes and projects.</p>
                     </div>
                     
                     <div style="text-align: center; margin: 32px 0;">
@@ -59,7 +59,7 @@ export const collaboratorVerificationTemplate = (confirmLink: string) => `
                     </div>
                     
                     <div class="info-box">
-                        <p><strong>Getting Started:</strong> Click the button above to accept the invitation and start collaborating. This link will expire in 7 days. If you don't have a Jotion account yet, you'll be prompted to create one.</p>
+                        <p><strong>Getting Started:</strong> Click the button above to accept the invitation and start collaborating. This link will expire in 7 days. If you don't have a Bloks account yet, you'll be prompted to create one.</p>
                     </div>
                     
                     <div class="message">

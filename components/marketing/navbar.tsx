@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
+import { useTheme } from "next-themes";
+import Image from "next/image";
 
 export const Navbar = ({
   onSignIn,
@@ -12,16 +14,24 @@ export const Navbar = ({
   onSignUp(): void;
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { resolvedTheme } = useTheme();
 
   return (
     <nav className="border-b border-border sticky top-0 bg-background/95 backdrop-blur-sm z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">J</span>
-            </div>
-            <span className="text-xl font-bold">Jotion</span>
+          <div className="flex items-center">
+            <Image
+              src={
+                resolvedTheme === "dark"
+                  ? "/images/logo-dark.png"
+                  : "/images/logo.png"
+              }
+              alt="Bloks Logo"
+              width={1000}
+              height={32}
+              className="h-5 w-auto"
+            />
           </div>
 
           {/* Desktop Navigation */}

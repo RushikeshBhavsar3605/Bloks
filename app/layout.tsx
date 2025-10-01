@@ -11,19 +11,19 @@ import { SocketProvider } from "@/components/providers/socket-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Jotion",
+  title: "Bloks",
   description: "The connected workspace where better, faster work happens",
   icons: {
     icon: [
       {
         media: "(prefers-color-scheme: light)",
-        url: "/logo.svg",
-        href: "/logo.svg",
+        url: "/images/logo.svg",
+        href: "/images/logo.svg",
       },
       {
         media: "(prefers-color-scheme: dark)",
-        url: "/logo-dark.svg",
-        href: "/logo-dark.svg",
+        url: "/images/logo.svg",
+        href: "/images/logo.svg",
       },
     ],
   },

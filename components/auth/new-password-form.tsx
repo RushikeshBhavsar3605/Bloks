@@ -64,7 +64,7 @@ export const NewPasswordForm = () => {
   return (
     <CardWrapper
       headerLabel="Enter a new password"
-      headerDescription="Create the new password of your Jotion account"
+      headerDescription="Create the new password of your Bloks account"
       backButtonLabel="Back to login"
       backButtonHref="/auth/login"
     >
