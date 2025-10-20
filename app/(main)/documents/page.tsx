@@ -101,7 +101,7 @@ const DocumentsPage = () => {
 
     const handleCreated = (data: DocumentWithMeta) => {
       const count = created !== undefined ? created.count + 1 : 1;
-      setCreated({ count: count, date: data.createdAt });
+      setCreated({ count: count, date: new Date(data.createdAt) });
     };
 
     const createEvent = "document:created:root";
