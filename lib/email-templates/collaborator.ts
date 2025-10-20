@@ -10,7 +10,7 @@ const emailHeader = `
 const emailFooter = `
     <div class="email-footer">
         <div class="footer-text">
-            <p><strong>Bloks</strong> - A personal learning project built to master full-stack development and crack MAANG interviews.</p>
+            <p><strong>Bloks</strong> - A personal learning project built to master full-stack development.</p>
             <p>This is a portfolio project demonstrating modern web development practices.</p>
         </div>
         <div class="footer-links">
