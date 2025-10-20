@@ -5,6 +5,7 @@ import { toast } from "sonner";
 interface CreateDocumentOptions {
   title?: string;
   parentDocumentId?: string;
+  content?: string;
   onSuccess?: (document: any) => void;
   onUpgradeRequired?: () => void;
 }
@@ -12,6 +13,7 @@ interface CreateDocumentOptions {
 export const createDocumentWithUpgradeCheck = async ({
   title = "Untitled",
   parentDocumentId,
+  content,
   onSuccess,
   onUpgradeRequired,
 }: CreateDocumentOptions) => {
@@ -21,7 +23,7 @@ export const createDocumentWithUpgradeCheck = async ({
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ title, parentDocumentId }),
+    body: JSON.stringify({ title, parentDocumentId, content }),
   })
     .then(async (res) => {
       const data = await res.json();

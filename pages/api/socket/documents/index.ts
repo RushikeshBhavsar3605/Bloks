@@ -41,12 +41,13 @@ export default async function handler(
 
   // POST - Create a new document
   if (req.method === "POST") {
-    const { title, parentDocumentId } = req.body;
+    const { title, parentDocumentId, content } = req.body;
 
     const response = await createDocument({
       userId: user.id,
       title: title || "Untitled",
       parentDocumentId,
+      content,
     });
 
     if (!response.success || !response.data) {

@@ -55,7 +55,6 @@ export function SimpleEditorNoToolbar({
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [initialContentSet, setInitialContentSet] =
     React.useState<boolean>(false);
-  const initialContentRef = React.useRef(content);
 
   const editor = useEditor(
     {
@@ -154,10 +153,7 @@ export function SimpleEditorNoToolbar({
 
         // Don't emit if we haven't finished setting initial content
         if (!initialContentSet) {
-          // Check if content now matches what we expect
-          if (html === initialContentRef.current) {
-            setInitialContentSet(true);
-          }
+          setInitialContentSet(true);
           return;
         }
 

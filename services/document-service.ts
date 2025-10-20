@@ -18,6 +18,7 @@ interface CreateDocumentProps {
   userId: string;
   title: string;
   parentDocumentId?: string;
+  content?: string;
 }
 
 interface UpdateDocumentProps extends DocumentActionProps {
@@ -140,6 +141,7 @@ export const createDocument = async ({
   userId,
   title,
   parentDocumentId,
+  content,
 }: CreateDocumentProps): Promise<ServiceResponse<DocumentWithMeta>> => {
   try {
     // Check access rights (must be owner or EDITOR)
@@ -180,7 +182,7 @@ export const createDocument = async ({
         parentDocumentId: parentDocumentId || "",
         isArchived: false,
         isPublished: false,
-        content: "",
+        content: content || "",
       },
     });
 

@@ -86,9 +86,16 @@ const LibraryPage = () => {
     }
   }, [offset, loadingMore, hasMore]);
 
-  const onCreate = () => {
+  const onCreate = ({
+    title,
+    content,
+  }: {
+    title?: string;
+    content?: string;
+  }) => {
     createDocumentWithUpgradeCheck({
-      title: "Untitled",
+      title: title || "Untitled",
+      content,
       onSuccess: (document) => {
         router.push(`/documents/${document.id}`);
       },
@@ -98,15 +105,34 @@ const LibraryPage = () => {
 
   const onDocumentSelect = (docId: string) => {
     if (docId === "new" || docId === "blank-page") {
-      onCreate();
-    } else if (
-      docId === "new-project" ||
-      docId === "meeting-notes" ||
-      docId === "task-list"
-    ) {
-      // For template-based creation, we can still use the basic create function
-      // In a real app, you might want to create with specific templates
-      onCreate();
+      onCreate({});
+    }
+    // else if (
+    //   docId === "new-project" ||
+    //   docId === "meeting-notes" ||
+    //   docId === "task-list"
+    // ) {
+    //   // For template-based creation, we can still use the basic create function
+    //   // In a real app, you might want to create with specific templates
+    //   onCreate();
+    // } else {
+    //   router.push(`/documents/${docId}`);
+    // }
+    else if (docId === "new-project") {
+      onCreate({
+        title: "{{Project Name}}",
+        content: `<p>Status: Draft | Active | On Hold</p><p>Owner: {{Owner}} • Updated: {{YYYY-MM-DD}}</p><h2>Summary</h2><p>One or two sentences on the problem, proposed solution, and expected impact.</p><h2>Goals &amp; Metrics</h2><ul><li><p>{{Goal}} — Metric: {{baseline}} → {{target}} by {{date}}</p></li><li><p>{{Goal}} — Metric: {{baseline}} → {{target}} by {{date}}</p></li></ul><h2>Scope</h2><ul><li><p>In: {{key components/services/user flows}}</p></li><li><p>Out: {{explicit exclusions}}</p></li></ul><h2>Requirements</h2><ul><li><p>Functional: {{behavior 1}}; {{behavior 2}}</p></li><li><p>Non-Functional: p95 ≤ {{X}} ms; Reliability {{SLO}}; Security {{note}}</p></li></ul><h2>Plan &amp; Milestones</h2><ul><li><p>M1: {{milestone}} — {{YYYY-MM-DD}}</p></li><li><p>M2: {{milestone}} — {{YYYY-MM-DD}}</p></li><li><p>Launch: {{YYYY-MM-DD}}</p></li></ul><h2>Risks</h2><ul><li><p>{{risk}} — Mitigation: {{plan}} — Owner: {{name}}</p></li></ul><h2>Stakeholders</h2><ul><li><p>Engg: {{names}} • PM: {{names}} • Design: {{names}}</p></li></ul><h2>Decisions &amp; Open Questions</h2><ul><li><p>Decision: {{what}} — Rationale: {{why}}</p></li><li><p>Open: {{question}} — Owner: {{name}}</p></li></ul><p></p>`,
+      });
+    } else if (docId === "meeting-notes") {
+      onCreate({
+        title: "Meeting: {{Topic}}",
+        content: `<p>Date: {{YYYY-MM-DD}}</p><p>Time: {{Start–End}} {{TZ}}</p><p>Facilitator: {{Name}}</p><p>Note Taker: {{Name}}</p><h2>Attendees</h2><ul><li><p>{{Name}} (Role)</p></li><li><p>{{Name}} (Role)</p></li></ul><h2>Agenda</h2><ul><li><p>{{Item 1}} ({{mins}})</p></li><li><p>{{Item 2}} ({{mins}})</p></li></ul><h2>Discussion Notes</h2><ul><li><p>{{Key point or decision context}}</p></li><li><p>{{Data/links referenced}}</p></li></ul><h2>Decisions</h2><ul><li><p>Decision: {{what}} — Owner: {{who}} — Effective: {{date}}</p></li></ul><h2>Action Items</h2><ul data-type="taskList"><li data-checked="false" data-type="taskItem"><label><input type="checkbox"><span></span></label><div><p>{{Action}} — Owner: {{who}} — Due: {{YYYY-MM-DD}}</p></div></li><li data-checked="false" data-type="taskItem"><label><input type="checkbox"><span></span></label><div><p>{{Action}} — Owner: {{who}} — Due: {{YYYY-MM-DD}}</p></div></li></ul><h2>Parking Lot</h2><ul><li><p>{{Topic to revisit}} — Owner: {{who}}</p></li></ul><h2>Next Meeting</h2><ul><li><p>Tentative: {{YYYY-MM-DD}} — Goals: {{objectives}}</p></li></ul><p></p>`,
+      });
+    } else if (docId === "task-list") {
+      onCreate({
+        title: "Task List",
+        content: `<p>Priority Legend: 🔴 High • 🟠 Medium • 🟢 Low</p><p>Status: Inbox | Backlog | In Progress | Blocked | Review | Done</p><h2>Inbox</h2><ul data-type="taskList"><li data-checked="false" data-type="taskItem"><label><input type="checkbox"><span></span></label><div><p>{{Task}} — Owner: {{Name}} — Priority: 🟠 — Due: {{YYYY-MM-DD}} — Tags: {{#tag}}</p></div></li></ul><p>## Backlog</p><ul data-type="taskList"><li data-checked="false" data-type="taskItem"><label><input type="checkbox"><span></span></label><div><p>{{Task}} — Owner: {{Name}} — Priority: 🟢 — Due: {{YYYY-MM-DD}}</p></div></li></ul><p>## In Progress</p><ul data-type="taskList"><li data-checked="false" data-type="taskItem"><label><input type="checkbox"><span></span></label><div><p>{{Task}} — Owner: {{Name}} — Priority: 🔴 — Started: {{YYYY-MM-DD}}</p></div></li></ul><p>## Blocked</p><ul data-type="taskList"><li data-checked="false" data-type="taskItem"><label><input type="checkbox"><span></span></label><div><p>{{Task}} — Blocker: {{dependency}} — Owner: {{Name}} — ETA: {{YYYY-MM-DD}}</p></div></li></ul><p>## Review</p><ul data-type="taskList"><li data-checked="false" data-type="taskItem"><label><input type="checkbox"><span></span></label><div><p>{{Task}} — Reviewer: {{Name}} — PR: {{ID}}</p></div></li></ul><p>## Done</p><ul data-type="taskList"><li data-checked="false" data-type="taskItem"><label><input type="checkbox"><span></span></label><div><p>{{Task}} — Completed: {{YYYY-MM-DD}} — Notes: {{brief}}</p></div></li></ul><p></p>`,
+      });
     } else {
       router.push(`/documents/${docId}`);
     }
