@@ -29,6 +29,7 @@ import { LiveCollaborationExtension } from "@/extensions/live-collaboration-exte
 import { useSocket } from "@/components/providers/socket-provider";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { cn } from "@/lib/tiptap-utils";
+import { useMediaQuery } from "usehooks-ts";
 
 interface SimpleEditorNoToolbarProps {
   content?: string;
@@ -51,6 +52,10 @@ export function SimpleEditorNoToolbar({
 }: SimpleEditorNoToolbarProps) {
   const { socket } = useSocket();
   const user = useCurrentUser();
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const [initialContentSet, setInitialContentSet] =
+    React.useState<boolean>(false);
+  const initialContentRef = React.useRef(content);
 
   const editor = useEditor(
     {
@@ -147,6 +152,15 @@ export function SimpleEditorNoToolbar({
         const html = editor.getHTML();
         onChange?.(html);
 
+        // Don't emit if we haven't finished setting initial content
+        if (!initialContentSet) {
+          // Check if content now matches what we expect
+          if (html === initialContentRef.current) {
+            setInitialContentSet(true);
+          }
+          return;
+        }
+
         // Only emit for user actions (not collaborative updates)
         // This prevents infinite loops when receiving real-time changes from other users
         const isUserAction = !transaction.getMeta("isReceiving");
@@ -204,14 +218,15 @@ export function SimpleEditorNoToolbar({
   }
 
   return (
-    <div className={cn("w-full px-[54px] mx-auto rounded-lg", className)}>
+    <div className={cn("w-full px-8 mx-auto rounded-lg", className)}>
       {/* Editor Content */}
       <div className="relative flex justify-center">
         <EditorContent
           editor={editor}
           className={cn(
-            "min-h-[400px] min-w-[450px] max-w-[835px]",
-            !editable && "cursor-default"
+            "min-h-[400px]",
+            !editable && "cursor-default",
+            isMobile ? "w-full" : "w-[835px]"
           )}
         />
       </div>
