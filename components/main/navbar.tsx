@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  MenuIcon,
   Settings,
   Download,
   FileText,
   FileImage,
+  ChevronsRight,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -406,14 +406,13 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
   return (
     <>
       <header className="h-[66px] flex items-center justify-between px-4 border-b border-gray-200 dark:border-[#1E1E20] bg-background dark:bg-[#0B0B0F]">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           {isCollapsed && (
-            <button
+            <ChevronsRight
+              role="button"
               onClick={onResetWidth}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E20] rounded-lg transition-colors text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            >
-              <MenuIcon className="w-5 h-5" />
-            </button>
+              className="w-6 h-6 text-muted-foreground text-gray-600 dark:text-gray-400 rounded-sm hover:bg-gray-200 dark:hover:bg-[#1E1E20]"
+            />
           )}
           <div className="flex items-center gap-3">
             <span className="text-2xl">{document.icon || "📄"}</span>

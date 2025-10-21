@@ -197,8 +197,8 @@ Item.Skeleton = function ItemSkeleton({ level }: { level?: number }) {
       }}
       className="flex gap-x-2 py-[3px]"
     >
-      <Skeleton className="h-8 w-8" />
-      <Skeleton className="h-8 w-full" />
+      <Skeleton className="h-7 w-8" />
+      <Skeleton className="h-7 w-full" />
     </div>
   );
 };

@@ -47,7 +47,7 @@ const UserItem = () => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {/* Header */}
-        <div className="px-4 py-3 cursor-pointer">
+        <div className="px-4 py-2 cursor-pointer border-b-1">
           <div className="flex items-center gap-3 rounded-lg p-2 hover:bg-gray-50 dark:hover:bg-[#1E1E20]">
             <div className="w-8 h-8 rounded-md flex items-center justify-center">
               {user?.image ? (

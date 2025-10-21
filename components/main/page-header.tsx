@@ -1,7 +1,7 @@
 "use client";
 
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { Upload, MenuIcon } from "lucide-react";
+import { Upload, ChevronsRight } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { SearchInput } from "@/components/search/search-input";
 
@@ -42,13 +42,13 @@ export const PageHeader = ({
 
   return (
     <header className="h-[66px] flex items-center justify-between px-8 border-b border-gray-200 dark:border-[#1E1E20] bg-background dark:bg-[#0B0B0F]">
-      <div className="flex items-center gap-4 flex-1 max-w-md">
+      <div className="flex items-center flex-1 max-w-md">
         {isCollapsed && (
           <nav className="bg-transparent">
-            <MenuIcon
+            <ChevronsRight
               role="button"
               onClick={onResetWidth}
-              className="h-6 w-6 text-muted-foreground"
+              className="h-6 w-6 ml-[-32px] text-muted-foreground text-gray-600 dark:text-gray-400 rounded-sm hover:bg-gray-200 dark:hover:bg-[#1E1E20]"
             />
           </nav>
         )}

@@ -20,18 +20,15 @@ export const Navbar = ({
     <nav className="border-b border-border sticky top-0 bg-background/95 backdrop-blur-sm z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
             <Image
-              src={
-                resolvedTheme === "dark"
-                  ? "/images/logo-dark.png"
-                  : "/images/logo.png"
-              }
+              src={"/images/logo.svg"}
               alt="Bloks Logo"
               width={1000}
               height={32}
-              className="h-5 w-auto"
+              className="h-8 w-8 rounded-lg border border-gray-700"
             />
+            <span className="text-xl font-bold">Bloks</span>
           </div>
 
           {/* Desktop Navigation */}

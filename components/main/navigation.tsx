@@ -5,9 +5,9 @@ import {
   ChevronsLeft,
   ChevronsRight,
   CreditCard,
+  FilePlus,
   Home,
   Library,
-  PlusCircle,
   Search,
   Settings,
   Trash,
@@ -29,6 +29,7 @@ import { Navbar } from "./navbar";
 import { PageHeader } from "./page-header";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { getUserSubscription } from "@/actions/users/get-user-subscription";
+import { Separator } from "../ui/separator";
 
 // Create a ref that can be shared
 export const sharedNavbarRef = { current: null as ElementRef<"div"> | null };
@@ -112,13 +113,6 @@ export const Navigation = ({
       icon: Settings,
       path: "?modal=settings",
       onClick: () => router.push("?modal=settings"),
-    },
-    {
-      id: "new-page",
-      label: "New page",
-      icon: PlusCircle,
-      path: "/new-page",
-      onClick: () => onCreate(),
     },
   ];
 
@@ -235,7 +229,7 @@ export const Navigation = ({
           onClick={collapse}
           role="button"
           className={cn(
-            "h-6 w-6 text-gray-600 dark:text-gray-400 rounded-sm hover:bg-gray-200 dark:hover:bg-[#1E1E20] absolute top-3 right-2 opacity-0 group-hover/sidebar:opacity-100 transition",
+            "h-6 w-6 text-gray-600 dark:text-gray-400 rounded-sm hover:bg-gray-200 dark:hover:bg-[#1E1E20] absolute top-5 right-2 opacity-0 group-hover/sidebar:opacity-100 transition",
             isMobile && "opacity-100"
           )}
         >
@@ -251,7 +245,7 @@ export const Navigation = ({
             <div className="text-xs font-medium text-gray-600 dark:text-gray-500 mb-3 px-2">
               Menu
             </div>
-            <nav className="space-y-1">
+            <nav className="space-y-1 pb-6">
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = isActiveRoute(item.path);
@@ -272,6 +266,20 @@ export const Navigation = ({
                 );
               })}
             </nav>
+
+            <Separator />
+            {/* New Page Button */}
+            <div className="pt-6">
+              <button
+                onClick={onCreate}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 border-2 border-dashed hover:border-gray-500 hover:bg-gray-100 dark:hover:bg-[#1E1E20] hover:dark:border-gray-500 text-muted-foreground hover:text-primary group"
+                )}
+              >
+                <FilePlus className="h-4 w-4 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                <span>New page</span>
+              </button>
+            </div>
           </div>
 
           {/* Documents */}
@@ -331,21 +339,29 @@ export const Navigation = ({
         )}
       >
         {!!params?.documentId ? (
-          <Navbar isCollapsed={isCollapsed} onResetWidth={resetWidth} />
+          <>
+            {((isMobile && isCollapsed) || !isMobile) && (
+              <Navbar isCollapsed={isCollapsed} onResetWidth={resetWidth} />
+            )}
+          </>
         ) : pathname !== "/billing" && pathname !== "/explore" ? (
-          <PageHeader
-            searchPlaceholder="Search pages, projects, and more..."
-            onNewPageClick={onCreate}
-            isCollapsed={isCollapsed}
-            onResetWidth={resetWidth}
-          />
+          <>
+            {((isMobile && isCollapsed) || !isMobile) && (
+              <PageHeader
+                searchPlaceholder="Search pages, projects, and more..."
+                onNewPageClick={onCreate}
+                isCollapsed={isCollapsed}
+                onResetWidth={resetWidth}
+              />
+            )}
+          </>
         ) : (
-          <nav className="bg-transparent px-1 py-3 w-full">
+          <nav className="bg-transparent px-1 py-5 w-full">
             {isCollapsed && (
               <ChevronsRight
                 role="button"
                 onClick={resetWidth}
-                className="h-6 w-6 text-muted-foreground text-gray-600 dark:text-gray-400 rounded-sm hover:bg-gray-200 dark:hover:bg-[#1E1E20]"
+                className="h-6 w-6 absolute text-muted-foreground text-gray-600 dark:text-gray-400 rounded-sm hover:bg-gray-200 dark:hover:bg-[#1E1E20]"
               />
             )}
           </nav>
