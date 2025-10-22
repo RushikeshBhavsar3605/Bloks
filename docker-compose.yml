@@ -5,7 +5,8 @@ services:
       - "3000:3000"
     volumes:
       - .:/app # Live code reload
-      - /app/node_modules # Prevent host overwrite
+      - node_modules:/app/node_modules # Use named volume for node_modules
+      - /app/.next # Prevent host overwrite
     environment:
       - NODE_ENV=development
       - DATABASE_URL=${DATABASE_URL}
@@ -19,3 +20,6 @@ services:
       - EMAIL_PASS=${EMAIL_PASS}
     env_file:
       - .env
+
+volumes:
+  node_modules:
