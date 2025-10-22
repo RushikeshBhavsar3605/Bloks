@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable standalone output for Docker production builds
-  output: 'standalone',
+  // Remove standalone output - it conflicts with pages/api routes
+  // output: 'standalone',
   
   // Optimize images
   images: {
