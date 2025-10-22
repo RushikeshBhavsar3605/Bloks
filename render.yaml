@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: bloks-app
+    env: docker
+    dockerfilePath: ./Dockerfile.prod
+    plan: starter
+    scaling:
+      minInstances: 1
+      maxInstances: 3
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://jotion-app.onrender.com
+      - key: DATABASE_URL
+        sync: false # You'll need to set this manually
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false # You'll need to set this manually
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false # You'll need to set this manually
+      - key: GITHUB_CLIENT_ID
+        sync: false # You'll need to set this manually
+      - key: GITHUB_CLIENT_SECRET
+        sync: false # You'll need to set this manually
+      - key: EMAIL_FROM
+        sync: false # You'll need to set this manually
+      - key: EMAIL_PASS
+        sync: false # You'll need to set this manually
+    healthCheckPath: /api/health
+    buildFilter:
+      paths:
+        - app/**
+        - components/**
+        - lib/**
+        - prisma/**
+        - package.json
+        - Dockerfile.prod
