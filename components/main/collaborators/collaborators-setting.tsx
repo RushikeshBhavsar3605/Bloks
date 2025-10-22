@@ -387,9 +387,9 @@ export const CollaboratorsSetting = ({
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#2A2A2E] rounded-lg transition-colors text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-white"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-[#2A2A2E] rounded-lg transition-colors text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-white"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
       </div>
 
