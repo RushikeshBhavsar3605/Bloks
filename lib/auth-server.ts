@@ -9,6 +9,10 @@ interface UserType {
 }
 
 export const currentUser = async (req: NextApiRequest) => {
+  // Debug: Log all cookies
+  console.log("All cookies: ", req.cookies);
+  console.log("Headers: ", req.headers.cookie);
+
   const token = await getToken({
     req: req as unknown as Request,
     // @ts-ignore
