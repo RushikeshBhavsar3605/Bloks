@@ -25,7 +25,10 @@ export const AccountTab = () => {
   const signOutUser = async () => {
     setIsSigningOut(true);
     try {
-      await signOut();
+      await signOut({
+        callbackUrl: "/",
+        redirect: true,
+      });
       toast.success("You have been signed out successfully!");
     } catch (error) {
       toast.error("Failed to sign out. Please try again.");
@@ -97,7 +100,8 @@ export const AccountTab = () => {
                     Sign Out Confirmation
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to sign out? You will need to sign in again to access your account.
+                    Are you sure you want to sign out? You will need to sign in
+                    again to access your account.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

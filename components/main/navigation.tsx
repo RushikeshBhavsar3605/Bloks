@@ -37,11 +37,13 @@ export const sharedNavbarRef = { current: null as ElementRef<"div"> | null };
 interface NavigationProps {
   openSearchModal: () => void;
   openTrashModal: () => void;
+  openCollaboratorModal: () => void;
 }
 
 export const Navigation = ({
   openSearchModal,
   openTrashModal,
+  openCollaboratorModal,
 }: NavigationProps) => {
   const user = useCurrentUser();
   const [userPlan, setUserPlan] = useState<"free" | "pro" | "team">();
@@ -341,7 +343,11 @@ export const Navigation = ({
         {!!params?.documentId ? (
           <>
             {((isMobile && isCollapsed) || !isMobile) && (
-              <Navbar isCollapsed={isCollapsed} onResetWidth={resetWidth} />
+              <Navbar
+                isCollapsed={isCollapsed}
+                onResetWidth={resetWidth}
+                openCollaboratorModal={openCollaboratorModal}
+              />
             )}
           </>
         ) : pathname !== "/billing" && pathname !== "/explore" ? (

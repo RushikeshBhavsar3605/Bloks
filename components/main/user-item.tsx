@@ -39,8 +39,15 @@ const getAvatarColor = (id: string) => {
 const UserItem = () => {
   const user = useCurrentUser();
 
-  const signOutUser = () => {
-    signOut();
+  if (!user) {
+    return null;
+  }
+
+  const signOutUser = async () => {
+    await signOut({
+      callbackUrl: "/",
+      redirect: true,
+    });
   };
 
   return (

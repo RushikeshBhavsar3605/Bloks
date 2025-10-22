@@ -4,10 +4,10 @@ import { useCollaborators } from "@/hooks/use-collaborators";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Spinner } from "@/components/spinner";
+import { Spinner } from "@/components/ui/spinner";
 import { useSocket } from "@/components/providers/socket-provider";
 import { getCollaborator } from "@/actions/collaborators/get-collaborator";
-import { Mail, Settings, UserPlus, Globe, Copy, Check } from "lucide-react";
+import { Mail, Settings, UserPlus, Globe, Copy, Check, X } from "lucide-react";
 import { CollaboratorItem } from "./collaborator-item";
 import { DocumentDeleteSection } from "./document-delete-section";
 import { useOrigin } from "@/hooks/use-origin";
@@ -25,6 +25,7 @@ export const CollaboratorsSetting = ({
   documentIsArchived,
   documentIsPublished,
   updatePublishStatus,
+  onClose,
 }: {
   documentId: string;
   documentOwnerId: string;
@@ -34,6 +35,7 @@ export const CollaboratorsSetting = ({
   documentIsArchived: boolean;
   documentIsPublished: boolean;
   updatePublishStatus: (isPublished: boolean) => void;
+  onClose: () => void;
 }) => {
   const [emailInput, setEmailInput] = useState("");
   const [isMounted, setIsMounted] = useState(false);
@@ -332,7 +334,7 @@ export const CollaboratorsSetting = ({
   if (!isMounted) {
     return (
       <div className="h-full flex items-center justify-center">
-        <Spinner size="lg" />
+        <Spinner className="size-6" />
       </div>
     );
   }
@@ -340,7 +342,7 @@ export const CollaboratorsSetting = ({
   if (isLoading)
     return (
       <div className="h-full flex items-center justify-center">
-        <Spinner size="lg" />
+        <Spinner className="size-6" />
       </div>
     );
 
@@ -368,19 +370,27 @@ export const CollaboratorsSetting = ({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3 pb-4 border-b border-gray-200 dark:border-[#1E1E20]">
-        <div className="w-9 h-9 bg-gray-100 dark:bg-[#2A2A2E] rounded-lg flex items-center justify-center">
-          <Settings className="w-4 h-4 text-blue-500 dark:text-blue-400" />
-        </div>
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Document Settings
-          </h2>
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <span>{documentIcon || "📄"}</span>
-            <span>{documentTitle || "Untitled"}</span>
+      <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-[#1E1E20]">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-gray-100 dark:bg-[#2A2A2E] rounded-lg flex items-center justify-center">
+            <Settings className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Document Settings
+            </h2>
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <span>{documentIcon || "📄"}</span>
+              <span>{documentTitle || "Untitled"}</span>
+            </div>
           </div>
         </div>
+        <button
+          onClick={onClose}
+          className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#2A2A2E] rounded-lg transition-colors text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-white"
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
 
       <div className="space-y-6 max-h-[calc(90vh-200px)] overflow-y-auto custom-scrollbar">

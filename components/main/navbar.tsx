@@ -13,9 +13,7 @@ import { Title } from "./title";
 import { SocketIndicator } from "../socket-indicator";
 import { useSocket } from "../providers/socket-provider";
 import { SaveIndicator } from "../save-indicator";
-import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
 import { Skeleton } from "../ui/skeleton";
-import { CollaboratorsSetting } from "./collaborators/collaborators-setting";
 import { CollaboratorWithMeta, DocumentWithMeta } from "@/types/shared";
 import { toast } from "sonner";
 import { Banner } from "./banner";
@@ -39,6 +37,7 @@ import {
 interface NavbarProps {
   isCollapsed: boolean;
   onResetWidth: () => void;
+  openCollaboratorModal?: () => void;
 }
 
 const getAvatarInitials = (name: string) => {
@@ -66,7 +65,11 @@ const getAvatarColor = (id: string) => {
   return colors[index];
 };
 
-export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
+export const Navbar = ({
+  isCollapsed,
+  onResetWidth,
+  openCollaboratorModal,
+}: NavbarProps) => {
   const router = useRouter();
   const { socket, joinDocument } = useSocket();
   const params = useParams();
@@ -507,26 +510,13 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
           </DropdownMenu>
 
           {/* Document Settings Button */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <button className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-[#2A2A2E] hover:bg-gray-200 dark:hover:bg-[#323236] text-gray-900 dark:text-white text-sm rounded-lg transition-colors">
-                <Settings className="w-4 h-4" />
-                <span className="hidden sm:block">Settings</span>
-              </button>
-            </DialogTrigger>
-            <DialogContent className="w-full max-w-3xl bg-background dark:bg-[#161618] border border-gray-200 dark:border-[#1E1E20] text-gray-900 dark:text-white">
-              <CollaboratorsSetting
-                documentId={document.id}
-                documentOwnerId={document.userId}
-                documentTitle={document.title}
-                documentIcon={document.icon}
-                documentCreatedAt={document.createdAt}
-                documentIsArchived={document.isArchived}
-                documentIsPublished={document.isPublished}
-                updatePublishStatus={updatePublishStatus}
-              />
-            </DialogContent>
-          </Dialog>
+          <button
+            onClick={openCollaboratorModal}
+            className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-[#2A2A2E] hover:bg-gray-200 dark:hover:bg-[#323236] text-gray-900 dark:text-white text-sm rounded-lg transition-colors"
+          >
+            <Settings className="w-4 h-4" />
+            <span className="hidden sm:block">Settings</span>
+          </button>
         </div>
       </header>
 

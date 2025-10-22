@@ -4,7 +4,7 @@ import { Document } from "@prisma/client";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Spinner } from "@/components/spinner";
+import { Spinner } from "@/components/ui/spinner";
 import { DocumentWithMeta } from "@/types/shared";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { TrashSearch } from "./trash-search";
@@ -131,7 +131,7 @@ export const TrashBox = () => {
   if (documents === undefined) {
     return (
       <div className="h-full flex items-center justify-center p-4">
-        <Spinner size="lg" />
+        <Spinner className="size-6" />
       </div>
     );
   }
