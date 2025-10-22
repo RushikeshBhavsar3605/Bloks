@@ -15,5 +15,6 @@ export const currentUser = async (req: NextApiRequest) => {
     secret: process.env.AUTH_SECRET,
   });
 
+  console.log("Token in pages/api:", token);
   return (token?.user as UserType) || null;
 };
