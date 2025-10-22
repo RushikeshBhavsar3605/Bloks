@@ -1,14 +1,12 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
-    volumes:
-      - .:/app # Live code reload
-      - node_modules:/app/node_modules # Use named volume for node_modules
-      - /app/.next # Prevent host overwrite
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
@@ -22,6 +20,3 @@ services:
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
     env_file:
       - .env
-
-volumes:
-  node_modules:
