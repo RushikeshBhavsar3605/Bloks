@@ -1,5 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Enable standalone output for Docker production builds
+  output: 'standalone',
+  
+  // Optimize images
+  images: {
+    unoptimized: false,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+  },
+
   webpack: (config, { dev, isServer }) => {
     if (dev && !isServer) {
       // 1. Prevent HMR from breaking Socket.io
