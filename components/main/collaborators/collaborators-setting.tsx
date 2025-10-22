@@ -70,9 +70,6 @@ export const CollaboratorsSetting = ({
         addedBy: { name: string; id: string };
       };
     }) => {
-      console.log(
-        `Invite by ${data.newCollaborator.addedBy.name} user: ${data.newCollaborator.userName}`
-      );
       if (!data.invited) return;
 
       const newCollaborator: CollaboratorWithMeta | null =
@@ -135,8 +132,6 @@ export const CollaboratorsSetting = ({
         )
       );
     };
-
-    // console.log("🎧 Attaching socket listeners for user:", user?.name);
 
     socket.on("collaborator:settings:invite", handleCollaboratorInvite);
     socket.on("collaborator:settings:verified", handleCollaboratorVerified);

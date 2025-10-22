@@ -71,7 +71,6 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
   const joinActiveDocument = (documentId: string, userId: string) => {
     if (socket) {
-      console.log("Active In: ", documentId, userId);
       socket.emit("join-active-document", { documentId, userId });
     }
   };

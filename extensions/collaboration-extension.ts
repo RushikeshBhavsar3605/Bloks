@@ -18,7 +18,10 @@ interface CollaborationStorage {
   cleanup?: () => void;
 }
 
-export const CollaborationExtension = Extension.create<CollaborationOptions, CollaborationStorage>({
+export const CollaborationExtension = Extension.create<
+  CollaborationOptions,
+  CollaborationStorage
+>({
   name: "collaboration",
 
   addOptions() {
@@ -36,7 +39,7 @@ export const CollaborationExtension = Extension.create<CollaborationOptions, Col
 
     const collaborationPlugin = new Plugin<PluginState>({
       key: new PluginKey("collaboration"),
-      
+
       state: {
         init(): PluginState {
           return {
@@ -63,7 +66,7 @@ export const CollaborationExtension = Extension.create<CollaborationOptions, Col
             timestamp: number;
           }) => {
             console.log(`[${userId}] Received doc-change:`, data);
-            
+
             // Ignore our own changes
             if (data.userId === userId) {
               console.log(`[${userId}] Ignoring own change`);
@@ -79,28 +82,36 @@ export const CollaborationExtension = Extension.create<CollaborationOptions, Col
             // Apply the received steps to the editor
             if (data.steps && data.steps.length > 0) {
               const { state, dispatch } = editorView;
-              
+
               try {
                 let tr = state.tr;
-                
+
                 // Mark this transaction as receiving to prevent feedback loops
                 tr = tr.setMeta("isReceiving", true);
                 tr = tr.setMeta("addToHistory", false); // Don't add to undo history
-                
-                console.log(`[${userId}] Applying`, data.steps.length, 'steps');
-                
+
+                console.log(`[${userId}] Applying`, data.steps.length, "steps");
+
                 // Apply each step
                 data.steps.forEach((stepJSON, index) => {
                   try {
                     const step = Step.fromJSON(state.schema, stepJSON);
                     const result = tr.maybeStep(step);
                     if (result.failed) {
-                      console.warn(`[${userId}] Failed to apply step ${index}:`, result.failed);
+                      console.warn(
+                        `[${userId}] Failed to apply step ${index}:`,
+                        result.failed
+                      );
                     } else {
-                      console.log(`[${userId}] Applied step ${index} successfully`);
+                      console.log(
+                        `[${userId}] Applied step ${index} successfully`
+                      );
                     }
                   } catch (stepError) {
-                    console.warn(`[${userId}] Error parsing step ${index}:`, stepError);
+                    console.warn(
+                      `[${userId}] Error parsing step ${index}:`,
+                      stepError
+                    );
                   }
                 });
 
@@ -111,15 +122,21 @@ export const CollaborationExtension = Extension.create<CollaborationOptions, Col
                   console.log(`[${userId}] No changes to dispatch`);
                 }
               } catch (error) {
-                console.error(`[${userId}] Error applying collaborative changes:`, error);
+                console.error(
+                  `[${userId}] Error applying collaborative changes:`,
+                  error
+                );
               }
             }
           };
 
           // Remove any existing listeners first to prevent duplicates
           socket.off("doc-change", handleDocChange);
-          
-          console.log(`[${userId}] Setting up doc-change listener for document:`, documentId);
+
+          console.log(
+            `[${userId}] Setting up doc-change listener for document:`,
+            documentId
+          );
           socket.on("doc-change", handleDocChange);
 
           // Store cleanup function - ensure storage exists
@@ -138,44 +155,56 @@ export const CollaborationExtension = Extension.create<CollaborationOptions, Col
             if (extension.storage?.cleanup) {
               extension.storage.cleanup();
             }
-          }
+          },
         };
       },
 
       appendTransaction: (transactions, oldState, newState) => {
         // CRITICAL FIX: Check each transaction individually for the isReceiving meta
         // Don't rely on plugin state which can get stuck
-        const hasReceivingTransaction = transactions.some(tr => tr.getMeta("isReceiving") === true);
-        
+        const hasReceivingTransaction = transactions.some(
+          (tr) => tr.getMeta("isReceiving") === true
+        );
+
         console.log(`[${userId}] appendTransaction check:`, {
           hasReceivingTransaction,
           transactionCount: transactions.length,
           hasSocket: !!socket,
           hasDocumentId: !!documentId,
-          hasUserId: !!userId
+          hasUserId: !!userId,
         });
-        
+
         if (hasReceivingTransaction) {
-          console.log(`[${userId}] Skipping emit - transaction marked as receiving`);
+          console.log(
+            `[${userId}] Skipping emit - transaction marked as receiving`
+          );
           return null;
         }
 
         // Check if there are actual document changes from user input
-        const userChanges = transactions.filter(tr => 
-          tr.docChanged && 
-          tr.getMeta("isReceiving") !== true &&
-          tr.steps.length > 0
+        const userChanges = transactions.filter(
+          (tr) =>
+            tr.docChanged &&
+            tr.getMeta("isReceiving") !== true &&
+            tr.steps.length > 0
         );
-        
+
         console.log(`[${userId}] User changes found:`, userChanges.length);
-        
+
         if (userChanges.length > 0 && socket && documentId && userId) {
           // Get the steps from user transactions
-          const steps = userChanges.flatMap(tr => tr.steps.map(step => step.toJSON()));
+          const steps = userChanges.flatMap((tr) =>
+            tr.steps.map((step) => step.toJSON())
+          );
 
           if (steps.length > 0) {
-            console.log(`[${userId}] EMITTING doc-change with`, steps.length, 'steps for document:', documentId);
-            
+            console.log(
+              `[${userId}] EMITTING doc-change with`,
+              steps.length,
+              "steps for document:",
+              documentId
+            );
+
             // Emit the changes via socket immediately
             socket.emit("doc-change", {
               documentId,
@@ -190,7 +219,7 @@ export const CollaborationExtension = Extension.create<CollaborationOptions, Col
             userChanges: userChanges.length,
             socket: !!socket,
             documentId: !!documentId,
-            userId: !!userId
+            userId: !!userId,
           });
         }
 

@@ -42,9 +42,6 @@ const getUserPlanAccess = async (userId: string) => {
     },
   });
 
-  console.log("Count: ", JSON.stringify(documentCount));
-  console.log("Subscription: ", JSON.stringify(subscription));
-
   if ((!subscription || subscription?.plan === "free") && documentCount >= 25)
     return false;
 

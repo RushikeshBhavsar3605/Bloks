@@ -254,7 +254,6 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
   // Join document socket room
   useEffect(() => {
     if (socket && document?.id && user?.id) {
-      console.log("Joining document room from navbar:", document.id, user.name);
       joinDocument(document.id, user.id);
     }
   }, [socket, document?.id, user?.id, joinDocument]);
@@ -273,7 +272,6 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
       title?: string;
       icon?: string;
     }) => {
-      console.log("Real-time title change", JSON.stringify(title));
       setDocument((doc) => {
         if (!doc) return doc;
         return {

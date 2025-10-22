@@ -20,7 +20,6 @@ const DocumentIdPage = () => {
 
   const fetchDocuments = useCallback(async () => {
     try {
-      console.log("DocumentId: ", documentId);
       if (!documentId) {
         return router.push("/documents");
       }

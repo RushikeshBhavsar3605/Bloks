@@ -73,7 +73,6 @@ const BillingPage = () => {
     const fetchSubscription = async () => {
       const plan = await getUserSubscription(user.id as string);
       setCurrentPlan(plan);
-      console.log("Plan: ", plan);
     };
 
     fetchSubscription();

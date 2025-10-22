@@ -99,17 +99,11 @@ const DocumentIdPage = () => {
 
     const docHeaderChange = `doc-header-change`;
 
-    console.log(
-      `[PAGE] Joining active document: ${documentId} for user: ${userId}`
-    );
     joinActiveDocument(documentId, userId);
     socket.on(docHeaderChange, handleDocHeaderChange);
     socket.on("collaborator:settings:role", handleCollaboratorRoleChange);
 
     return () => {
-      console.log(
-        `[PAGE] Leaving active document: ${documentId} for user: ${userId}`
-      );
       leaveActiveDocument(documentId, userId);
       socket.off(docHeaderChange, handleDocHeaderChange);
       socket.off("collaborator:settings:role", handleCollaboratorRoleChange);

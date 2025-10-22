@@ -162,7 +162,6 @@ export function SimpleEditorNoToolbar({
         const isUserAction = !transaction.getMeta("isReceiving");
 
         if (isUserAction && socket && documentId && user?.id) {
-          console.log(`[USER ID FROM FRONTEND CONTENT UPDATE]: ${user.id}`);
           socket.emit("document:update:content", {
             documentId,
             content: html,
