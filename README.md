@@ -74,8 +74,8 @@
 
 ```bash
 # Clone the repository  [header-1](#header-1)
-git clone https://github.com/RushikeshBhavsar3605/Jotion.git
-cd Jotion
+git clone https://github.com/RushikeshBhavsar3605/Bloks.git
+cd Bloks
 
 # Install dependencies  [header-2](#header-2)
 npm install
