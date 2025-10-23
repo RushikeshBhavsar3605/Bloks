@@ -11,7 +11,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_APP_URL
-        value: https://jotion-app.onrender.com
+        value: https://bloks.onrender.com
       - key: DATABASE_URL
         sync: false # You'll need to set this manually
       - key: AUTH_SECRET
