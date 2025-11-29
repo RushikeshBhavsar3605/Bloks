@@ -1,74 +1,155 @@
-# Bloks - Revolutionary File Organization Platform
+# <img src="public/images/logo.svg" width="32" style="vertical-align:-6px;" /> Bloks - Revolutionary File Organization Platform
 
-<div align="center">
-  <img src="public/images/logo.png" alt="Bloks Logo" height="100">
-  
-  <p align="center">
-    <strong>Think beyond folders. Every file is a container.</strong>
-  </p>
-  
-  <p align="center">
-    A modern, real-time collaborative document editing and management platform built with Next.js 14, featuring nested file structures, rich text editing, and team collaboration capabilities.
-  </p>
+A modern, real-time collaborative document editing and management platform inspired by Notion built with modern web technologies, featuring nested file structures, rich text editing, and team collaboration capabilities.
 
-  <p align="center">
-    <a href="#features">Features</a> |
-    <a href="#getting-started">Getting Started</a> |
-    <a href="#deployment">Deployment</a> |
-    <a href="#tech-stack">Tech Stack</a> |
-    <a href="#contributing">Contributing</a>
-  </p>
-</div>
+![Next.js](https://img.shields.io/badge/Next.js-ffffff?style=flat&logo=nextdotjs&logoColor=000)
+![Auth.js](https://img.shields.io/badge/Auth.js-ec542f?style=flat&logo=auth0&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=flat&logo=prisma&logoColor=white)
+![Socket.io](https://img.shields.io/badge/Socket.io-ffffff?style=flat&logo=socketdotio&logoColor=010101)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
 
----
+## 🔗 Live Project:
 
-## 🚀 Features
+- Explore the live version of the project here: [Live Project](https://bloks.onrender.com)
 
-### Core Capabilities
+## ✨ Features
 
-- **Nested File Structure** - Create infinite document hierarchies where each document can contain other documents [2](#0-1)
-- **Real-time Collaboration** - Work together seamlessly with live cursors and synchronized content updates [3](#0-2)
-- **Rich Text Editor** - Powered by Tiptap with extensive formatting, tables, lists, and task management [4](#0-3)
-- **AI-Powered Search** - Find anything instantly across all nested files and content [5](#0-4)
-- **Multi-Platform** - Access from desktop, tablet, or mobile with offline support [6](#0-5)
-- **Enterprise Security** - Bank-level security with end-to-end encryption and permission controls [7](#0-6)
+### Real-time Collaboration Architecture
 
-### Collaboration Features
+The real-time collaboration system is built with a modular Socket.io architecture:
 
-- Live collaborative editing with operational transformation
-- Document sharing with owner, editor, and viewer roles
-- Public document publishing and discovery
-- Real-time presence indicators
+- **Document Save Manager**: Debounced saves with 2-second intervals to optimize database writes
+- **Room Manager**: Handles document subscriptions and active user presence
+- **Event Handlers**: Separate modules for document operations and collaboration features
+- **Type Safety**: Centralized TypeScript definitions for all socket events
 
-### Subscription Tiers
+This architecture supports live collaborative editing, cursor tracking, and synchronized document updates across multiple users. See `pages/api/socket/README.md` for detailed implementation.
 
-- **Free**: 25 documents, 3 collaborators
-- **Pro**: 200 documents, 8 collaborators
-- **Team**: Unlimited documents and collaborators
+### Advanced Authentication System
+
+Multi-provider authentication built with NextAuth.js 5.0:
+
+- **Providers**: Email/password, Google OAuth, and GitHub OAuth support
+- **Security**: Bcrypt password hashing with salt rounds for credential authentication
+- **Session Management**: Secure JWT tokens with automatic refresh
+- **Email Verification**: Account verification and password reset workflows
+- **Two-Factor Auth**: Optional 2FA support for enhanced security
+
+The system uses Zod schemas for input validation and includes comprehensive error handling for all authentication flows. See `auth.config.ts` and `actions/auth/` for implementation details.
+
+### Rich Text Editor Ecosystem
+
+Built on TipTap 2.23.1 with extensive customizations:
+
+- **Core Features**: Tables, lists, blockquotes, links, images, task lists, text alignment
+- **Custom Extensions**: Callout blocks, collaborative editing, table node views
+- **Node Components**: Custom image, code block, list, and paragraph renderers
+- **Keyboard Shortcuts**: Full keyboard navigation with Mod+Shift combinations
+- **Selection Handling**: Visual selection highlights and trailing node management
+
+The editor supports real-time collaboration through Socket.io event synchronization and includes custom node views for enhanced user experience. See `components/templates/simple-editor-no-toolbar.tsx` and `extensions/` for implementation.
+
+### Full-Text Search System
+
+MongoDB-based search architecture with comprehensive filtering:
+
+- **Real-time Search**: Instant results as you type across all accessible documents
+- **Advanced Filters**: Search by content, title, owner, collaboration status
+- **Scope Control**: Search personal documents, shared documents, or public content
+- **Permission Aware**: Results filtered by user access permissions
+- **Modal Interface**: Keyboard-accessible search modal with keyboard shortcuts
+
+The search system uses MongoDB text indexes with case-insensitive matching and includes debounced input for performance optimization. See `actions/search/advanced-search.ts` and `components/search/` for implementation.
+
+### Nested Document Architecture
+
+Infinite hierarchical document structure where every document can contain other documents:
+
+- **Tree Structure**: Dynamic document tree with drag-drop organization
+- **Parent-Child Relations**: Database-level relationships with cascade operations
+- **Breadcrumb Navigation**: Automatic breadcrumb generation for nested paths
+- **Recursive Operations**: Bulk operations on document hierarchies (archive, restore, delete)
+- **Visual Indicators**: Icons and indentation showing document relationships
+
+The system uses recursive database queries and maintains referential integrity across all nested operations. See `components/main/document-list/document-tree.tsx` for UI implementation.
+
+### Subscription & Billing Management
+
+Stripe-integrated subscription system with three tiers:
+
+- **Free Plan**: 25 documents, 3 publications, 2 collaborators per document
+- **Pro Plan**: 200 documents, 15 publications, 8 collaborators (₹499/month)
+- **Team Plan**: Unlimited documents, publications, and collaborators (₹999/month)
+- **Usage Tracking**: Real-time monitoring of document counts and limits
+- **Upgrade Flows**: Contextual upgrade prompts when limits are reached
+
+The billing system includes webhook handling for subscription events and customer portal integration. See `data/pricing.ts` and `components/main/billing/` for implementation.
+
+### Collaboration & Sharing System
+
+Comprehensive document sharing with granular permissions:
+
+- **Role-Based Access**: Owner, Editor, Viewer roles with specific permissions
+- **Invitation System**: Email-based collaboration invites with verification
+- **Public Publishing**: Share documents publicly with optional password protection
+- **Real-time Presence**: Live cursors and user presence indicators
+- **Activity Tracking**: Audit logs for document access and modifications
+
+The collaboration system integrates with the real-time architecture for instant permission updates. See `actions/collaborators/` and `services/collaborator-service.ts` for implementation.
+
+### Document Management & Organization
+
+Full lifecycle document management with advanced organization:
+
+- **Starred Documents**: Favorite documents for quick access
+- **Trash System**: Soft delete with restore capabilities
+- **Bulk Operations**: Multi-select operations across document sets
+- **Export Options**: Document export capabilities (implementation varies by subscription tier)
+- **Metadata Tracking**: Creation dates, last edited, author information
+
+The system maintains document relationships during moves and operations. See `components/main/trash-box/` and `actions/documents/` for implementation.
+
+### Theme & Accessibility System
+
+Comprehensive theming and accessibility support:
+
+- **Dark/Light Mode**: System-aware theme switching with persistence
+- **Responsive Design**: Mobile-first design with tablet and desktop optimizations
+- **Keyboard Navigation**: Full keyboard accessibility for all features
+- **Screen Reader Support**: ARIA labels and semantic HTML structure
+- **Focus Management**: Proper focus handling in modals and complex interactions
+
+The theme system uses Tailwind CSS with CSS variables for smooth transitions. See `components/providers/theme-provider.tsx` for implementation.
+
+### Marketing Site
+
+The marketing site showcases the platform with interactive demos, including an animated company carousel and nested file structure visualization.
 
 ## 🛠️ Tech Stack
 
 ### Frontend
 
-- **Framework**: Next.js 14.2.4 with App Router [8](#0-7)
-- **UI Library**: React 18 [9](#0-8)
-- **Styling**: Tailwind CSS [10](#0-9)
-- **UI Components**: Radix UI primitives [11](#0-10)
-- **State Management**: Zustand [12](#0-11)
-- **Forms**: React Hook Form + Zod validation [13](#0-12)
+- **Framework**: Next.js 14.2.4 with App Router
+- **UI Library**: React 18
+- **Styling**: Tailwind CSS
+- **UI Components**: Radix UI primitives
+- **State Management**: Zustand
+- **Forms**: React Hook Form + Zod validation
 
 ### Backend
 
-- **Authentication**: NextAuth.js 5.0 (multi-provider) [14](#0-13)
-- **Database**: MongoDB with Prisma ORM [15](#0-14)
-- **Real-time**: Socket.io for WebSocket communication [16](#0-15)
-- **Payments**: Stripe integration [17](#0-16)
-- **Email**: Resend + Nodemailer [18](#0-17)
+- **Authentication**: NextAuth.js 5.0 (multi-provider)
+- **Database**: MongoDB with Prisma ORM
+- **Real-time**: Socket.io with modular architecture for scalable WebSocket communication
+- **Payments**: Stripe integration
+- **Email**: Resend + Nodemailer
 
 ### Rich Text Editor
 
-- **Core**: Tiptap 2.23.1 with extensive extensions [19](#0-18)
-- **Features**: Tables, lists, blockquotes, links, images, task lists, text alignment [20](#0-19)
+- **Core**: Tiptap 2.23.1 with extensive extensions
+- **Features**: Tables, lists, blockquotes, links, images, task lists, text alignment
 
 ## 📦 Installation
 
@@ -100,8 +181,6 @@ npm run start    # Start production server
 npm run lint     # Run ESLint
 ```
 
-`package.json:5-10`
-
 ## 🌐 Environment Variables
 
 Required environment variables:
@@ -117,7 +196,7 @@ Required environment variables:
 - `STRIPE_WEBHOOK_SECRET` - Stripe webhook secret
 - `RESEND_API_KEY` - Email service API key
 
-## 🏗️ Project Structure
+## 📁 Project Structure
 
 ```
 bloks/
@@ -139,32 +218,42 @@ bloks/
 ├── actions/              # Server actions
 ├── hooks/                # Custom React hooks
 ├── lib/                  # Utility libraries
+├── pages/api/socket/     # Real-time WebSocket architecture
+│   ├── managers/         # State and save management
+│   ├── handlers/         # Event processing modules
+│   └── types.ts          # Socket event definitions
 ├── prisma/               # Database schema
 ├── services/             # Business logic services
 ├── types/                # TypeScript type definitions
 └── public/               # Static assets
 ```
 
-`page.tsx:1-12`
+## 🚀 Deployment
 
-## 🎨 Key Features Implementation
+This application cannot be deployed on Vercel as it uses `Socket.io`, which requires a persistent server, and Vercel is a serverless platform. However, you can deploy it on other platforms that support long-lived connections, such as Render or similar platforms.
 
-### Marketing Site
+Here's how you can deploy on Render:
 
-The marketing site showcases the platform with interactive demos, including an animated company carousel and nested file structure visualization. `page.tsx:47-76`
+1. Push your code to GitHub
+2. Import your repository in Render
+3. Add all environment variables
+4. Deploy!
 
-### Authentication
+## 👤 Author
 
-Multi-provider authentication supporting email/password, Google OAuth, and GitHub OAuth with two-factor authentication support. `authentication.ts:24-50`
+Rushikesh Bhavsar
 
-## 📄 License
+- GitHub: [@RushikeshBhavsar3605](https://github.com/RushikeshBhavsar3605)
 
-This is a personal learning project built to demonstrate modern full-stack development practices. authentication.ts:13-14
+  <a href="https://github.com/RushikeshBhavsar3605">
+  <img src="https://avatars.githubusercontent.com/u/129877176?v=4" alt="GitHub Profile" style="width: 45px; height: 45px; border-radius: 50%;" />
+  </a>
 
-## 🤝 Contributing
+## 🙏 Acknowledgments
 
-This is a portfolio project. Feel free to fork and experiment!
+- Inspired by Notion's amazing collaborative management platform
+- Built using modern web technologies
 
-## 📧 Contact
+---
 
-For questions or feedback, please open an issue on GitHub.
+⭐ If you like this project, please give it a star on GitHub!

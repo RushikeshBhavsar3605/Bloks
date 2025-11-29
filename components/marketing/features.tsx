@@ -12,7 +12,7 @@ export const Features = () => {
       icon: Search,
       title: "Powerful Search",
       description:
-        "Find anything instantly with our AI-powered search across all your nested files and content.",
+        "Find anything instantly with full-text search across all your nested files and content.",
     },
     {
       icon: Share2,
@@ -22,9 +22,9 @@ export const Features = () => {
     },
     {
       icon: Lock,
-      title: "Enterprise Security",
+      title: "Secure Authentication",
       description:
-        "Bank-level security with end-to-end encryption and advanced permission controls.",
+        "Multi-provider authentication with encrypted sessions and comprehensive permission controls.",
     },
     {
       icon: Smartphone,
