@@ -134,7 +134,7 @@ The marketing site showcases the platform with interactive demos, including an a
 - **Framework**: Next.js 14.2.4 with App Router
 - **UI Library**: React 18
 - **Styling**: Tailwind CSS
-- **UI Components**: Radix UI primitives
+- **UI Components**: Shadcn UI
 - **State Management**: Zustand
 - **Forms**: React Hook Form + Zod validation
 
@@ -202,29 +202,94 @@ Required environment variables:
 bloks/
 ├── app/                    # Next.js App Router
 │   ├── (auth)/            # Authentication pages
-│   ├── (main)/            # Main application pages
+│   │   ├── auth/          # Login/register pages
+│   │   └── verify/        # Email verification
+│   ├── (main)/            # Main application
+│   │   ├── billing/       # Subscription management
+│   │   ├── documents/     # Document editor and view
+│   │   ├── explore/       # Browse templates
+│   │   ├── library/       # User's document library
+│   │   ├── settings/      # User settings
+│   │   └── starred/       # Starred documents
 │   ├── (marketing)/       # Landing page
 │   ├── (public)/          # Public document preview
 │   └── api/               # API routes
-├── components/            # Reusable UI components
+│       └── auth/          # NextAuth configuration
+├── components/            # React components
 │   ├── auth/             # Authentication components
 │   ├── main/             # Main app components
+│   │   ├── billing/      # Billing UI components
+│   │   ├── collaborators/ # Collaboration UI
+│   │   ├── document-list/ # Document listing
+│   │   ├── settings/      # Settings UI
+│   │   ├── trash-box/     # Trash management
+│   │   ├── editor.tsx     # TipTap editor wrapper
+│   │   ├── navbar.tsx     # Top navigation bar
+│   │   └── toolbar.tsx    # Editor toolbar
 │   ├── marketing/        # Marketing page components
 │   ├── modals/           # Modal components
+│   │   ├── collaborator-modal.tsx
+│   │   ├── confirm-modal.tsx
+│   │   ├── settings-modal.tsx
+│   │   ├── trash-modal.tsx
+│   │   └── upgrade-alert-modal.tsx
 │   ├── providers/        # Context providers
 │   ├── search/           # Search functionality
 │   ├── templates/        # Document templates
 │   └── ui/               # Base UI components
 ├── actions/              # Server actions
+│   ├── collaborators/    # Collaborator management
+│   ├── documents/        # Document CRUD operations
+│   ├── search/           # Search actions
+│   ├── users/            # User management
+│   ├── login.ts          # Login action
+│   ├── register.ts       # Registration action
+│   └── reset.ts          # Password reset
 ├── hooks/                # Custom React hooks
-├── lib/                  # Utility libraries
-├── pages/api/socket/     # Real-time WebSocket architecture
-│   ├── managers/         # State and save management
-│   ├── handlers/         # Event processing modules
-│   └── types.ts          # Socket event definitions
-├── prisma/               # Database schema
+│   ├── use-advanced-search.ts  # Search functionality
+│   ├── use-collaborators.ts    # Collaborator state
+│   ├── use-current-user.ts     # User session
+│   ├── use-save-status.tsx     # Document save status
+│   └── use-settings.tsx        # Settings modal
+├── lib/                  # Utility functions
+│   ├── email-templates/  # Email HTML templates
+│   ├── toasts/          # Toast notification helpers
+│   ├── auth-server.ts   # Server-side auth utilities
+│   ├── client-socket.ts # Socket.io client setup
+│   ├── db.ts            # Prisma client
+│   ├── mail.ts          # Email sending
+│   ├── tiptap-utils.ts  # Editor utilities
+│   └── tokens.ts        # Auth token generation
+├── pages/                # Pages Router (for Socket.io)
+│   └── api/
+│       ├── socket/       # Socket.io handlers
+│       │   ├── auth/     # Socket authentication
+│       │   ├── collaborators/ # Collaborator events
+│       │   │   └── invite.ts
+│       │   ├── documents/ # Document events
+│       │   │   ├── [documentId]/
+│       │   │   ├── access.ts
+│       │   │   ├── index.ts
+│       │   │   └── trash.ts
+│       │   ├── handlers/ # Event processing modules
+│       │   │   ├── collaboration-events.ts
+│       │   │   └── document-events.ts
+│       │   ├── managers/ # State and save management
+│       │   │   ├── document-save-manager.ts
+│       │   │   └── room-manager.ts
+│       │   ├── io.ts    # Socket initialization
+│       │   ├── socket-manager.ts
+│       │   └── types.ts # Socket event definitions
+│       └── webhook/      # External webhooks
+│           └── stripe/   # Stripe payment webhooks
 ├── services/             # Business logic services
+│   ├── collaborator-service.ts
+│   ├── document-service.ts
+│   └── socket-service.ts
+├── prisma/               # Database schema
+│   └── schema.prisma     # Prisma schema definition
 ├── types/                # TypeScript type definitions
+│   └── shared.ts         # Shared types
 └── public/               # Static assets
 ```
 
