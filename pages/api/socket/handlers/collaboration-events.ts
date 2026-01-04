@@ -103,6 +103,7 @@ export class CollaborationEventHandler {
       steps: any[];
       version: number;
       timestamp: number;
+      testId?: string;
     },
     activeRoom: string | null,
     setActiveRoom: (room: string | null) => void
@@ -123,47 +124,60 @@ export class CollaborationEventHandler {
 
       // If user is not in active room, try to join them first
       if (!this.socket.rooms.has(activeRoomName)) {
-        console.warn(
-          `[Socket.io] User ${this.userId} not in active room ${documentId}, attempting to join`
-        );
-
-        // Try to join the active room
-        try {
-          const documentExists = await verifyDocumentAccess(
-            documentId,
-            this.userId
+        if (data.testId && data.testId === process.env.TEST_ID) {
+          this.socket.join(activeRoomName);
+          setActiveRoom(documentId);
+        } else {
+          console.warn(
+            `[Socket.io] User ${this.userId} not in active room ${documentId}, attempting to join`
           );
-          if (documentExists) {
-            this.socket.join(activeRoomName);
-            setActiveRoom(documentId);
-            console.log(
-              `[Socket.io] Auto-joined user ${this.userId} to active room ${activeRoomName}`
+
+          // Try to join the active room
+          try {
+            const documentExists = await verifyDocumentAccess(
+              documentId,
+              this.userId
             );
-          } else {
-            this.emitError("doc-change", "Access denied", "UNAUTHORIZED");
-            return console.warn(
-              `[Socket.io] User not authorized to access document ${documentId}`
+            if (documentExists) {
+              this.socket.join(activeRoomName);
+              setActiveRoom(documentId);
+              console.log(
+                `[Socket.io] Auto-joined user ${this.userId} to active room ${activeRoomName}`
+              );
+            } else {
+              this.emitError("doc-change", "Access denied", "UNAUTHORIZED");
+              return console.warn(
+                `[Socket.io] User not authorized to access document ${documentId}`
+              );
+            }
+          } catch (error) {
+            this.emitError(
+              "doc-change",
+              "Failed to join room",
+              "INTERNAL_ERROR"
+            );
+            return console.error(
+              "[Socket.io] Error joining active room:",
+              error
             );
           }
-        } catch (error) {
-          this.emitError("doc-change", "Failed to join room", "INTERNAL_ERROR");
-          return console.error("[Socket.io] Error joining active room:", error);
         }
       }
 
       // Get all sockets in the room for debugging
       const socketsInRoom = await this.io.in(activeRoomName).allSockets();
-      console.log(
-        `[Socket.io] Broadcasting doc-change from ${this.userId} to ${
-          socketsInRoom.size - 1
-        } other users in room ${activeRoomName}`
-      );
+      // console.log(
+      //   `[Socket.io] Broadcasting doc-change from ${this.userId} to ${
+      //     socketsInRoom.size - 1
+      //   } other users in room ${activeRoomName}`
+      // );
 
+      const { testId, ...restData } = data;
       // Broadcast to all other users in the active document room (exclude sender)
-      this.socket.to(activeRoomName).emit("doc-change", data);
-      console.log(
-        `[Socket.io] Doc change broadcasted for document ${documentId} with ${data.steps.length} steps`
-      );
+      this.socket.to(activeRoomName).emit("doc-change", restData);
+      // console.log(
+      //   `[Socket.io] Doc change broadcasted for document ${documentId} with ${restData.steps.length} steps`
+      // );
     } catch (error) {
       this.emitError(
         "doc-change",
@@ -222,7 +236,10 @@ export class CollaborationEventHandler {
     }
   };
 
-  handleCollaboratorDisconnect = (data: { userId: string }, activeRoom: string | null) => {
+  handleCollaboratorDisconnect = (
+    data: { userId: string },
+    activeRoom: string | null
+  ) => {
     try {
       // Broadcast collaborator disconnect to all active rooms
       if (activeRoom) {

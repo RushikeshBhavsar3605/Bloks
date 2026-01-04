@@ -4,6 +4,7 @@ import { DocumentEventHandler } from "./handlers/document-events";
 import { CollaborationEventHandler } from "./handlers/collaboration-events";
 import { DocumentSaveManager } from "./managers/document-save-manager";
 import { DocumentRoomAction } from "./types";
+import { setEditEventCount, setEditLatencies } from "./io";
 
 export class SocketDocumentManager {
   private activeRoom: string | null = null;
@@ -17,9 +18,24 @@ export class SocketDocumentManager {
     private userId: string
   ) {
     // Initialize handlers
-    this.roomManager = new RoomManager(socket, io, userId, this.emitError.bind(this));
-    this.documentHandler = new DocumentEventHandler(socket, io, userId, this.emitError.bind(this));
-    this.collaborationHandler = new CollaborationEventHandler(socket, io, userId, this.emitError.bind(this));
+    this.roomManager = new RoomManager(
+      socket,
+      io,
+      userId,
+      this.emitError.bind(this)
+    );
+    this.documentHandler = new DocumentEventHandler(
+      socket,
+      io,
+      userId,
+      this.emitError.bind(this)
+    );
+    this.collaborationHandler = new CollaborationEventHandler(
+      socket,
+      io,
+      userId,
+      this.emitError.bind(this)
+    );
 
     // Set up event listeners
     this.setupEventListeners();
@@ -35,23 +51,43 @@ export class SocketDocumentManager {
     this.socket.on("leave-active-document", this.handleLeaveActiveDocument);
 
     // Document event listeners
-    this.socket.on("document:update:title", this.documentHandler.handleTitleUpdate);
-    this.socket.on("document:update:content", this.documentHandler.handleContentUpdate);
+    this.socket.on(
+      "document:update:title",
+      this.documentHandler.handleTitleUpdate
+    );
+    this.socket.on(
+      "document:update:content",
+      this.documentHandler.handleContentUpdate
+    );
 
     // Collaboration event listeners
     this.socket.on("doc-header-change", this.handleDocHeaderChange);
     this.socket.on("doc-change", this.handleDocChange);
-    this.socket.on("cursor-update", this.collaborationHandler.handleCursorUpdate);
-    this.socket.on("collaborator-disconnect", this.handleCollaboratorDisconnect);
+    this.socket.on(
+      "cursor-update",
+      this.collaborationHandler.handleCursorUpdate
+    );
+    this.socket.on(
+      "collaborator-disconnect",
+      this.handleCollaboratorDisconnect
+    );
   }
 
   // Wrapper methods to handle activeRoom state
   private handleJoinActiveDocument = (data: DocumentRoomAction) => {
-    this.roomManager.joinActiveRoom(data, this.activeRoom, this.setActiveRoom.bind(this));
+    this.roomManager.joinActiveRoom(
+      data,
+      this.activeRoom,
+      this.setActiveRoom.bind(this)
+    );
   };
 
   private handleLeaveActiveDocument = (data: DocumentRoomAction) => {
-    this.roomManager.leaveActiveRoom(data, this.activeRoom, this.setActiveRoom.bind(this));
+    this.roomManager.leaveActiveRoom(
+      data,
+      this.activeRoom,
+      this.setActiveRoom.bind(this)
+    );
   };
 
   private handleDocHeaderChange = (data: {
@@ -60,21 +96,39 @@ export class SocketDocumentManager {
     title?: string;
     icon?: string;
   }) => {
-    this.collaborationHandler.handleDocHeaderChange(data, this.activeRoom, this.setActiveRoom.bind(this));
+    this.collaborationHandler.handleDocHeaderChange(
+      data,
+      this.activeRoom,
+      this.setActiveRoom.bind(this)
+    );
   };
 
-  private handleDocChange = (data: {
+  private handleDocChange = async (data: {
     documentId: string;
     userId: string;
     steps: any[];
     version: number;
     timestamp: number;
   }) => {
-    this.collaborationHandler.handleDocChange(data, this.activeRoom, this.setActiveRoom.bind(this));
+    // Latency Calculation
+    const start = performance.now();
+
+    await this.collaborationHandler.handleDocChange(
+      data,
+      this.activeRoom,
+      this.setActiveRoom.bind(this)
+    );
+
+    const duration = performance.now() - start;
+    setEditLatencies(duration);
+    setEditEventCount();
   };
 
   private handleCollaboratorDisconnect = (data: { userId: string }) => {
-    this.collaborationHandler.handleCollaboratorDisconnect(data, this.activeRoom);
+    this.collaborationHandler.handleCollaboratorDisconnect(
+      data,
+      this.activeRoom
+    );
   };
 
   private setActiveRoom(room: string | null) {
@@ -94,12 +148,24 @@ export class SocketDocumentManager {
       this.socket.off("join-active-document", this.handleJoinActiveDocument);
       this.socket.off("leave-active-document", this.handleLeaveActiveDocument);
 
-      this.socket.off("document:update:title", this.documentHandler.handleTitleUpdate);
-      this.socket.off("document:update:content", this.documentHandler.handleContentUpdate);
+      this.socket.off(
+        "document:update:title",
+        this.documentHandler.handleTitleUpdate
+      );
+      this.socket.off(
+        "document:update:content",
+        this.documentHandler.handleContentUpdate
+      );
       this.socket.off("doc-header-change", this.handleDocHeaderChange);
       this.socket.off("doc-change", this.handleDocChange);
-      this.socket.off("cursor-update", this.collaborationHandler.handleCursorUpdate);
-      this.socket.off("collaborator-disconnect", this.handleCollaboratorDisconnect);
+      this.socket.off(
+        "cursor-update",
+        this.collaborationHandler.handleCursorUpdate
+      );
+      this.socket.off(
+        "collaborator-disconnect",
+        this.handleCollaboratorDisconnect
+      );
 
       // Clean up DocumentSaveManager state if user was in an active document
       if (this.activeRoom) {
