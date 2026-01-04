@@ -5,6 +5,7 @@ import { CollaborationEventHandler } from "./handlers/collaboration-events";
 import { DocumentSaveManager } from "./managers/document-save-manager";
 import { DocumentRoomAction } from "./types";
 import { setEditEventCount, setEditLatencies } from "./io";
+import { performance } from "perf_hooks";
 
 export class SocketDocumentManager {
   private activeRoom: string | null = null;
