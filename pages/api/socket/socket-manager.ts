@@ -63,7 +63,9 @@ export class SocketDocumentManager {
 
     // Collaboration event listeners
     this.socket.on("doc-header-change", this.handleDocHeaderChange);
-    this.socket.on("doc-change", this.handleDocChange);
+    this.socket.on("doc-change", (data, ack) => {
+      this.handleDocChange(data, ack);
+    });
     this.socket.on(
       "cursor-update",
       this.collaborationHandler.handleCursorUpdate
@@ -104,25 +106,22 @@ export class SocketDocumentManager {
     );
   };
 
-  private handleDocChange = async (data: {
-    documentId: string;
-    userId: string;
-    steps: any[];
-    version: number;
-    timestamp: number;
-  }) => {
-    // Latency Calculation
-    const start = performance.now();
-
-    await this.collaborationHandler.handleDocChange(
+  private handleDocChange = (
+    data: {
+      documentId: string;
+      userId: string;
+      steps: any[];
+      version: number;
+      timestamp: number;
+    },
+    ack?: (res?: any) => void
+  ) => {
+    this.collaborationHandler.handleDocChange(
       data,
       this.activeRoom,
-      this.setActiveRoom.bind(this)
+      this.setActiveRoom.bind(this),
+      ack
     );
-
-    const duration = performance.now() - start;
-    setEditLatencies(duration);
-    setEditEventCount();
   };
 
   private handleCollaboratorDisconnect = (data: { userId: string }) => {

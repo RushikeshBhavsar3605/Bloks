@@ -106,7 +106,8 @@ export class CollaborationEventHandler {
       testId?: string;
     },
     activeRoom: string | null,
-    setActiveRoom: (room: string | null) => void
+    setActiveRoom: (room: string | null) => void,
+    ack?: (res?: any) => void
   ) => {
     try {
       const { documentId } = data;
@@ -175,6 +176,7 @@ export class CollaborationEventHandler {
       const { testId, ...restData } = data;
       // Broadcast to all other users in the active document room (exclude sender)
       this.socket.to(activeRoomName).emit("doc-change", restData);
+      ack?.({ ok: true, ts: Date.now() });
       // console.log(
       //   `[Socket.io] Doc change broadcasted for document ${documentId} with ${restData.steps.length} steps`
       // );
@@ -184,6 +186,7 @@ export class CollaborationEventHandler {
         "Failed to broadcast change",
         "INTERNAL_ERROR"
       );
+      ack?.({ ok: false, error: "UNAUTHORIZED" });
       console.error("[Socket.io] Doc change error:", error);
     }
   };
