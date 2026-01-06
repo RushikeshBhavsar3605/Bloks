@@ -142,15 +142,6 @@ This behavior is expected for a **single-instance, resource-constrained deployme
 
 ---
 
-## Limitations & Future Improvements
-
-- Add **server-side timestamps** for authoritative fan-out latency
-- Introduce **Redis adapter** to test horizontal scalability
-- Run tests on **paid instances** to compare latency vs cost
-- Export metrics to Prometheus/Grafana for long-running analysis
-
----
-
 ## Why This Matters
 
 These tests demonstrate:
