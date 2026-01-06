@@ -8,14 +8,9 @@ A real-time collaborative document editor focused on low-latency sync, conflict-
 
 ## What this project explores
 
-Bloks is built to study **real-time systems at application scale**, specifically:
+Bloks is built to study **real-time systems under concurrent load**, with an emphasis on **backend behavior, latency trade-offs, and cost-aware infrastructure decisions**.
 
-- Multi-user collaborative editing
-- Consistency vs latency trade-offs
-- Permission-aware data access
-- Scalable WebSocket architectures
-
-This is **not** a UI-first project — the emphasis is on backend behavior under concurrent usage.
+This is **not a UI-first project** — the core focus is designing and validating a real-time collaboration system that remains predictable under multi-user contention.
 
 ---
 
@@ -67,6 +62,39 @@ Ephemeral collaboration state (presence, cursors) is kept **in-memory**, while d
 
 ---
 
+## Performance & Load Testing
+
+Bloks includes a **custom Socket.IO load-testing harness** that simulates real collaborative editing patterns and measures latency under concurrent usage.
+
+**Test highlights:**
+
+- 20 concurrent editors
+- ~100 real-time edits/sec sustained
+- Production deployment on **Render free tier** (single instance, shared CPU, ~512 MB RAM)
+
+**Observed latencies (post-warmup):**
+
+- **Emitter ACK latency (client → server → ACK)**
+  - p50: ~283 ms
+  - p90: ~353 ms
+  - p99: ~584 ms
+- **Subscriber broadcast latency (client-observed fan-out)**
+  - p50: ~283 ms
+  - p90: ~350 ms
+  - p99: ~581 ms
+
+Error rate under load: **~0.41%**, primarily due to ACK timeouts, with no client disconnects or crashes.
+
+📁 Full methodology, assumptions, and limitations are documented in:
+
+```
+performance-tests/
+├─ socket.io-load-test.js
+└─ README.md
+```
+
+---
+
 ## Design Decisions & Trade-offs
 
 - **Socket.IO over polling**
@@ -102,15 +130,13 @@ npm install
 npm run dev
 ```
 
-Environment variables for database, authentication, and billing are required.
-Sensitive infrastructure details are intentionally omitted.
+Environment variables for database, authentication, and billing are required. Sensitive infrastructure details are intentionally omitted.
 
 ---
 
 ## Deployment
 
-Requires a platform that supports **persistent connections**.
-Currently deployed on **Render**.
+Requires a platform that supports **persistent connections**. Currently deployed on **Render**.
 
 ---
 
