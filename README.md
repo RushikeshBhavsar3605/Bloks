@@ -1,6 +1,6 @@
 # Bloks
 
-A real-time collaborative document editor focused on low-latency sync, conflict-safe editing, and role-based access control.
+A real-time collaborative document editor focused on low-latency sync, conflict-safe editing, role-based access control and cost-aware persistence under concurrent load.
 
 🔗 **Live Demo**: [https://bloks.onrender.com](https://bloks.onrender.com)
 
@@ -22,6 +22,12 @@ This is **not a UI-first project** — the core focus is designing and validatin
   - Room-based document subscriptions
   - Live cursor presence and user activity
   - Debounced persistence to reduce write amplification
+
+- **Write-Amplification Control**
+
+  - Centralized document-level in-memory state
+  - Activity-aware debounced persistence (2s inactivity window)
+  - Immediate persistence for idle documents
 
 - **Conflict-Safe Editing**
 
@@ -62,15 +68,42 @@ Ephemeral collaboration state (presence, cursors) is kept **in-memory**, while d
 
 ---
 
+## Debounced Persistence Architecture
+
+Collaborative editors generate high-frequency updates. Persisting every edit causes write amplification under concurrent usage.
+
+**Solution:** Bloks uses a **document-level, activity-aware debounce** strategy:
+
+- All socket edits update a shared in-memory document state
+- When a document is **active**, persistence is deferred using a 2s inactivity window
+- When a document becomes **idle**, state is flushed immediately
+
+**Theoretical worst-case bound:**
+
+- Per-edit persistence → O(edits)
+- Debounced persistence → ≤ 1 write per 2s per document (≤ 30 writes/min)
+
+This bound is deterministic and independent of edit rate or number of collaborators.
+
+📄 **Detailed design and mathematical proof:** [`DEBOUNCE.md`](DEBOUNCE.md)
+
+---
+
 ## Performance & Load Testing
 
-Bloks includes a **custom Socket.IO load-testing harness** that simulates real collaborative editing patterns and measures latency under concurrent usage.
+Bloks includes a **custom Socket.IO load-testing harness** that simulates real collaborative editing patterns and measures system behavior under concurrent load.
+
+**Test environment:**
+
+- Production deployment on **Render free tier**
+- Single-node Socket.IO server
+- Shared CPU, ~512 MB RAM
 
 **Test highlights:**
 
 - 20 concurrent editors
 - ~100 real-time edits/sec sustained
-- Production deployment on **Render free tier** (single instance, shared CPU, ~512 MB RAM)
+- Stable latency distribution under continuous load
 
 **Observed latencies (post-warmup):**
 
@@ -85,13 +118,7 @@ Bloks includes a **custom Socket.IO load-testing harness** that simulates real c
 
 Error rate under load: **~0.41%**, primarily due to ACK timeouts, with no client disconnects or crashes.
 
-📁 Full methodology, assumptions, and limitations are documented in:
-
-```
-performance-tests/
-├─ socket.io-load-test.js
-└─ README.md
-```
+📄 **Full methodology and measured results:** [`performance-tests/README.md`](performance-tests/README.md)
 
 ---
 
