@@ -1,5 +1,4 @@
 "use server";
-export const runtime = "nodejs";
 
 import * as z from "zod";
 import { AuthError } from "next-auth";
