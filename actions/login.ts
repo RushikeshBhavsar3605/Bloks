@@ -1,4 +1,5 @@
 "use server";
+export const runtime = "nodejs";
 
 import * as z from "zod";
 import { AuthError } from "next-auth";
@@ -32,12 +33,12 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
 
   if (!existingUser.emailVerified) {
     const verificationToken = await generateVerificationToken(
-      existingUser.email
+      existingUser.email,
     );
 
     await sendVerificationEmail(
       verificationToken.email,
-      verificationToken.token
+      verificationToken.token,
     );
 
     return { success: "Confirmation email sent!" };
@@ -66,7 +67,7 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
       });
 
       const existingConfirmation = await getTwoFactorConfirmationByUserId(
-        existingUser.id
+        existingUser.id,
       );
 
       if (existingConfirmation) {
@@ -82,6 +83,7 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
       });
     } else {
       const twoFactorToken = await generateTwoFactorToken(existingUser.email);
+      console.log("2FA branch hit for:", existingUser.email);
       await sendTwoFactorTokenEmail(twoFactorToken.email, twoFactorToken.token);
 
       return { twoFactor: true };
