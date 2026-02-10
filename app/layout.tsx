@@ -27,6 +27,22 @@ export const metadata: Metadata = {
       },
     ],
   },
+  openGraph: {
+    title: "Bloks",
+    description: "The connected workspace where better, faster work happens",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "OG Image",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/og.png"],
+  },
 };
 
 export default async function RootLayout({

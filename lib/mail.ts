@@ -8,7 +8,9 @@ import { collaboratorVerificationTemplate } from "./email-templates/collaborator
 
 const domain = process.env.NEXT_PUBLIC_APP_URL;
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.EMAIL_FROM,
     pass: process.env.EMAIL_PASS,
@@ -61,7 +63,7 @@ export const sendVerificationEmail = async (email: string, token: string) => {
 
 export const sendCollaboratorVerificationEmail = async (
   email: string,
-  token: string
+  token: string,
 ) => {
   const confirmLink = `${domain}/verify/new-collaborator?token=${token}`;
 
