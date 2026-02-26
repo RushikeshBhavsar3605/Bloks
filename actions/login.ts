@@ -35,12 +35,15 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
       existingUser.email,
     );
 
-    await sendVerificationEmail(
-      verificationToken.email,
-      verificationToken.token,
-    );
+    // await sendVerificationEmail(
+    //   verificationToken.email,
+    //   verificationToken.token,
+    // );
 
-    return { success: "Confirmation email sent!" };
+    return {
+      success: "Confirmation email sent!",
+      confirmLink: `${process.env.NEXT_PUBLIC_APP_URL}/auth/new-verification?token=${verificationToken.token}`,
+    };
   }
 
   if (existingUser.isTwoFactorEnabled && existingUser.email) {
@@ -83,9 +86,9 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
     } else {
       const twoFactorToken = await generateTwoFactorToken(existingUser.email);
       console.log("2FA branch hit for:", existingUser.email);
-      await sendTwoFactorTokenEmail(twoFactorToken.email, twoFactorToken.token);
+      // await sendTwoFactorTokenEmail(twoFactorToken.email, twoFactorToken.token);
 
-      return { twoFactor: true };
+      return { twoFactor: true, code: twoFactorToken.token };
     }
   }
 

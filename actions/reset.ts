@@ -22,10 +22,13 @@ export const reset = async (values: z.infer<typeof ResetSchema>) => {
   }
 
   const passwordResetToken = await generatePasswordResetToken(email);
-  await sendPasswordResetEmail(
-    passwordResetToken.email,
-    passwordResetToken.token
-  );
+  // await sendPasswordResetEmail(
+  //   passwordResetToken.email,
+  //   passwordResetToken.token
+  // );
 
-  return { success: "Reset email sent!" };
+  return {
+    success: "Reset email sent!",
+    resetLink: `${process.env.NEXT_PUBLIC_APP_URL}/auth/new-password?token=${passwordResetToken.token}`,
+  };
 };

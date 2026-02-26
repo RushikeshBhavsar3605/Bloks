@@ -7,7 +7,16 @@ import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { useSocket } from "@/components/providers/socket-provider";
 import { getCollaborator } from "@/actions/collaborators/get-collaborator";
-import { Mail, Settings, UserPlus, Globe, Copy, Check, X } from "lucide-react";
+import {
+  Mail,
+  Settings,
+  UserPlus,
+  Globe,
+  Copy,
+  Check,
+  X,
+  Link,
+} from "lucide-react";
 import { CollaboratorItem } from "./collaborator-item";
 import { DocumentDeleteSection } from "./document-delete-section";
 import { useOrigin } from "@/hooks/use-origin";
@@ -15,6 +24,7 @@ import { publishDocument } from "@/actions/documents/publish-document";
 import { unpublishDocument } from "@/actions/documents/unpublish-document";
 import { useUpgradeAlert } from "@/hooks/use-upgrade-alert";
 import { UpgradeAlertModal } from "@/components/modals/upgrade-alert-modal";
+import { getInviteCode } from "@/actions/collaborators/get-invite-code";
 
 export const CollaboratorsSetting = ({
   documentId,
@@ -41,6 +51,8 @@ export const CollaboratorsSetting = ({
   const [isMounted, setIsMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [inviteLinkCopied, setInviteLinkCopied] = useState<boolean>(false);
+  const [inviteUrl, setInviteUrl] = useState<string>();
   const user = useCurrentUser();
   const { owner, isLoading, error, collaborators, setCollaborators } =
     useCollaborators(documentId);
@@ -52,6 +64,22 @@ export const CollaboratorsSetting = ({
     openUpgradeAlert,
     closeUpgradeAlert,
   } = useUpgradeAlert();
+
+  const onNewInviteUrl = async (generate: boolean) => {
+    try {
+      const token = await getInviteCode({ documentId, generate });
+
+      if (!token) return;
+
+      setInviteUrl(`${process.env.NEXT_PUBLIC_APP_URL}/invite/${token}`);
+    } catch (error) {
+      console.log("[DOCUMENT_INVITE]:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (!inviteUrl) onNewInviteUrl(false);
+  }, []);
 
   // Hydration guard
   useEffect(() => {
@@ -130,8 +158,8 @@ export const CollaboratorsSetting = ({
     }) => {
       setCollaborators((prevState) =>
         prevState.map((c) =>
-          c.user.id === data.updatedUser.id ? { ...c, role: data.newRole } : c
-        )
+          c.user.id === data.updatedUser.id ? { ...c, role: data.newRole } : c,
+        ),
       );
     };
 
@@ -213,7 +241,7 @@ export const CollaboratorsSetting = ({
   // Function to handle role change
   const handleRoleChange = async (
     collaboratorId: string,
-    newRole: CollaboratorRole
+    newRole: CollaboratorRole,
   ) => {
     const promise = fetch(
       `/api/socket/documents/${documentId}/collaborators/${collaboratorId}`,
@@ -225,7 +253,7 @@ export const CollaboratorsSetting = ({
         body: JSON.stringify({
           role: newRole,
         }),
-      }
+      },
     ).then((response) => {
       if (!response.ok) {
         throw new Error("Failed to update collaborator role");
@@ -234,8 +262,8 @@ export const CollaboratorsSetting = ({
       // Update the local state after successful API call
       setCollaborators((prevState) =>
         prevState.map((collab) =>
-          collab.id === collaboratorId ? { ...collab, role: newRole } : collab
-        )
+          collab.id === collaboratorId ? { ...collab, role: newRole } : collab,
+        ),
       );
     });
 
@@ -252,7 +280,7 @@ export const CollaboratorsSetting = ({
       `/api/socket/documents/${documentId}/collaborators/${collaboratorId}`,
       {
         method: "DELETE",
-      }
+      },
     ).then(async (response) => {
       if (!response.ok) {
         throw new Error("Failed to remove collaborator");
@@ -328,6 +356,17 @@ export const CollaboratorsSetting = ({
     setTimeout(() => {
       setCopied(false);
     }, 2000);
+  };
+
+  const handleInviteCopyUrl = () => {
+    if (!inviteUrl) return;
+
+    navigator.clipboard.writeText(inviteUrl);
+    setInviteLinkCopied(true);
+
+    setTimeout(() => {
+      setInviteLinkCopied(false);
+    }, 1000);
   };
 
   // Prevent hydration mismatch
@@ -520,7 +559,7 @@ export const CollaboratorsSetting = ({
               Invite people
             </h3>
             <div className="flex items-center gap-3">
-              <div className="flex-1 relative">
+              {/* <div className="flex-1 relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
                 <input
                   type="email"
@@ -530,14 +569,31 @@ export const CollaboratorsSetting = ({
                   placeholder="Enter email address"
                   className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#1A1A1C] border border-gray-300 dark:border-[#2A2A2E] rounded-lg text-gray-900 dark:text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+              </div> */}
+              <div className="flex-1 relative">
+                <Link className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
+                <input
+                  value={inviteUrl}
+                  disabled
+                  placeholder="Enter email address"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#1A1A1C] border border-gray-300 dark:border-[#2A2A2E] rounded-lg text-gray-900 dark:text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
               <button
-                onClick={handleInviteByEmail}
-                disabled={!emailInput.trim()}
+                onClick={handleInviteCopyUrl}
                 className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors text-sm"
               >
-                <UserPlus className="w-4 h-4" />
-                Invite
+                {inviteLinkCopied ? (
+                  <>
+                    <Check className="h-4 w-4" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" />
+                    Copy
+                  </>
+                )}
               </button>
             </div>
           </div>
