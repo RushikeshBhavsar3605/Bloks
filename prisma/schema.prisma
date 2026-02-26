@@ -176,3 +176,9 @@ model CollaboratorVerificationToken {
 
   @@index([email, token])
 }
+
+model DocumentInviteToken{
+  id String @id @default(cuid()) @map("_id")
+  documentId String @unique
+  token String @unique
+}
