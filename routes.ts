@@ -7,6 +7,7 @@ export const publicRoutes = [
   "/",
   "/auth/new-verification",
   "/verify/new-collaborator",
+  "/api/health",
 ];
 
 export const dynamicPublicRoutes = ["/preview"];
