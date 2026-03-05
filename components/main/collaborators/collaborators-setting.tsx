@@ -16,6 +16,7 @@ import {
   Check,
   X,
   Link,
+  RefreshCw,
 } from "lucide-react";
 import { CollaboratorItem } from "./collaborator-item";
 import { DocumentDeleteSection } from "./document-delete-section";
@@ -25,6 +26,8 @@ import { unpublishDocument } from "@/actions/documents/unpublish-document";
 import { useUpgradeAlert } from "@/hooks/use-upgrade-alert";
 import { UpgradeAlertModal } from "@/components/modals/upgrade-alert-modal";
 import { getInviteCode } from "@/actions/collaborators/get-invite-code";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export const CollaboratorsSetting = ({
   documentId,
@@ -53,6 +56,7 @@ export const CollaboratorsSetting = ({
   const [copied, setCopied] = useState(false);
   const [inviteLinkCopied, setInviteLinkCopied] = useState<boolean>(false);
   const [inviteUrl, setInviteUrl] = useState<string>();
+  const [isInviteLoading, setIsInviteLoading] = useState<boolean>(false);
   const user = useCurrentUser();
   const { owner, isLoading, error, collaborators, setCollaborators } =
     useCollaborators(documentId);
@@ -66,6 +70,7 @@ export const CollaboratorsSetting = ({
   } = useUpgradeAlert();
 
   const onNewInviteUrl = async (generate: boolean) => {
+    setIsInviteLoading(true);
     try {
       const token = await getInviteCode({ documentId, generate });
 
@@ -74,6 +79,8 @@ export const CollaboratorsSetting = ({
       setInviteUrl(`${process.env.NEXT_PUBLIC_APP_URL}/invite/${token}`);
     } catch (error) {
       console.log("[DOCUMENT_INVITE]:", error);
+    } finally {
+      setIsInviteLoading(false);
     }
   };
 
@@ -359,6 +366,8 @@ export const CollaboratorsSetting = ({
   };
 
   const handleInviteCopyUrl = () => {
+    setIsInviteLoading(true);
+
     if (!inviteUrl) return;
 
     navigator.clipboard.writeText(inviteUrl);
@@ -366,6 +375,7 @@ export const CollaboratorsSetting = ({
 
     setTimeout(() => {
       setInviteLinkCopied(false);
+      setIsInviteLoading(false);
     }, 1000);
   };
 
@@ -558,43 +568,45 @@ export const CollaboratorsSetting = ({
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
               Invite people
             </h3>
-            <div className="flex items-center gap-3">
-              {/* <div className="flex-1 relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
-                <input
-                  type="email"
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleInviteByEmail()}
-                  placeholder="Enter email address"
-                  className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#1A1A1C] border border-gray-300 dark:border-[#2A2A2E] rounded-lg text-gray-900 dark:text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div> */}
-              <div className="flex-1 relative">
-                <Link className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
-                <input
-                  value={inviteUrl}
-                  disabled
-                  placeholder="Enter email address"
-                  className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#1A1A1C] border border-gray-300 dark:border-[#2A2A2E] rounded-lg text-gray-900 dark:text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+            <div className="space-y-0">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 relative">
+                  <Link className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <Input
+                    value={inviteUrl}
+                    disabled
+                    placeholder="Enter email address"
+                    className="pl-10 bg-zinc-300/50 dark:bg-zinc-300/20 border-0 focus-visible:ring-0 text-black dark:text-white focus-visible:ring-offset-0"
+                  />
+                </div>
+                <Button
+                  disabled={isInviteLoading}
+                  onClick={handleInviteCopyUrl}
+                  size="icon"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {inviteLinkCopied ? (
+                    <>
+                      <Check className="h-4 w-4" />
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
               </div>
-              <button
-                onClick={handleInviteCopyUrl}
-                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors text-sm"
+
+              <Button
+                onClick={() => onNewInviteUrl(true)}
+                disabled={isInviteLoading}
+                variant="link"
+                size="sm"
+                className="text-xs text-zinc-500 mt-4"
               >
-                {inviteLinkCopied ? (
-                  <>
-                    <Check className="h-4 w-4" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4" />
-                    Copy
-                  </>
-                )}
-              </button>
+                Generate a new link
+                <RefreshCw className="w-4 h-4 ml-2" />
+              </Button>
             </div>
           </div>
         ) : (
